@@ -8,31 +8,31 @@ import type { SpecSummary } from '@specbook/shared';
 
 interface SpecFormProps {
     existingSpecs: SpecSummary[];
-    onAdd: (description: string, group: string) => Promise<void>;
+    onAdd: (title: string, context: string) => Promise<void>;
 }
 
 export const SpecForm: React.FC<SpecFormProps> = ({ existingSpecs, onAdd }) => {
-    const [description, setDescription] = useState('');
-    const [group, setGroup] = useState('');
+    const [title, setTitle] = useState('');
+    const [context, setContext] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    const descRef = useRef<any>(null);
+    const titleRef = useRef<any>(null);
 
-    // Auto-complete options from existing groups
-    const groupOptions = useMemo(() => {
-        const groups = [...new Set(existingSpecs.map(s => s.group).filter(g => g !== 'Ungrouped'))];
-        return groups.sort().map(g => ({ value: g }));
+    // Auto-complete options from existing contexts
+    const contextOptions = useMemo(() => {
+        const contexts = [...new Set(existingSpecs.map(s => s.context).filter(c => c !== 'Ungrouped'))];
+        return contexts.sort().map(c => ({ value: c }));
     }, [existingSpecs]);
 
     const handleSubmit = async () => {
-        const trimmed = description.trim();
+        const trimmed = title.trim();
         if (!trimmed) return;
 
         setSubmitting(true);
         try {
-            await onAdd(trimmed, group.trim() || 'Ungrouped');
-            setDescription('');
-            // Keep group for batch entry
-            descRef.current?.focus();
+            await onAdd(trimmed, context.trim() || 'Ungrouped');
+            setTitle('');
+            // Keep context for batch entry
+            titleRef.current?.focus();
         } catch (err) {
             console.error('Failed to add spec:', err);
         } finally {
@@ -49,25 +49,25 @@ export const SpecForm: React.FC<SpecFormProps> = ({ existingSpecs, onAdd }) => {
 
     return (
         <Space.Compact style={{ width: '100%', marginBottom: 20 }}>
-            <Input
-                ref={descRef}
-                placeholder="Enter spec description..."
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                onKeyDown={handleKeyDown}
-                style={{ flex: 1 }}
-                allowClear
-            />
             <AutoComplete
-                placeholder="Group"
-                value={group}
-                onChange={setGroup}
-                options={groupOptions}
+                placeholder="Context"
+                value={context}
+                onChange={setContext}
+                options={contextOptions}
                 style={{ width: 180 }}
                 onKeyDown={handleKeyDown}
                 filterOption={(inputValue, option) =>
                     option?.value.toLowerCase().includes(inputValue.toLowerCase()) ?? false
                 }
+            />
+            <Input
+                ref={titleRef}
+                placeholder="Enter spec title..."
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                onKeyDown={handleKeyDown}
+                style={{ flex: 1 }}
+                allowClear
             />
             <Button
                 type="primary"

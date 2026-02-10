@@ -29,9 +29,9 @@ export const SpecPage: React.FC = () => {
         }
     }, [workspace, loadSpecs]);
 
-    const handleAdd = async (description: string, group: string) => {
+    const handleAdd = async (title: string, context: string) => {
         try {
-            await addSpec({ description, group });
+            await addSpec({ title, context });
             message.success('Spec added');
         } catch (err: any) {
             message.error(err?.message || 'Failed to add spec');

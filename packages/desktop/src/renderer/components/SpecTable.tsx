@@ -1,5 +1,6 @@
 /**
  * View component — antd Table for spec display.
+ * Columns: Context (first), Title (second).
  * Supports filter, sort, and group-by.
  */
 import React, { useMemo, useState } from 'react';
@@ -29,15 +30,15 @@ interface SpecTableProps {
     onDelete: (id: string) => Promise<void>;
 }
 
-// ─── Group colors ──────────────────────────────────
-const GROUP_COLORS = [
+// ─── Context colors ────────────────────────────────
+const CONTEXT_COLORS = [
     'blue', 'green', 'orange', 'purple', 'cyan',
     'magenta', 'gold', 'lime', 'geekblue', 'volcano',
 ];
 
-function getGroupColor(group: string, allGroups: string[]): string {
-    const idx = allGroups.indexOf(group);
-    return GROUP_COLORS[idx % GROUP_COLORS.length];
+function getContextColor(context: string, allContexts: string[]): string {
+    const idx = allContexts.indexOf(context);
+    return CONTEXT_COLORS[idx % CONTEXT_COLORS.length];
 }
 
 export const SpecTable: React.FC<SpecTableProps> = ({
@@ -51,9 +52,9 @@ export const SpecTable: React.FC<SpecTableProps> = ({
     const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
     const [editValue, setEditValue] = useState('');
 
-    // Unique groups
-    const allGroups = useMemo(() =>
-        [...new Set(specs.map(s => s.group))].sort(),
+    // Unique contexts
+    const allContexts = useMemo(() =>
+        [...new Set(specs.map(s => s.context))].sort(),
         [specs],
     );
 
@@ -62,8 +63,8 @@ export const SpecTable: React.FC<SpecTableProps> = ({
         if (!filterText) return specs;
         const lower = filterText.toLowerCase();
         return specs.filter(s =>
-            s.description.toLowerCase().includes(lower) ||
-            s.group.toLowerCase().includes(lower),
+            s.title.toLowerCase().includes(lower) ||
+            s.context.toLowerCase().includes(lower),
         );
     }, [specs, filterText]);
 
@@ -89,16 +90,49 @@ export const SpecTable: React.FC<SpecTableProps> = ({
         setEditingCell(null);
     };
 
-    // ─── Columns ─────────────────────────────────────
+    // ─── Columns (Context first, then Title) ─────────
     const columns: ColumnsType<SpecSummary> = [
         {
-            title: 'Description',
-            dataIndex: 'description',
-            key: 'description',
-            sorter: (a, b) => a.description.localeCompare(b.description),
+            title: 'Context',
+            dataIndex: 'context',
+            key: 'context',
+            width: 180,
+            sorter: (a, b) => a.context.localeCompare(b.context),
+            filters: allContexts.map(c => ({ text: c, value: c })),
+            onFilter: (value, record) => record.context === value,
+            render: (text: string, record) => {
+                if (editingCell?.id === record.id && editingCell.field === 'context') {
+                    return (
+                        <Input
+                            size="small"
+                            value={editValue}
+                            autoFocus
+                            onChange={e => setEditValue(e.target.value)}
+                            onPressEnter={commitEdit}
+                            onBlur={commitEdit}
+                            onKeyDown={e => e.key === 'Escape' && cancelEdit()}
+                        />
+                    );
+                }
+                return (
+                    <Tag
+                        color={getContextColor(text, allContexts)}
+                        style={{ cursor: 'pointer' }}
+                        onDoubleClick={() => startEdit(record.id, 'context', text)}
+                    >
+                        {text}
+                    </Tag>
+                );
+            },
+        },
+        {
+            title: 'Title',
+            dataIndex: 'title',
+            key: 'title',
+            sorter: (a, b) => a.title.localeCompare(b.title),
             ellipsis: true,
             render: (text: string, record) => {
-                if (editingCell?.id === record.id && editingCell.field === 'description') {
+                if (editingCell?.id === record.id && editingCell.field === 'title') {
                     return (
                         <Input
                             size="small"
@@ -114,43 +148,10 @@ export const SpecTable: React.FC<SpecTableProps> = ({
                 return (
                     <Text
                         style={{ cursor: 'pointer' }}
-                        onDoubleClick={() => startEdit(record.id, 'description', text)}
+                        onDoubleClick={() => startEdit(record.id, 'title', text)}
                     >
                         {text}
                     </Text>
-                );
-            },
-        },
-        {
-            title: 'Group',
-            dataIndex: 'group',
-            key: 'group',
-            width: 180,
-            sorter: (a, b) => a.group.localeCompare(b.group),
-            filters: allGroups.map(g => ({ text: g, value: g })),
-            onFilter: (value, record) => record.group === value,
-            render: (text: string, record) => {
-                if (editingCell?.id === record.id && editingCell.field === 'group') {
-                    return (
-                        <Input
-                            size="small"
-                            value={editValue}
-                            autoFocus
-                            onChange={e => setEditValue(e.target.value)}
-                            onPressEnter={commitEdit}
-                            onBlur={commitEdit}
-                            onKeyDown={e => e.key === 'Escape' && cancelEdit()}
-                        />
-                    );
-                }
-                return (
-                    <Tag
-                        color={getGroupColor(text, allGroups)}
-                        style={{ cursor: 'pointer' }}
-                        onDoubleClick={() => startEdit(record.id, 'group', text)}
-                    >
-                        {text}
-                    </Tag>
                 );
             },
         },
@@ -212,11 +213,8 @@ export const SpecTable: React.FC<SpecTableProps> = ({
                 size="middle"
                 pagination={false}
                 locale={{ emptyText: specs.length === 0 ? 'No specs yet. Add one above.' : 'No matching items.' }}
-                {...(groupByEnabled && allGroups.length > 0
+                {...(groupByEnabled && allContexts.length > 0
                     ? {
-                        // Group by: use expandable row grouping via sorted data
-                        // antd doesn't have native group-by, so we use column grouping via filters
-                        // For a true group-by display, we leverage the group sorter
                         defaultSortOrder: 'ascend' as const,
                         sortDirections: ['ascend' as const, 'descend' as const],
                     }

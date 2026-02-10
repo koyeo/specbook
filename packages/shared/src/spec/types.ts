@@ -5,8 +5,8 @@
 /** Index entry — stored in specs.json */
 export interface SpecSummary {
     id: string;
-    description: string;
-    group: string;
+    context: string;
+    title: string;
     createdAt: string;
 }
 

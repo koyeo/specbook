@@ -5,7 +5,7 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 import {
     IPC,
-    validateDescription,
+    validateTitle,
     generateId,
 } from '@specbook/shared';
 import type {
@@ -62,7 +62,7 @@ export function registerIpcHandlers(): void {
         const ws = requireWorkspace();
 
         // Domain: validate
-        const validation = validateDescription(payload.description);
+        const validation = validateTitle(payload.title);
         if (!validation.valid) {
             throw new Error(validation.error);
         }
@@ -73,8 +73,8 @@ export function registerIpcHandlers(): void {
 
         const detail: SpecDetail = {
             id,
-            description: payload.description.trim(),
-            group: payload.group?.trim() || 'Ungrouped',
+            context: payload.context?.trim() || 'Ungrouped',
+            title: payload.title.trim(),
             content: payload.content?.trim() || '',
             createdAt: now,
             updatedAt: now,
@@ -82,8 +82,8 @@ export function registerIpcHandlers(): void {
 
         const summary = {
             id: detail.id,
-            description: detail.description,
-            group: detail.group,
+            context: detail.context,
+            title: detail.title,
             createdAt: detail.createdAt,
         };
 
@@ -103,16 +103,16 @@ export function registerIpcHandlers(): void {
 
         const updated: SpecDetail = {
             ...existing,
-            description: payload.description?.trim() ?? existing.description,
-            group: payload.group?.trim() ?? existing.group,
+            context: payload.context?.trim() ?? existing.context,
+            title: payload.title?.trim() ?? existing.title,
             content: payload.content?.trim() ?? existing.content,
             updatedAt: new Date().toISOString(),
         };
 
         const summary = {
             id: updated.id,
-            description: updated.description,
-            group: updated.group,
+            context: updated.context,
+            title: updated.title,
             createdAt: updated.createdAt,
         };
 

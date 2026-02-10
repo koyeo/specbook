@@ -9,11 +9,11 @@ export interface ValidationResult {
     error?: string;
 }
 
-/** Validate that spec description is non-empty. */
-export function validateDescription(description: string): ValidationResult {
-    const trimmed = description.trim();
+/** Validate that spec title is non-empty. */
+export function validateTitle(title: string): ValidationResult {
+    const trimmed = title.trim();
     if (trimmed.length === 0) {
-        return { valid: false, error: 'Description cannot be empty.' };
+        return { valid: false, error: 'Title cannot be empty.' };
     }
     return { valid: true };
 }

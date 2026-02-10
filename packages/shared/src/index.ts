@@ -10,7 +10,7 @@ export type { SpecSummary, SpecDetail, SpecIndex } from './spec/types';
 export { SPEC_DIR, SPEC_INDEX_FILE, SPECS_SUBDIR } from './spec/types';
 
 // Validation & ID generation
-export { validateDescription, generateId } from './spec/validations';
+export { validateTitle, generateId } from './spec/validations';
 export type { ValidationResult } from './spec/validations';
 
 // IPC contract

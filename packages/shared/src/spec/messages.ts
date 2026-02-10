@@ -17,16 +17,16 @@ export const IPC = {
 
 /** Add spec payload. */
 export interface AddSpecPayload {
-    description: string;
-    group: string;
+    title: string;
+    context: string;
     content?: string;
 }
 
 /** Update spec payload. */
 export interface UpdateSpecPayload {
     id: string;
-    description?: string;
-    group?: string;
+    title?: string;
+    context?: string;
     content?: string;
 }
 
