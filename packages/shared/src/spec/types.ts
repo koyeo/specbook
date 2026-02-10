@@ -2,26 +2,31 @@
  * Spec domain types.
  */
 
-/** A single spec item in the table. */
-export interface SpecItem {
-    /** Unique ID (UUID-like). */
+/** Index entry — stored in specs.json */
+export interface SpecSummary {
     id: string;
-    /** Description text. */
     description: string;
-    /** Group/category name. */
     group: string;
-    /** ISO 8601 timestamp when created. */
     createdAt: string;
 }
 
-/** The full spec file structure (persisted as YAML). */
-export interface SpecFile {
-    version: string;
-    items: SpecItem[];
+/** Full spec detail — stored in specs/{id}.spec.json */
+export interface SpecDetail extends SpecSummary {
+    content: string;
+    updatedAt: string;
 }
 
-/** Directory name for storing specs within the workspace. */
+/** Root index file structure (.spec/specs.json) */
+export interface SpecIndex {
+    version: string;
+    specs: SpecSummary[];
+}
+
+/** Directory name for spec storage. */
 export const SPEC_DIR = '.spec';
 
-/** Single spec file name. */
-export const SPEC_FILENAME = 'spec.yaml';
+/** Index file name. */
+export const SPEC_INDEX_FILE = 'specs.json';
+
+/** Subdirectory for individual spec files. */
+export const SPECS_SUBDIR = 'specs';

@@ -1,0 +1,27 @@
+{
+    "name": "@specbook/desktop",
+    "version": "0.1.0",
+    "private": true,
+    "main": "./out/main/index.js",
+    "scripts": {
+        "dev": "electron-vite dev",
+        "build": "electron-vite build",
+        "preview": "electron-vite preview",
+        "clean": "rm -rf out dist"
+    },
+    "dependencies": {
+        "@specbook/shared": "workspace:*",
+        "@ant-design/icons": "^5.6.1",
+        "antd": "^5.24.2"
+    },
+    "devDependencies": {
+        "@types/react": "^19.1.6",
+        "@types/react-dom": "^19.1.6",
+        "@vitejs/plugin-react": "^4.5.2",
+        "electron": "^36.3.2",
+        "electron-vite": "^3.1.0",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "typescript": "^5.7.3"
+    }
+}

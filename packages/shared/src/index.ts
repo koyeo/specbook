@@ -5,9 +5,14 @@
 
 export const SPECBOOK_VERSION = '0.1.0';
 
-// Spec domain
-export type { SpecItem, SpecFile } from './spec/types';
-export { SPEC_DIR, SPEC_FILENAME } from './spec/types';
+// Spec domain types
+export type { SpecSummary, SpecDetail, SpecIndex } from './spec/types';
+export { SPEC_DIR, SPEC_INDEX_FILE, SPECS_SUBDIR } from './spec/types';
+
+// Validation & ID generation
 export { validateDescription, generateId } from './spec/validations';
 export type { ValidationResult } from './spec/validations';
-export type { WebviewToExtensionMessage, ExtensionToWebviewMessage } from './spec/messages';
+
+// IPC contract
+export type { AddSpecPayload, UpdateSpecPayload, SpecAPI } from './spec/messages';
+export { IPC } from './spec/messages';

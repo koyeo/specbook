@@ -1,8 +1,5 @@
 {
     "compilerOptions": {
-        "composite": true,
-        "outDir": "./dist",
-        "rootDir": "./src",
         "target": "ES2022",
         "module": "CommonJS",
         "moduleResolution": "node",
@@ -15,15 +12,10 @@
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
         "isolatedModules": true,
-        "declaration": true,
-        "declarationMap": true,
-        "sourceMap": true
+        "noEmit": true
     },
     "include": [
-        "src/**/*.ts"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist"
+        "src/main/**/*.ts",
+        "src/preload/**/*.ts"
     ]
 }

@@ -1,16 +1,42 @@
 /**
- * Message types for Extension ↔ Webview communication.
+ * IPC channel names and payload types.
+ * Shared between main process and renderer.
  */
-import type { SpecItem } from './types';
+import type { SpecSummary, SpecDetail } from './types';
 
-/** Messages sent FROM the Webview TO the Extension. */
-export type WebviewToExtensionMessage =
-    | { type: 'addItem'; description: string; group: string }
-    | { type: 'deleteItem'; id: string }
-    | { type: 'updateItem'; item: SpecItem }
-    | { type: 'loadItems' };
+/** IPC channel names. */
+export const IPC = {
+    LOAD_SPECS: 'spec:load-all',
+    ADD_SPEC: 'spec:add',
+    UPDATE_SPEC: 'spec:update',
+    DELETE_SPEC: 'spec:delete',
+    GET_SPEC: 'spec:get',
+    SELECT_WORKSPACE: 'workspace:select',
+    GET_WORKSPACE: 'workspace:get',
+} as const;
 
-/** Messages sent FROM the Extension TO the Webview. */
-export type ExtensionToWebviewMessage =
-    | { type: 'itemsLoaded'; items: SpecItem[] }
-    | { type: 'error'; message: string };
+/** Add spec payload. */
+export interface AddSpecPayload {
+    description: string;
+    group: string;
+    content?: string;
+}
+
+/** Update spec payload. */
+export interface UpdateSpecPayload {
+    id: string;
+    description?: string;
+    group?: string;
+    content?: string;
+}
+
+/** API exposed to renderer via contextBridge. */
+export interface SpecAPI {
+    loadSpecs(): Promise<SpecSummary[]>;
+    addSpec(payload: AddSpecPayload): Promise<SpecDetail>;
+    updateSpec(payload: UpdateSpecPayload): Promise<SpecDetail>;
+    deleteSpec(id: string): Promise<void>;
+    getSpec(id: string): Promise<SpecDetail | null>;
+    selectWorkspace(): Promise<string | null>;
+    getWorkspace(): Promise<string | null>;
+}
