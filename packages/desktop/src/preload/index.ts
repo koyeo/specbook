@@ -4,7 +4,7 @@
  */
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '@specbook/shared';
-import type { SpecAPI, AddSpecPayload, UpdateSpecPayload } from '@specbook/shared';
+import type { SpecAPI, AddSpecPayload, UpdateSpecPayload, MoveSpecPayload } from '@specbook/shared';
 
 const api: SpecAPI = {
     loadSpecs: () => ipcRenderer.invoke(IPC.LOAD_SPECS),
@@ -12,6 +12,7 @@ const api: SpecAPI = {
     updateSpec: (payload: UpdateSpecPayload) => ipcRenderer.invoke(IPC.UPDATE_SPEC, payload),
     deleteSpec: (id: string) => ipcRenderer.invoke(IPC.DELETE_SPEC, id),
     getSpec: (id: string) => ipcRenderer.invoke(IPC.GET_SPEC, id),
+    moveSpec: (payload: MoveSpecPayload) => ipcRenderer.invoke(IPC.MOVE_SPEC, payload),
     selectWorkspace: () => ipcRenderer.invoke(IPC.SELECT_WORKSPACE),
     getWorkspace: () => ipcRenderer.invoke(IPC.GET_WORKSPACE),
 };

@@ -11,6 +11,7 @@ export const IPC = {
     UPDATE_SPEC: 'spec:update',
     DELETE_SPEC: 'spec:delete',
     GET_SPEC: 'spec:get',
+    MOVE_SPEC: 'spec:move',
     SELECT_WORKSPACE: 'workspace:select',
     GET_WORKSPACE: 'workspace:get',
 } as const;
@@ -29,6 +30,13 @@ export interface UpdateSpecPayload {
     title?: string;
     context?: string;
     content?: string;
+    completed?: boolean;
+}
+
+/** Move spec payload — change parent. */
+export interface MoveSpecPayload {
+    id: string;
+    newParentId: string | null;
 }
 
 /** API exposed to renderer via contextBridge. */
@@ -38,6 +46,7 @@ export interface SpecAPI {
     updateSpec(payload: UpdateSpecPayload): Promise<SpecDetail>;
     deleteSpec(id: string): Promise<void>;
     getSpec(id: string): Promise<SpecDetail | null>;
+    moveSpec(payload: MoveSpecPayload): Promise<void>;
     selectWorkspace(): Promise<string | null>;
     getWorkspace(): Promise<string | null>;
 }

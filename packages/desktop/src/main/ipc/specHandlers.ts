@@ -11,9 +11,11 @@ import {
 import type {
     AddSpecPayload,
     UpdateSpecPayload,
+    MoveSpecPayload,
     SpecDetail,
 } from '@specbook/shared';
 import * as specStore from '../infrastructure/specStore';
+import { getLastWorkspace, saveLastWorkspace } from '../infrastructure/appConfig';
 
 let currentWorkspace: string | null = null;
 
@@ -23,6 +25,7 @@ export function getWorkspace(): string | null {
 
 export function setWorkspace(workspace: string): void {
     currentWorkspace = workspace;
+    saveLastWorkspace(workspace);
 }
 
 function requireWorkspace(): string {
@@ -44,10 +47,15 @@ export function registerIpcHandlers(): void {
             return null;
         }
         currentWorkspace = result.filePaths[0];
+        saveLastWorkspace(currentWorkspace);
         return currentWorkspace;
     });
 
     ipcMain.handle(IPC.GET_WORKSPACE, () => {
+        // Auto-restore last workspace if none set
+        if (!currentWorkspace) {
+            currentWorkspace = getLastWorkspace();
+        }
         return currentWorkspace;
     });
 
@@ -86,6 +94,7 @@ export function registerIpcHandlers(): void {
             context,
             title: payload.title.trim(),
             hasContent: false,
+            completed: false,
             content: payload.content?.trim() || '',
             createdAt: now,
             updatedAt: now,
@@ -97,6 +106,7 @@ export function registerIpcHandlers(): void {
             context: detail.context,
             title: detail.title,
             hasContent: detail.content.length > 0,
+            completed: detail.completed,
             createdAt: detail.createdAt,
         };
 
@@ -119,6 +129,7 @@ export function registerIpcHandlers(): void {
             context: payload.context?.trim() ?? existing.context,
             title: payload.title?.trim() ?? existing.title,
             content: payload.content?.trim() ?? existing.content,
+            completed: payload.completed ?? existing.completed ?? false,
             updatedAt: new Date().toISOString(),
         };
 
@@ -128,6 +139,7 @@ export function registerIpcHandlers(): void {
             context: updated.context,
             title: updated.title,
             hasContent: updated.content.length > 0,
+            completed: updated.completed ?? false,
             createdAt: updated.createdAt,
         };
 
@@ -144,5 +156,10 @@ export function registerIpcHandlers(): void {
     ipcMain.handle(IPC.GET_SPEC, (_event, id: string) => {
         const ws = requireWorkspace();
         return specStore.readSpecDetail(ws, id);
+    });
+
+    ipcMain.handle(IPC.MOVE_SPEC, (_event, payload: MoveSpecPayload) => {
+        const ws = requireWorkspace();
+        specStore.moveSpec(ws, payload.id, payload.newParentId);
     });
 }

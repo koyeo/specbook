@@ -2,7 +2,7 @@
  * Application layer — IPC invoke wrappers as React hooks.
  */
 import { useState, useEffect, useCallback } from 'react';
-import type { SpecTreeNode, AddSpecPayload, UpdateSpecPayload } from '@specbook/shared';
+import type { SpecTreeNode, AddSpecPayload, UpdateSpecPayload, MoveSpecPayload } from '@specbook/shared';
 
 export function useSpecs() {
     const [specs, setSpecs] = useState<SpecTreeNode[]>([]);
@@ -44,6 +44,11 @@ export function useSpecs() {
         await loadSpecs();
     }, [loadSpecs]);
 
+    const moveSpec = useCallback(async (payload: MoveSpecPayload) => {
+        await window.api.moveSpec(payload);
+        await loadSpecs();
+    }, [loadSpecs]);
+
     const selectWorkspace = useCallback(async () => {
         const ws = await window.api.selectWorkspace();
         if (ws) {
@@ -73,6 +78,7 @@ export function useSpecs() {
         addSpec,
         updateSpec,
         deleteSpec,
+        moveSpec,
         selectWorkspace,
     };
 }

@@ -5,7 +5,6 @@ import React, { useEffect, useState } from 'react';
 import { Typography, Button, Space, Divider, message, Modal, Input, AutoComplete } from 'antd';
 import { FolderOpenOutlined } from '@ant-design/icons';
 import { SpecTable } from '../components/SpecTable';
-import { SpecForm } from '../components/SpecForm';
 import { SpecDetailDrawer } from '../components/SpecDetailDrawer';
 import { useSpecs } from '../hooks/useSpecs';
 
@@ -27,41 +26,32 @@ export const SpecPage: React.FC = () => {
     const [drawerSpecId, setDrawerSpecId] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
 
-    // Add-child modal state
-    const [addChildParentId, setAddChildParentId] = useState<string | null>(null);
-    const [childTitle, setChildTitle] = useState('');
-    const [addingChild, setAddingChild] = useState(false);
+    // Add-new modal state
+    const [addMode, setAddMode] = useState<'root' | 'sibling' | 'child' | null>(null);
+    const [addParentId, setAddParentId] = useState<string | null>(null);
+    const [newTitle, setNewTitle] = useState('');
+    const [newContext, setNewContext] = useState('');
+    const [adding, setAdding] = useState(false);
 
-    // Load specs when workspace is available
     useEffect(() => {
-        if (workspace) {
-            loadSpecs();
-        }
+        if (workspace) loadSpecs();
     }, [workspace, loadSpecs]);
 
-    const handleAdd = async (title: string, context: string) => {
+    // ─── Checkbox toggle ─────────────────────────────
+    const handleToggleCompleted = async (id: string, completed: boolean) => {
         try {
-            await addSpec({ title, context });
-            message.success('Spec added');
+            await updateSpec({ id, completed });
         } catch (err: any) {
-            message.error(err?.message || 'Failed to add spec');
-        }
-    };
-
-    const handleUpdate = async (payload: { id: string;[key: string]: string | undefined }) => {
-        try {
-            await updateSpec(payload);
-        } catch (err: any) {
-            message.error(err?.message || 'Failed to update spec');
+            message.error(err?.message || 'Failed to update');
         }
     };
 
     const handleDelete = async (id: string) => {
         try {
             await deleteSpec(id);
-            message.success('Spec deleted');
+            message.success('Deleted');
         } catch (err: any) {
-            message.error(err?.message || 'Failed to delete spec');
+            message.error(err?.message || 'Failed to delete');
         }
     };
 
@@ -75,112 +65,139 @@ export const SpecPage: React.FC = () => {
         setDrawerSpecId(null);
     };
 
-    const handleDrawerSaved = () => {
-        loadSpecs();
+    const handleDrawerSaved = () => loadSpecs();
+
+    // ─── Add Spec Flows ──────────────────────────────
+    const handleAddRoot = () => {
+        setAddMode('root');
+        setAddParentId(null);
+        setNewTitle('');
+        setNewContext('');
+    };
+
+    const handleAddSibling = (_afterId: string, parentId: string | null) => {
+        setAddMode('sibling');
+        setAddParentId(parentId);
+        setNewTitle('');
+        setNewContext('');
     };
 
     const handleAddChild = (parentId: string) => {
-        setAddChildParentId(parentId);
-        setChildTitle('');
+        setAddMode('child');
+        setAddParentId(parentId);
+        setNewTitle('');
+        setNewContext('');
     };
 
-    const handleAddChildConfirm = async () => {
-        if (!addChildParentId || !childTitle.trim()) return;
-        setAddingChild(true);
+    const handleAddConfirm = async () => {
+        if (!newTitle.trim()) return;
+        setAdding(true);
         try {
-            await addSpec({ title: childTitle.trim(), context: '', parentId: addChildParentId });
-            message.success('Child spec added');
-            setAddChildParentId(null);
-            setChildTitle('');
+            const parentId = addMode === 'root' ? null : addParentId;
+            const context = newContext.trim() || 'Ungrouped';
+            await addSpec({ title: newTitle.trim(), context, parentId });
+            message.success('Spec added');
+            setAddMode(null);
         } catch (err: any) {
-            message.error(err?.message || 'Failed to add child');
+            message.error(err?.message || 'Failed to add');
         } finally {
-            setAddingChild(false);
+            setAdding(false);
         }
     };
 
-    const handleAddChildCancel = () => {
-        setAddChildParentId(null);
-        setChildTitle('');
-    };
+    const handleAddCancel = () => setAddMode(null);
+    const handleSelectWorkspace = async () => { await selectWorkspace(); };
 
-    const handleSelectWorkspace = async () => {
-        await selectWorkspace();
-    };
+    const modalTitle = addMode === 'child' ? 'Add child spec'
+        : addMode === 'sibling' ? 'Add sibling spec' : 'New spec';
+    const showContext = addMode === 'root';
 
-    // ─── No workspace selected ───────────────────────
+    // Collect contexts for autocomplete
+    const existingContexts: string[] = [];
+    const walk = (nodes: typeof specs) => {
+        for (const n of nodes) {
+            if (!existingContexts.includes(n.context)) existingContexts.push(n.context);
+            if (n.children) walk(n.children);
+        }
+    };
+    walk(specs);
+
+    // ─── No workspace ────────────────────────────────
     if (!workspace) {
         return (
             <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                gap: 16,
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', height: '100%', gap: 16,
             }}>
                 <Title level={3}>📝 SpecBook</Title>
                 <Text type="secondary">Select a workspace folder to get started</Text>
-                <Button
-                    type="primary"
-                    size="large"
-                    icon={<FolderOpenOutlined />}
-                    onClick={handleSelectWorkspace}
-                >
+                <Button type="primary" size="large" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>
                     Open Workspace
                 </Button>
             </div>
         );
     }
 
-    // ─── Workspace loaded ────────────────────────────
     return (
         <div>
             <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 8 }} align="center">
                 <Title level={4} style={{ margin: 0 }}>📝 Specs</Title>
                 <Space size={8}>
                     <Text type="secondary" style={{ fontSize: 12 }}>{workspace}</Text>
-                    <Button size="small" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>
-                        Change
-                    </Button>
+                    <Button size="small" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>Change</Button>
                 </Space>
             </Space>
             <Divider style={{ margin: '12px 0' }} />
 
-            <SpecForm existingSpecs={specs} onAdd={handleAdd} />
             <SpecTable
                 specs={specs}
                 loading={loading}
-                onUpdate={handleUpdate}
+                onToggleCompleted={handleToggleCompleted}
                 onDelete={handleDelete}
                 onOpen={handleOpen}
+                onAddSibling={handleAddSibling}
                 onAddChild={handleAddChild}
+                onAddRoot={handleAddRoot}
             />
 
             <SpecDetailDrawer
                 specId={drawerSpecId}
                 open={drawerOpen}
+                specs={specs}
                 onClose={handleDrawerClose}
                 onSaved={handleDrawerSaved}
             />
 
-            {/* Add child modal */}
             <Modal
-                title="Add child spec"
-                open={!!addChildParentId}
-                onOk={handleAddChildConfirm}
-                onCancel={handleAddChildCancel}
-                confirmLoading={addingChild}
+                title={modalTitle}
+                open={!!addMode}
+                onOk={handleAddConfirm}
+                onCancel={handleAddCancel}
+                confirmLoading={adding}
                 okText="Add"
                 destroyOnClose
             >
-                <Input
-                    placeholder="Enter child spec title..."
-                    value={childTitle}
-                    onChange={e => setChildTitle(e.target.value)}
-                    onPressEnter={handleAddChildConfirm}
-                    autoFocus
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <Input
+                        placeholder="Spec title..."
+                        value={newTitle}
+                        onChange={e => setNewTitle(e.target.value)}
+                        onPressEnter={handleAddConfirm}
+                        autoFocus
+                    />
+                    {showContext && (
+                        <AutoComplete
+                            options={existingContexts.map(c => ({ value: c }))}
+                            value={newContext}
+                            onChange={setNewContext}
+                            placeholder="Context (e.g. User, Auth, Payment...)"
+                            style={{ width: '100%' }}
+                            filterOption={(input, option) =>
+                                (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                        />
+                    )}
+                </div>
             </Modal>
         </div>
     );

@@ -1,39 +1,39 @@
 /**
- * View component — antd Table with tree structure for spec display.
- * Supports expand/collapse, per-row "+" to add child, and inline editing.
+ * View component — task-list style spec table with tree structure.
+ * Checkbox at row start, right-click context menu, click title to open detail.
  */
 import React, { useMemo, useState, useEffect } from 'react';
 import {
-    Table,
     Input,
     Tag,
     Button,
-    Space,
-    Popconfirm,
     Typography,
     Tooltip,
+    Checkbox,
+    Dropdown,
+    Spin,
 } from 'antd';
+import type { MenuProps } from 'antd';
 import {
-    DeleteOutlined,
     SearchOutlined,
     FileTextOutlined,
-    PlusOutlined,
-    EditOutlined,
     ExpandAltOutlined,
     ShrinkOutlined,
+    PlusOutlined,
 } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
-import type { SpecTreeNode, UpdateSpecPayload } from '@specbook/shared';
+import type { SpecTreeNode } from '@specbook/shared';
 
 const { Text } = Typography;
 
 interface SpecTableProps {
     specs: SpecTreeNode[];
     loading: boolean;
-    onUpdate: (payload: UpdateSpecPayload) => Promise<void>;
+    onToggleCompleted: (id: string, completed: boolean) => void;
     onDelete: (id: string) => Promise<void>;
     onOpen: (id: string) => void;
+    onAddSibling: (afterId: string, parentId: string | null) => void;
     onAddChild: (parentId: string) => void;
+    onAddRoot: () => void;
 }
 
 // ─── Context colors ────────────────────────────────
@@ -47,7 +47,6 @@ function getContextColor(context: string, allContexts: string[]): string {
     return CONTEXT_COLORS[idx % CONTEXT_COLORS.length];
 }
 
-/** Collect all unique contexts from tree nodes recursively. */
 function collectContexts(nodes: SpecTreeNode[]): string[] {
     const set = new Set<string>();
     const walk = (list: SpecTreeNode[]) => {
@@ -60,7 +59,6 @@ function collectContexts(nodes: SpecTreeNode[]): string[] {
     return [...set].sort();
 }
 
-/** Filter tree nodes recursively — keep the node if it or any descendant matches. */
 function filterTree(nodes: SpecTreeNode[], lowerFilter: string): SpecTreeNode[] {
     const result: SpecTreeNode[] = [];
     for (const n of nodes) {
@@ -68,268 +66,325 @@ function filterTree(nodes: SpecTreeNode[], lowerFilter: string): SpecTreeNode[] 
         const selfMatch =
             n.title.toLowerCase().includes(lowerFilter) ||
             n.context.toLowerCase().includes(lowerFilter);
-
         if (selfMatch || childMatch.length > 0) {
-            result.push({
-                ...n,
-                children: childMatch.length > 0 ? childMatch : n.children,
-            });
+            result.push({ ...n, children: childMatch.length > 0 ? childMatch : n.children });
         }
     }
     return result;
 }
 
-/** Count total nodes in a tree recursively. */
 function countNodes(nodes: SpecTreeNode[]): number {
     let c = 0;
-    for (const n of nodes) {
-        c += 1;
-        if (n.children) c += countNodes(n.children);
-    }
+    for (const n of nodes) { c += 1; if (n.children) c += countNodes(n.children); }
     return c;
 }
 
-/** Collect all IDs that have children (expandable rows). */
 function collectParentIds(nodes: SpecTreeNode[]): string[] {
     const ids: string[] = [];
     const walk = (list: SpecTreeNode[]) => {
         for (const n of list) {
-            if (n.children && n.children.length > 0) {
-                ids.push(n.id);
-                walk(n.children);
-            }
+            if (n.children && n.children.length > 0) { ids.push(n.id); walk(n.children); }
         }
     };
     walk(nodes);
     return ids;
 }
 
+// ─── Single Row ──────────────────────────────────────
+
+interface RowProps {
+    node: SpecTreeNode;
+    depth: number;
+    allContexts: string[];
+    expanded: boolean;
+    hasChildren: boolean;
+    hoveredRow: string | null;
+    onToggleExpand: (id: string) => void;
+    onToggleCheck: (id: string, checked: boolean) => void;
+    onHover: (id: string | null) => void;
+    onOpen: (id: string) => void;
+    onAddSibling: (afterId: string, parentId: string | null) => void;
+    onAddChild: (parentId: string) => void;
+    onDelete: (id: string) => void;
+}
+
+const SpecRow: React.FC<RowProps> = ({
+    node,
+    depth,
+    allContexts,
+    expanded,
+    hasChildren,
+    hoveredRow,
+    onToggleExpand,
+    onToggleCheck,
+    onHover,
+    onOpen,
+    onAddSibling,
+    onAddChild,
+    onDelete,
+}) => {
+    const isHovered = hoveredRow === node.id;
+
+    const contextMenuItems: MenuProps['items'] = [
+        { key: 'open', label: '📂 Open detail' },
+        { type: 'divider' },
+        { key: 'add-sibling', label: '↓ Add sibling below' },
+        { key: 'add-child', label: '→ Add child' },
+        { type: 'divider' },
+        { key: 'delete', label: '🗑 Delete', danger: true },
+    ];
+
+    const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
+        switch (key) {
+            case 'open': onOpen(node.id); break;
+            case 'add-sibling': onAddSibling(node.id, node.parentId); break;
+            case 'add-child': onAddChild(node.id); break;
+            case 'delete': onDelete(node.id); break;
+        }
+    };
+
+    return (
+        <Dropdown
+            menu={{ items: contextMenuItems, onClick: handleMenuClick }}
+            trigger={['contextMenu']}
+        >
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '5px 8px',
+                    paddingLeft: 8 + depth * 24,
+                    background: isHovered ? '#fafafa' : 'transparent',
+                    transition: 'background 0.15s',
+                    cursor: 'default',
+                    minHeight: 34,
+                }}
+                onMouseEnter={() => onHover(node.id)}
+                onMouseLeave={() => onHover(null)}
+            >
+                {/* Expand toggle */}
+                <span
+                    style={{
+                        width: 18,
+                        flexShrink: 0,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: hasChildren ? 'pointer' : 'default',
+                        fontSize: 9,
+                        color: '#bbb',
+                        userSelect: 'none',
+                    }}
+                    onClick={() => hasChildren && onToggleExpand(node.id)}
+                >
+                    {hasChildren ? (expanded ? '▼' : '▶') : ''}
+                </span>
+
+                {/* Checkbox */}
+                <Checkbox
+                    checked={node.completed}
+                    onChange={(e) => onToggleCheck(node.id, e.target.checked)}
+                    style={{ marginRight: 8 }}
+                />
+
+                {/* Context tag (root level only) */}
+                {!node.parentId && (
+                    <Tag
+                        color={getContextColor(node.context, allContexts)}
+                        style={{ marginRight: 8, flexShrink: 0, fontSize: 11 }}
+                    >
+                        {node.context}
+                    </Tag>
+                )}
+
+                {/* Title — click to open detail */}
+                <Text
+                    style={{
+                        flex: 1,
+                        textDecoration: node.completed ? 'line-through' : 'none',
+                        color: node.completed ? '#999' : undefined,
+                        cursor: 'pointer',
+                    }}
+                    onClick={() => onOpen(node.id)}
+                >
+                    {node.hasContent && (
+                        <FileTextOutlined style={{ color: '#1677ff', marginRight: 6, fontSize: 12 }} />
+                    )}
+                    {node.title}
+                </Text>
+            </div>
+        </Dropdown>
+    );
+};
+
+// ─── Recursive tree renderer ─────────────────────────
+
+interface TreeRendererProps {
+    nodes: SpecTreeNode[];
+    depth: number;
+    expandedKeys: Set<string>;
+    allContexts: string[];
+    hoveredRow: string | null;
+    onToggleExpand: (id: string) => void;
+    onToggleCheck: (id: string, checked: boolean) => void;
+    onHover: (id: string | null) => void;
+    onOpen: (id: string) => void;
+    onAddSibling: (afterId: string, parentId: string | null) => void;
+    onAddChild: (parentId: string) => void;
+    onDelete: (id: string) => void;
+}
+
+const TreeRenderer: React.FC<TreeRendererProps> = ({
+    nodes,
+    depth,
+    expandedKeys,
+    ...rest
+}) => {
+    return (
+        <>
+            {nodes.map(node => {
+                const hasChildren = !!(node.children && node.children.length > 0);
+                const isExpanded = expandedKeys.has(node.id);
+                return (
+                    <React.Fragment key={node.id}>
+                        <SpecRow
+                            node={node}
+                            depth={depth}
+                            hasChildren={hasChildren}
+                            expanded={isExpanded}
+                            {...rest}
+                        />
+                        {hasChildren && isExpanded && (
+                            <TreeRenderer
+                                nodes={node.children!}
+                                depth={depth + 1}
+                                expandedKeys={expandedKeys}
+                                {...rest}
+                            />
+                        )}
+                    </React.Fragment>
+                );
+            })}
+        </>
+    );
+};
+
+// ─── Main Component ─────────────────────────────────
+
 export const SpecTable: React.FC<SpecTableProps> = ({
     specs,
     loading,
-    onUpdate,
+    onToggleCompleted,
     onDelete,
     onOpen,
+    onAddSibling,
     onAddChild,
+    onAddRoot,
 }) => {
     const [filterText, setFilterText] = useState('');
-    const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
-    const [editValue, setEditValue] = useState('');
     const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-    const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+    const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
 
-    // Unique contexts (from tree)
     const allContexts = useMemo(() => collectContexts(specs), [specs]);
-
-    // Filter tree
     const displaySpecs = useMemo(() => {
         if (!filterText) return specs;
         return filterTree(specs, filterText.toLowerCase());
     }, [specs, filterText]);
-
     const totalCount = useMemo(() => countNodes(specs), [specs]);
     const filteredCount = useMemo(() => countNodes(displaySpecs), [displaySpecs]);
-
-    // All expandable row IDs
     const allParentIds = useMemo(() => collectParentIds(displaySpecs), [displaySpecs]);
 
-    // Default expand all on first load
     useEffect(() => {
-        setExpandedKeys(collectParentIds(specs));
+        setExpandedKeys(new Set(collectParentIds(specs)));
     }, [specs]);
 
-    const expandAll = () => setExpandedKeys(allParentIds);
-    const collapseAll = () => setExpandedKeys([]);
-    const isAllExpanded = allParentIds.length > 0 && expandedKeys.length >= allParentIds.length;
+    const isAllExpanded = allParentIds.length > 0 && expandedKeys.size >= allParentIds.length;
 
-    // ─── Inline editing ──────────────────────────────
-    const startEdit = (id: string, field: string, currentValue: string) => {
-        setEditingCell({ id, field });
-        setEditValue(currentValue);
-    };
-
-    const commitEdit = async () => {
-        if (!editingCell || !editValue.trim()) {
-            setEditingCell(null);
-            return;
-        }
-        await onUpdate({
-            id: editingCell.id,
-            [editingCell.field]: editValue.trim(),
+    const toggleExpand = (id: string) => {
+        setExpandedKeys(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
         });
-        setEditingCell(null);
     };
 
-    const cancelEdit = () => {
-        setEditingCell(null);
-    };
-
-    // ─── Columns ─────────────────────────────────────
-    const columns: ColumnsType<SpecTreeNode> = [
-        {
-            title: 'Context',
-            dataIndex: 'context',
-            key: 'context',
-            width: 160,
-            render: (text: string, record) => {
-                if (editingCell?.id === record.id && editingCell.field === 'context') {
-                    return (
-                        <Input
-                            size="small"
-                            value={editValue}
-                            autoFocus
-                            onChange={e => setEditValue(e.target.value)}
-                            onPressEnter={commitEdit}
-                            onBlur={commitEdit}
-                            onKeyDown={e => e.key === 'Escape' && cancelEdit()}
-                        />
-                    );
-                }
-                // Only show context tag on root-level specs
-                if (!record.parentId) {
-                    return (
-                        <Tag
-                            color={getContextColor(text, allContexts)}
-                            style={{ cursor: 'pointer' }}
-                            onDoubleClick={() => startEdit(record.id, 'context', text)}
-                        >
-                            {text}
-                        </Tag>
-                    );
-                }
-                return null;
-            },
-        },
-        {
-            title: 'Title',
-            dataIndex: 'title',
-            key: 'title',
-            render: (text: string, record) => {
-                if (editingCell?.id === record.id && editingCell.field === 'title') {
-                    return (
-                        <Input
-                            size="small"
-                            value={editValue}
-                            autoFocus
-                            onChange={e => setEditValue(e.target.value)}
-                            onPressEnter={commitEdit}
-                            onBlur={commitEdit}
-                            onKeyDown={e => e.key === 'Escape' && cancelEdit()}
-                        />
-                    );
-                }
-                return (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <Text
-                            style={{ cursor: 'pointer', flex: 1 }}
-                            onDoubleClick={() => startEdit(record.id, 'title', text)}
-                        >
-                            {record.hasContent && (
-                                <FileTextOutlined style={{ color: '#1677ff', marginRight: 6, fontSize: 12 }} />
-                            )}
-                            {text}
-                        </Text>
-                        {hoveredRow === record.id && (
-                            <Button
-                                type="link"
-                                size="small"
-                                style={{ padding: '0 4px', fontSize: 12, flexShrink: 0 }}
-                                onClick={() => onOpen(record.id)}
-                            >
-                                Open
-                            </Button>
-                        )}
-                    </div>
-                );
-            },
-        },
-        {
-            title: '',
-            key: 'actions',
-            width: 110,
-            render: (_, record) => (
-                <Space size={0}>
-                    <Tooltip title="Edit">
-                        <Button
-                            type="text"
-                            size="small"
-                            icon={<EditOutlined />}
-                            onClick={() => startEdit(record.id, 'title', record.title)}
-                        />
-                    </Tooltip>
-                    <Tooltip title="Add child">
-                        <Button
-                            type="text"
-                            size="small"
-                            icon={<PlusOutlined />}
-                            onClick={() => onAddChild(record.id)}
-                        />
-                    </Tooltip>
-                    <Popconfirm
-                        title="Delete this spec and all children?"
-                        onConfirm={() => onDelete(record.id)}
-                        okText="Delete"
-                        cancelText="Cancel"
-                    >
-                        <Button
-                            type="text"
-                            size="small"
-                            danger
-                            icon={<DeleteOutlined />}
-                        />
-                    </Popconfirm>
-                </Space>
-            ),
-        },
-    ];
+    const expandAll = () => setExpandedKeys(new Set(allParentIds));
+    const collapseAll = () => setExpandedKeys(new Set());
 
     return (
         <div>
             {/* Toolbar */}
-            <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }} align="center">
-                <Space>
-                    <Input
-                        placeholder="Filter specs..."
-                        prefix={<SearchOutlined />}
-                        allowClear
-                        value={filterText}
-                        onChange={e => setFilterText(e.target.value)}
-                        style={{ width: 240 }}
-                    />
-                    {allParentIds.length > 0 && (
-                        <Tooltip title={isAllExpanded ? 'Collapse all' : 'Expand all'}>
-                            <Button
-                                size="small"
-                                icon={isAllExpanded ? <ShrinkOutlined /> : <ExpandAltOutlined />}
-                                onClick={isAllExpanded ? collapseAll : expandAll}
-                            />
-                        </Tooltip>
-                    )}
-                </Space>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                    {filteredCount} / {totalCount} items
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Input
+                    placeholder="Filter..."
+                    prefix={<SearchOutlined />}
+                    allowClear
+                    value={filterText}
+                    onChange={e => setFilterText(e.target.value)}
+                    style={{ width: 200 }}
+                    size="small"
+                />
+                {allParentIds.length > 0 && (
+                    <Tooltip title={isAllExpanded ? 'Collapse all' : 'Expand all'}>
+                        <Button
+                            size="small"
+                            icon={isAllExpanded ? <ShrinkOutlined /> : <ExpandAltOutlined />}
+                            onClick={isAllExpanded ? collapseAll : expandAll}
+                        />
+                    </Tooltip>
+                )}
+                <div style={{ flex: 1 }} />
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                    {filteredCount} / {totalCount}
                 </Text>
-            </Space>
+            </div>
 
-            {/* Tree Table */}
-            <Table
-                dataSource={displaySpecs}
-                columns={columns}
-                rowKey="id"
-                loading={loading}
-                size="middle"
-                pagination={false}
-                expandable={{
-                    expandedRowKeys: expandedKeys,
-                    onExpandedRowsChange: (keys) => setExpandedKeys(keys as string[]),
-                    indentSize: 24,
-                }}
-                locale={{ emptyText: totalCount === 0 ? 'No specs yet. Add one above.' : 'No matching items.' }}
-                onRow={(record) => ({
-                    onMouseEnter: () => setHoveredRow(record.id),
-                    onMouseLeave: () => setHoveredRow(null),
-                })}
-            />
+            {/* Tree rows — no border */}
+            <div>
+                {loading ? (
+                    <div style={{ padding: 24, textAlign: 'center' }}>
+                        <Spin size="small" />
+                    </div>
+                ) : displaySpecs.length === 0 ? (
+                    <div style={{ padding: 24, textAlign: 'center', color: '#999', fontSize: 13 }}>
+                        {totalCount === 0 ? 'No specs yet. Click + to add one.' : 'No matching items.'}
+                    </div>
+                ) : (
+                    <TreeRenderer
+                        nodes={displaySpecs}
+                        depth={0}
+                        expandedKeys={expandedKeys}
+                        allContexts={allContexts}
+                        hoveredRow={hoveredRow}
+                        onToggleExpand={toggleExpand}
+                        onToggleCheck={onToggleCompleted}
+                        onHover={setHoveredRow}
+                        onOpen={onOpen}
+                        onAddSibling={onAddSibling}
+                        onAddChild={onAddChild}
+                        onDelete={onDelete}
+                    />
+                )}
+
+                {/* Add row button at bottom */}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '6px 8px',
+                        cursor: 'pointer',
+                        color: '#999',
+                        fontSize: 13,
+                        transition: 'color 0.15s',
+                    }}
+                    onClick={onAddRoot}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#1677ff')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#999')}
+                >
+                    <PlusOutlined style={{ marginRight: 6 }} />
+                    New spec
+                </div>
+            </div>
         </div>
     );
 };

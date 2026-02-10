@@ -9,6 +9,7 @@ export interface SpecSummary {
     context: string;
     title: string;
     hasContent: boolean;
+    completed: boolean;
     createdAt: string;
 }
 

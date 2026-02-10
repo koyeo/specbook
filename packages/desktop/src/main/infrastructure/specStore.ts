@@ -170,3 +170,52 @@ export function deleteSpec(workspace: string, id: string): void {
         deleteSpecFile(workspace, delId);
     }
 }
+
+/** Move spec to a new parent (or root if newParentId is null). */
+export function moveSpec(workspace: string, id: string, newParentId: string | null): void {
+    const index = readIndex(workspace);
+
+    // Prevent circular: newParentId must not be a descendant of id
+    if (newParentId) {
+        const isDescendant = (checkId: string, ancestorId: string): boolean => {
+            for (const s of index.specs) {
+                if (s.id === checkId) {
+                    if (s.parentId === ancestorId) return true;
+                    if (s.parentId) return isDescendant(s.parentId, ancestorId);
+                    return false;
+                }
+            }
+            return false;
+        };
+        if (newParentId === id || isDescendant(newParentId, id)) {
+            throw new Error('Cannot move a spec into its own descendant.');
+        }
+    }
+
+    // Update index
+    const spec = index.specs.find(s => s.id === id);
+    if (!spec) throw new Error(`Spec ${id} not found.`);
+    spec.parentId = newParentId;
+
+    // If moving to a parent, inherit the parent's context
+    if (newParentId) {
+        const parent = index.specs.find(s => s.id === newParentId);
+        if (parent) {
+            spec.context = parent.context;
+        }
+    }
+
+    writeIndex(workspace, index);
+
+    // Update detail file
+    const detail = readSpecDetail(workspace, id);
+    if (detail) {
+        detail.parentId = newParentId;
+        if (newParentId) {
+            const parent = index.specs.find(s => s.id === newParentId);
+            if (parent) detail.context = parent.context;
+        }
+        detail.updatedAt = new Date().toISOString();
+        writeSpecDetail(workspace, detail);
+    }
+}

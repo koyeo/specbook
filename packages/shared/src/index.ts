@@ -14,5 +14,5 @@ export { validateTitle, generateId } from './spec/validations';
 export type { ValidationResult } from './spec/validations';
 
 // IPC contract
-export type { AddSpecPayload, UpdateSpecPayload, SpecAPI } from './spec/messages';
+export type { AddSpecPayload, UpdateSpecPayload, MoveSpecPayload, SpecAPI } from './spec/messages';
 export { IPC } from './spec/messages';
