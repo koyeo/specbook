@@ -19,9 +19,6 @@
     "references": [
         {
             "path": "./packages/shared"
-        },
-        {
-            "path": "./packages/extension"
         }
     ],
     "exclude": [

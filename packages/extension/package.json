@@ -1,5 +1,6 @@
 {
-    "name": "@specbook/extension",
+    "name": "specbook",
+    "publisher": "specbook",
     "displayName": "SpecBook",
     "description": "SpecBook VS Code Extension",
     "version": "0.1.0",
@@ -10,20 +11,31 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
     "main": "./dist/extension.js",
     "contributes": {
         "commands": [
             {
                 "command": "specbook.openPanel",
-                "title": "SpecBook: Open Panel"
+                "title": "SpecBook: Open Panel",
+                "icon": "$(notebook)"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "specbook.openPanel",
+                "key": "ctrl+shift+b",
+                "mac": "cmd+shift+b"
             }
         ]
     },
     "scripts": {
-        "build": "tsc -b",
+        "build": "npm run check-types && node esbuild.js",
+        "check-types": "tsc --noEmit",
         "clean": "rm -rf dist *.tsbuildinfo",
-        "dev": "tsc -b --watch",
+        "dev": "node esbuild.js --watch",
         "package": "vsce package"
     },
     "dependencies": {
@@ -32,6 +44,7 @@
     "devDependencies": {
         "@types/node": "^20.19.33",
         "@types/vscode": "^1.96.0",
+        "esbuild": "^0.27.3",
         "typescript": "^5.7.3"
     }
 }
