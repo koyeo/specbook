@@ -6,7 +6,7 @@
 export const SPECBOOK_VERSION = '0.1.0';
 
 // Spec domain types
-export type { SpecSummary, SpecDetail, SpecIndex } from './spec/types';
+export type { SpecSummary, SpecDetail, SpecIndex, SpecTreeNode } from './spec/types';
 export { SPEC_DIR, SPEC_INDEX_FILE, SPECS_SUBDIR } from './spec/types';
 
 // Validation & ID generation

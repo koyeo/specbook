@@ -5,8 +5,10 @@
 /** Index entry — stored in specs.json */
 export interface SpecSummary {
     id: string;
+    parentId: string | null;
     context: string;
     title: string;
+    hasContent: boolean;
     createdAt: string;
 }
 
@@ -14,6 +16,11 @@ export interface SpecSummary {
 export interface SpecDetail extends SpecSummary {
     content: string;
     updatedAt: string;
+}
+
+/** Tree node — SpecSummary with children for UI rendering */
+export interface SpecTreeNode extends SpecSummary {
+    children?: SpecTreeNode[];
 }
 
 /** Root index file structure (.spec/specs.json) */

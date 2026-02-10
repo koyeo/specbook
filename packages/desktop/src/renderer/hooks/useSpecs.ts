@@ -2,10 +2,10 @@
  * Application layer — IPC invoke wrappers as React hooks.
  */
 import { useState, useEffect, useCallback } from 'react';
-import type { SpecSummary, AddSpecPayload, UpdateSpecPayload } from '@specbook/shared';
+import type { SpecTreeNode, AddSpecPayload, UpdateSpecPayload } from '@specbook/shared';
 
 export function useSpecs() {
-    const [specs, setSpecs] = useState<SpecSummary[]>([]);
+    const [specs, setSpecs] = useState<SpecTreeNode[]>([]);
     const [loading, setLoading] = useState(false);
     const [workspace, setWorkspace] = useState<string | null>(null);
 

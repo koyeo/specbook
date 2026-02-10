@@ -9,7 +9,7 @@ import {
     SPEC_INDEX_FILE,
     SPECS_SUBDIR,
 } from '@specbook/shared';
-import type { SpecSummary, SpecDetail, SpecIndex } from '@specbook/shared';
+import type { SpecSummary, SpecDetail, SpecIndex, SpecTreeNode } from '@specbook/shared';
 
 function specDir(workspace: string): string {
     return path.join(workspace, SPEC_DIR);
@@ -75,10 +75,49 @@ export function deleteSpecFile(workspace: string, id: string): void {
     }
 }
 
+// ─── Tree builder ───────────────────────────────────
+
+function buildTree(flatSpecs: SpecSummary[]): SpecTreeNode[] {
+    const map = new Map<string, SpecTreeNode>();
+    const roots: SpecTreeNode[] = [];
+
+    // Create nodes
+    for (const s of flatSpecs) {
+        map.set(s.id, { ...s, children: [] });
+    }
+
+    // Build hierarchy
+    for (const s of flatSpecs) {
+        const node = map.get(s.id)!;
+        if (s.parentId && map.has(s.parentId)) {
+            map.get(s.parentId)!.children!.push(node);
+        } else {
+            roots.push(node);
+        }
+    }
+
+    // Clean up empty children arrays (antd uses undefined to hide expand arrow)
+    for (const node of map.values()) {
+        if (node.children && node.children.length === 0) {
+            delete node.children;
+        }
+    }
+
+    return roots;
+}
+
 // ─── Composite operations ───────────────────────────
 
-export function loadAllSpecs(workspace: string): SpecSummary[] {
-    return readIndex(workspace).specs;
+export function loadAllSpecs(workspace: string): SpecTreeNode[] {
+    const flatSpecs = readIndex(workspace).specs.map(s => {
+        const detail = readSpecDetail(workspace, s.id);
+        return {
+            ...s,
+            parentId: s.parentId ?? null,
+            hasContent: !!(detail && detail.content && detail.content.trim().length > 0),
+        };
+    });
+    return buildTree(flatSpecs);
 }
 
 export function addSpec(
@@ -106,9 +145,28 @@ export function updateSpec(
     writeSpecDetail(workspace, detail);
 }
 
+/** Delete spec and all its descendants recursively. */
 export function deleteSpec(workspace: string, id: string): void {
     const index = readIndex(workspace);
-    index.specs = index.specs.filter(s => s.id !== id);
+
+    // Find all descendant IDs
+    const idsToDelete = new Set<string>();
+    const collectDescendants = (parentId: string) => {
+        idsToDelete.add(parentId);
+        for (const s of index.specs) {
+            if (s.parentId === parentId && !idsToDelete.has(s.id)) {
+                collectDescendants(s.id);
+            }
+        }
+    };
+    collectDescendants(id);
+
+    // Remove from index
+    index.specs = index.specs.filter(s => !idsToDelete.has(s.id));
     writeIndex(workspace, index);
-    deleteSpecFile(workspace, id);
+
+    // Remove files
+    for (const delId of idsToDelete) {
+        deleteSpecFile(workspace, delId);
+    }
 }

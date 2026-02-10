@@ -2,7 +2,7 @@
  * IPC channel names and payload types.
  * Shared between main process and renderer.
  */
-import type { SpecSummary, SpecDetail } from './types';
+import type { SpecSummary, SpecDetail, SpecTreeNode } from './types';
 
 /** IPC channel names. */
 export const IPC = {
@@ -19,6 +19,7 @@ export const IPC = {
 export interface AddSpecPayload {
     title: string;
     context: string;
+    parentId?: string | null;
     content?: string;
 }
 
@@ -32,7 +33,7 @@ export interface UpdateSpecPayload {
 
 /** API exposed to renderer via contextBridge. */
 export interface SpecAPI {
-    loadSpecs(): Promise<SpecSummary[]>;
+    loadSpecs(): Promise<SpecTreeNode[]>;
     addSpec(payload: AddSpecPayload): Promise<SpecDetail>;
     updateSpec(payload: UpdateSpecPayload): Promise<SpecDetail>;
     deleteSpec(id: string): Promise<void>;

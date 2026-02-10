@@ -1,11 +1,12 @@
 /**
  * Container component — orchestrates hooks and passes data to views.
  */
-import React, { useEffect } from 'react';
-import { Typography, Button, Space, Divider, message } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Typography, Button, Space, Divider, message, Modal, Input, AutoComplete } from 'antd';
 import { FolderOpenOutlined } from '@ant-design/icons';
 import { SpecTable } from '../components/SpecTable';
 import { SpecForm } from '../components/SpecForm';
+import { SpecDetailDrawer } from '../components/SpecDetailDrawer';
 import { useSpecs } from '../hooks/useSpecs';
 
 const { Title, Text } = Typography;
@@ -21,6 +22,15 @@ export const SpecPage: React.FC = () => {
         deleteSpec,
         selectWorkspace,
     } = useSpecs();
+
+    // Detail drawer state
+    const [drawerSpecId, setDrawerSpecId] = useState<string | null>(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+
+    // Add-child modal state
+    const [addChildParentId, setAddChildParentId] = useState<string | null>(null);
+    const [childTitle, setChildTitle] = useState('');
+    const [addingChild, setAddingChild] = useState(false);
 
     // Load specs when workspace is available
     useEffect(() => {
@@ -41,7 +51,6 @@ export const SpecPage: React.FC = () => {
     const handleUpdate = async (payload: { id: string;[key: string]: string | undefined }) => {
         try {
             await updateSpec(payload);
-            message.success('Spec updated');
         } catch (err: any) {
             message.error(err?.message || 'Failed to update spec');
         }
@@ -54,6 +63,45 @@ export const SpecPage: React.FC = () => {
         } catch (err: any) {
             message.error(err?.message || 'Failed to delete spec');
         }
+    };
+
+    const handleOpen = (id: string) => {
+        setDrawerSpecId(id);
+        setDrawerOpen(true);
+    };
+
+    const handleDrawerClose = () => {
+        setDrawerOpen(false);
+        setDrawerSpecId(null);
+    };
+
+    const handleDrawerSaved = () => {
+        loadSpecs();
+    };
+
+    const handleAddChild = (parentId: string) => {
+        setAddChildParentId(parentId);
+        setChildTitle('');
+    };
+
+    const handleAddChildConfirm = async () => {
+        if (!addChildParentId || !childTitle.trim()) return;
+        setAddingChild(true);
+        try {
+            await addSpec({ title: childTitle.trim(), context: '', parentId: addChildParentId });
+            message.success('Child spec added');
+            setAddChildParentId(null);
+            setChildTitle('');
+        } catch (err: any) {
+            message.error(err?.message || 'Failed to add child');
+        } finally {
+            setAddingChild(false);
+        }
+    };
+
+    const handleAddChildCancel = () => {
+        setAddChildParentId(null);
+        setChildTitle('');
     };
 
     const handleSelectWorkspace = async () => {
@@ -105,7 +153,35 @@ export const SpecPage: React.FC = () => {
                 loading={loading}
                 onUpdate={handleUpdate}
                 onDelete={handleDelete}
+                onOpen={handleOpen}
+                onAddChild={handleAddChild}
             />
+
+            <SpecDetailDrawer
+                specId={drawerSpecId}
+                open={drawerOpen}
+                onClose={handleDrawerClose}
+                onSaved={handleDrawerSaved}
+            />
+
+            {/* Add child modal */}
+            <Modal
+                title="Add child spec"
+                open={!!addChildParentId}
+                onOk={handleAddChildConfirm}
+                onCancel={handleAddChildCancel}
+                confirmLoading={addingChild}
+                okText="Add"
+                destroyOnClose
+            >
+                <Input
+                    placeholder="Enter child spec title..."
+                    value={childTitle}
+                    onChange={e => setChildTitle(e.target.value)}
+                    onPressEnter={handleAddChildConfirm}
+                    autoFocus
+                />
+            </Modal>
         </div>
     );
 };

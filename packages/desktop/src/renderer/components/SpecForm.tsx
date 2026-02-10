@@ -1,14 +1,27 @@
 /**
- * View component — Form for adding a new spec.
+ * View component — Form for adding a new root-level spec.
  */
 import React, { useState, useRef, useMemo } from 'react';
 import { Input, Button, AutoComplete, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import type { SpecSummary } from '@specbook/shared';
+import type { SpecTreeNode } from '@specbook/shared';
 
 interface SpecFormProps {
-    existingSpecs: SpecSummary[];
+    existingSpecs: SpecTreeNode[];
     onAdd: (title: string, context: string) => Promise<void>;
+}
+
+/** Collect all unique contexts from a tree. */
+function collectContexts(nodes: SpecTreeNode[]): string[] {
+    const set = new Set<string>();
+    const walk = (list: SpecTreeNode[]) => {
+        for (const n of list) {
+            if (n.context !== 'Ungrouped') set.add(n.context);
+            if (n.children) walk(n.children);
+        }
+    };
+    walk(nodes);
+    return [...set].sort();
 }
 
 export const SpecForm: React.FC<SpecFormProps> = ({ existingSpecs, onAdd }) => {
@@ -19,8 +32,7 @@ export const SpecForm: React.FC<SpecFormProps> = ({ existingSpecs, onAdd }) => {
 
     // Auto-complete options from existing contexts
     const contextOptions = useMemo(() => {
-        const contexts = [...new Set(existingSpecs.map(s => s.context).filter(c => c !== 'Ungrouped'))];
-        return contexts.sort().map(c => ({ value: c }));
+        return collectContexts(existingSpecs).map(c => ({ value: c }));
     }, [existingSpecs]);
 
     const handleSubmit = async () => {
