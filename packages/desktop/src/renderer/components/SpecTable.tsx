@@ -1,6 +1,7 @@
 /**
  * View component — task-list style spec table with tree structure.
- * Fixed checkbox column for batch selection, right-click context menu, click title to open detail.
+ * Fixed checkbox column for batch selection (visible on hover/selected only).
+ * Uses antd theme tokens for dark/light mode compatibility.
  */
 import React, { useMemo, useState, useEffect } from 'react';
 import {
@@ -12,9 +13,8 @@ import {
     Checkbox,
     Dropdown,
     Spin,
-    Space,
     Select,
-    message,
+    theme,
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -25,9 +25,10 @@ import {
     PlusOutlined,
     DeleteOutlined,
 } from '@ant-design/icons';
-import type { SpecTreeNode, MoveSpecPayload } from '@specbook/shared';
+import type { SpecTreeNode } from '@specbook/shared';
 
 const { Text } = Typography;
+const { useToken } = theme;
 
 interface SpecTableProps {
     specs: SpecTreeNode[];
@@ -41,75 +42,62 @@ interface SpecTableProps {
     onBatchMove: (ids: string[], newParentId: string | null) => Promise<void>;
 }
 
-// ─── Colors ────────────────────────────────────────
 const CONTEXT_COLORS = [
     'blue', 'green', 'orange', 'purple', 'cyan',
     'magenta', 'gold', 'lime', 'geekblue', 'volcano',
 ];
 
-function getContextColor(context: string, allContexts: string[]): string {
-    const idx = allContexts.indexOf(context);
-    return CONTEXT_COLORS[idx % CONTEXT_COLORS.length];
+function getContextColor(ctx: string, all: string[]): string {
+    return CONTEXT_COLORS[all.indexOf(ctx) % CONTEXT_COLORS.length];
 }
 
 function collectContexts(nodes: SpecTreeNode[]): string[] {
-    const set = new Set<string>();
-    const walk = (list: SpecTreeNode[]) => {
-        for (const n of list) { set.add(n.context); if (n.children) walk(n.children); }
-    };
-    walk(nodes);
-    return [...set].sort();
+    const s = new Set<string>();
+    const w = (l: SpecTreeNode[]) => { for (const n of l) { s.add(n.context); if (n.children) w(n.children); } };
+    w(nodes);
+    return [...s].sort();
 }
 
-function filterTree(nodes: SpecTreeNode[], lowerFilter: string): SpecTreeNode[] {
-    const result: SpecTreeNode[] = [];
+function filterTree(nodes: SpecTreeNode[], q: string): SpecTreeNode[] {
+    const r: SpecTreeNode[] = [];
     for (const n of nodes) {
-        const childMatch = n.children ? filterTree(n.children, lowerFilter) : [];
-        const selfMatch = n.title.toLowerCase().includes(lowerFilter) || n.context.toLowerCase().includes(lowerFilter);
-        if (selfMatch || childMatch.length > 0) {
-            result.push({ ...n, children: childMatch.length > 0 ? childMatch : n.children });
-        }
+        const cm = n.children ? filterTree(n.children, q) : [];
+        if (n.title.toLowerCase().includes(q) || n.context.toLowerCase().includes(q) || cm.length > 0)
+            r.push({ ...n, children: cm.length > 0 ? cm : n.children });
     }
-    return result;
+    return r;
 }
 
 function countNodes(nodes: SpecTreeNode[]): number {
     let c = 0;
-    for (const n of nodes) { c += 1; if (n.children) c += countNodes(n.children); }
+    for (const n of nodes) { c++; if (n.children) c += countNodes(n.children); }
     return c;
 }
 
 function collectParentIds(nodes: SpecTreeNode[]): string[] {
     const ids: string[] = [];
-    const walk = (list: SpecTreeNode[]) => {
-        for (const n of list) {
-            if (n.children && n.children.length > 0) { ids.push(n.id); walk(n.children); }
-        }
-    };
-    walk(nodes);
+    const w = (l: SpecTreeNode[]) => { for (const n of l) { if (n.children?.length) { ids.push(n.id); w(n.children); } } };
+    w(nodes);
     return ids;
 }
 
 function collectAllIds(nodes: SpecTreeNode[]): string[] {
     const ids: string[] = [];
-    const walk = (list: SpecTreeNode[]) => {
-        for (const n of list) { ids.push(n.id); if (n.children) walk(n.children); }
-    };
-    walk(nodes);
+    const w = (l: SpecTreeNode[]) => { for (const n of l) { ids.push(n.id); if (n.children) w(n.children); } };
+    w(nodes);
     return ids;
 }
 
-/** Flatten tree for parent selector in batch move. */
 function flattenTree(nodes: SpecTreeNode[], depth = 0): { id: string; label: string }[] {
-    const result: { id: string; label: string }[] = [];
+    const r: { id: string; label: string }[] = [];
     for (const n of nodes) {
-        result.push({ id: n.id, label: '\u00A0\u00A0'.repeat(depth) + n.title });
-        if (n.children) result.push(...flattenTree(n.children, depth + 1));
+        r.push({ id: n.id, label: '\u00A0\u00A0'.repeat(depth) + n.title });
+        if (n.children) r.push(...flattenTree(n.children, depth + 1));
     }
-    return result;
+    return r;
 }
 
-// ─── Single Row ──────────────────────────────────────
+// ─── Row ─────────────────────────────────────────────
 
 interface RowProps {
     node: SpecTreeNode;
@@ -119,6 +107,10 @@ interface RowProps {
     hasChildren: boolean;
     hoveredRow: string | null;
     selected: boolean;
+    anySelected: boolean;
+    hoverBg: string;
+    selectedBg: string;
+    borderColor: string;
     onToggleExpand: (id: string) => void;
     onToggleSelect: (id: string) => void;
     onHover: (id: string | null) => void;
@@ -129,12 +121,14 @@ interface RowProps {
 }
 
 const SpecRow: React.FC<RowProps> = ({
-    node, depth, allContexts, expanded, hasChildren, hoveredRow, selected,
+    node, depth, allContexts, expanded, hasChildren, hoveredRow, selected, anySelected,
+    hoverBg, selectedBg, borderColor,
     onToggleExpand, onToggleSelect, onHover, onOpen, onAddSibling, onAddChild, onDelete,
 }) => {
     const isHovered = hoveredRow === node.id;
+    const showCheckbox = isHovered || selected || anySelected;
 
-    const contextMenuItems: MenuProps['items'] = [
+    const menuItems: MenuProps['items'] = [
         { key: 'open', label: '📂 Open detail' },
         { type: 'divider' },
         { key: 'add-sibling', label: '↓ Add sibling below' },
@@ -143,60 +137,42 @@ const SpecRow: React.FC<RowProps> = ({
         { key: 'delete', label: '🗑 Delete', danger: true },
     ];
 
-    const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
-        switch (key) {
-            case 'open': onOpen(node.id); break;
-            case 'add-sibling': onAddSibling(node.id, node.parentId); break;
-            case 'add-child': onAddChild(node.id); break;
-            case 'delete': onDelete(node.id); break;
-        }
+    const onMenu: MenuProps['onClick'] = ({ key }) => {
+        if (key === 'open') onOpen(node.id);
+        else if (key === 'add-sibling') onAddSibling(node.id, node.parentId);
+        else if (key === 'add-child') onAddChild(node.id);
+        else if (key === 'delete') onDelete(node.id);
     };
 
     return (
-        <Dropdown menu={{ items: contextMenuItems, onClick: handleMenuClick }} trigger={['contextMenu']}>
+        <Dropdown menu={{ items: menuItems, onClick: onMenu }} trigger={['contextMenu']}>
             <div
                 style={{
                     display: 'flex',
                     alignItems: 'center',
                     minHeight: 34,
-                    background: selected ? '#e6f7ff' : isHovered ? '#f5f5f5' : 'transparent',
+                    background: selected ? selectedBg : isHovered ? hoverBg : 'transparent',
                     transition: 'background 0.12s',
                     cursor: 'default',
                 }}
                 onMouseEnter={() => onHover(node.id)}
                 onMouseLeave={() => onHover(null)}
             >
-                {/* Fixed checkbox column — always aligned */}
+                {/* Checkbox column — fixed width, only visible on hover/selected/anySelected */}
                 <div style={{ width: 36, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Checkbox
-                        checked={selected}
-                        onChange={() => onToggleSelect(node.id)}
-                    />
+                    {showCheckbox ? (
+                        <Checkbox checked={selected} onChange={() => onToggleSelect(node.id)} />
+                    ) : null}
                 </div>
 
                 {/* Indented content */}
-                <div
-                    style={{
-                        flex: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        paddingLeft: depth * 20,
-                        paddingRight: 8,
-                    }}
-                >
-                    {/* Expand toggle */}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: depth * 20, paddingRight: 8 }}>
+                    {/* Expand arrow */}
                     <span
                         style={{
-                            width: 16,
-                            flexShrink: 0,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: hasChildren ? 'pointer' : 'default',
-                            fontSize: 9,
-                            color: '#bbb',
-                            userSelect: 'none',
-                            marginRight: 4,
+                            width: 16, flexShrink: 0, display: 'inline-flex', alignItems: 'center',
+                            justifyContent: 'center', cursor: hasChildren ? 'pointer' : 'default',
+                            fontSize: 9, color: 'var(--ant-color-text-quaternary)', userSelect: 'none', marginRight: 4,
                         }}
                         onClick={() => hasChildren && onToggleExpand(node.id)}
                     >
@@ -205,22 +181,14 @@ const SpecRow: React.FC<RowProps> = ({
 
                     {/* Context tag (root only) */}
                     {!node.parentId && (
-                        <Tag
-                            color={getContextColor(node.context, allContexts)}
-                            style={{ marginRight: 8, flexShrink: 0, fontSize: 11 }}
-                        >
+                        <Tag color={getContextColor(node.context, allContexts)} style={{ marginRight: 8, flexShrink: 0, fontSize: 11 }}>
                             {node.context}
                         </Tag>
                     )}
 
-                    {/* Title — click to open */}
-                    <Text
-                        style={{ flex: 1, cursor: 'pointer' }}
-                        onClick={() => onOpen(node.id)}
-                    >
-                        {node.hasContent && (
-                            <FileTextOutlined style={{ color: '#1677ff', marginRight: 6, fontSize: 12 }} />
-                        )}
+                    {/* Title */}
+                    <Text style={{ flex: 1, cursor: 'pointer' }} onClick={() => onOpen(node.id)}>
+                        {node.hasContent && <FileTextOutlined style={{ color: 'var(--ant-color-primary)', marginRight: 6, fontSize: 12 }} />}
                         {node.title}
                     </Text>
                 </div>
@@ -229,15 +197,19 @@ const SpecRow: React.FC<RowProps> = ({
     );
 };
 
-// ─── Recursive tree renderer ─────────────────────────
+// ─── Tree renderer ───────────────────────────────────
 
-interface TreeRendererProps {
+interface TreeProps {
     nodes: SpecTreeNode[];
     depth: number;
     expandedKeys: Set<string>;
     selectedIds: Set<string>;
     allContexts: string[];
     hoveredRow: string | null;
+    anySelected: boolean;
+    hoverBg: string;
+    selectedBg: string;
+    borderColor: string;
     onToggleExpand: (id: string) => void;
     onToggleSelect: (id: string) => void;
     onHover: (id: string | null) => void;
@@ -247,29 +219,16 @@ interface TreeRendererProps {
     onDelete: (id: string) => void;
 }
 
-const TreeRenderer: React.FC<TreeRendererProps> = ({ nodes, depth, expandedKeys, selectedIds, ...rest }) => (
+const TreeRenderer: React.FC<TreeProps> = ({ nodes, depth, expandedKeys, selectedIds, ...rest }) => (
     <>
         {nodes.map(node => {
-            const hasChildren = !!(node.children && node.children.length > 0);
+            const hasChildren = !!(node.children?.length);
             const isExpanded = expandedKeys.has(node.id);
             return (
                 <React.Fragment key={node.id}>
-                    <SpecRow
-                        node={node}
-                        depth={depth}
-                        hasChildren={hasChildren}
-                        expanded={isExpanded}
-                        selected={selectedIds.has(node.id)}
-                        {...rest}
-                    />
+                    <SpecRow node={node} depth={depth} hasChildren={hasChildren} expanded={isExpanded} selected={selectedIds.has(node.id)} {...rest} />
                     {hasChildren && isExpanded && (
-                        <TreeRenderer
-                            nodes={node.children!}
-                            depth={depth + 1}
-                            expandedKeys={expandedKeys}
-                            selectedIds={selectedIds}
-                            {...rest}
-                        />
+                        <TreeRenderer nodes={node.children!} depth={depth + 1} expandedKeys={expandedKeys} selectedIds={selectedIds} {...rest} />
                     )}
                 </React.Fragment>
             );
@@ -277,64 +236,45 @@ const TreeRenderer: React.FC<TreeRendererProps> = ({ nodes, depth, expandedKeys,
     </>
 );
 
-// ─── Main Component ─────────────────────────────────
+// ─── Main ────────────────────────────────────────────
 
 export const SpecTable: React.FC<SpecTableProps> = ({
     specs, loading, onDelete, onOpen, onAddSibling, onAddChild, onAddRoot, onBatchDelete, onBatchMove,
 }) => {
+    const { token } = useToken();
+
+    // Theme-aware colors
+    const hoverBg = token.controlItemBgHover;          // e.g. rgba(255,255,255,0.04) in dark
+    const selectedBg = token.controlItemBgActive;       // e.g. rgba(22,119,255,0.15)
+    const borderColor = token.colorBorderSecondary;
+
     const [filterText, setFilterText] = useState('');
     const [hoveredRow, setHoveredRow] = useState<string | null>(null);
     const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const allContexts = useMemo(() => collectContexts(specs), [specs]);
-    const displaySpecs = useMemo(() => {
-        if (!filterText) return specs;
-        return filterTree(specs, filterText.toLowerCase());
-    }, [specs, filterText]);
+    const displaySpecs = useMemo(() => filterText ? filterTree(specs, filterText.toLowerCase()) : specs, [specs, filterText]);
     const totalCount = useMemo(() => countNodes(specs), [specs]);
     const filteredCount = useMemo(() => countNodes(displaySpecs), [displaySpecs]);
     const allParentIds = useMemo(() => collectParentIds(displaySpecs), [displaySpecs]);
     const allIds = useMemo(() => collectAllIds(displaySpecs), [displaySpecs]);
     const flatList = useMemo(() => flattenTree(specs), [specs]);
 
-    useEffect(() => {
-        setExpandedKeys(new Set(collectParentIds(specs)));
-    }, [specs]);
-
-    // Clear selection when specs change
-    useEffect(() => {
-        setSelectedIds(new Set());
-    }, [specs]);
+    useEffect(() => { setExpandedKeys(new Set(collectParentIds(specs))); }, [specs]);
+    useEffect(() => { setSelectedIds(new Set()); }, [specs]);
 
     const isAllExpanded = allParentIds.length > 0 && expandedKeys.size >= allParentIds.length;
+    const anySelected = selectedIds.size > 0;
     const isAllSelected = allIds.length > 0 && selectedIds.size === allIds.length;
-    const isSomeSelected = selectedIds.size > 0;
 
     const toggleExpand = (id: string) => {
-        setExpandedKeys(prev => {
-            const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
-            return next;
-        });
+        setExpandedKeys(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
     };
-
     const toggleSelect = (id: string) => {
-        setSelectedIds(prev => {
-            const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
-            return next;
-        });
+        setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
     };
-
-    const toggleSelectAll = () => {
-        if (isAllSelected) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(allIds));
-        }
-    };
-
+    const toggleSelectAll = () => setSelectedIds(isAllSelected ? new Set() : new Set(allIds));
     const expandAll = () => setExpandedKeys(new Set(allParentIds));
     const collapseAll = () => setExpandedKeys(new Set());
 
@@ -344,7 +284,6 @@ export const SpecTable: React.FC<SpecTableProps> = ({
         setSelectedIds(new Set());
     };
 
-    // Batch move state
     const [batchMoveOpen, setBatchMoveOpen] = useState(false);
     const [batchMoveTarget, setBatchMoveTarget] = useState<string | null>(null);
 
@@ -371,132 +310,81 @@ export const SpecTable: React.FC<SpecTableProps> = ({
                 />
                 {allParentIds.length > 0 && (
                     <Tooltip title={isAllExpanded ? 'Collapse all' : 'Expand all'}>
-                        <Button
-                            size="small"
-                            icon={isAllExpanded ? <ShrinkOutlined /> : <ExpandAltOutlined />}
-                            onClick={isAllExpanded ? collapseAll : expandAll}
-                        />
+                        <Button size="small" icon={isAllExpanded ? <ShrinkOutlined /> : <ExpandAltOutlined />} onClick={isAllExpanded ? collapseAll : expandAll} />
                     </Tooltip>
                 )}
                 <div style={{ flex: 1 }} />
-                <Text type="secondary" style={{ fontSize: 11 }}>
-                    {filteredCount} / {totalCount}
-                </Text>
+                <Text type="secondary" style={{ fontSize: 11 }}>{filteredCount} / {totalCount}</Text>
             </div>
 
-            {/* Batch action bar */}
-            {isSomeSelected && (
+            {/* Batch bar */}
+            {anySelected && (
                 <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '6px 12px',
-                    marginBottom: 4,
-                    background: '#e6f7ff',
-                    borderRadius: 4,
-                    fontSize: 13,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '6px 12px', marginBottom: 4,
+                    background: selectedBg, borderRadius: 4, fontSize: 13,
                 }}>
                     <Text strong style={{ fontSize: 12 }}>{selectedIds.size} selected</Text>
-                    <Button size="small" danger icon={<DeleteOutlined />} onClick={handleBatchDelete}>
-                        Delete
-                    </Button>
-                    <Button size="small" onClick={() => setBatchMoveOpen(!batchMoveOpen)}>
-                        Move to...
-                    </Button>
+                    <Button size="small" danger icon={<DeleteOutlined />} onClick={handleBatchDelete}>Delete</Button>
+                    <Button size="small" onClick={() => setBatchMoveOpen(!batchMoveOpen)}>Move to...</Button>
                     {batchMoveOpen && (
                         <>
                             <Select
-                                size="small"
-                                value={batchMoveTarget}
-                                onChange={setBatchMoveTarget}
-                                style={{ width: 200 }}
-                                allowClear
-                                showSearch
-                                placeholder="Root level"
-                                options={flatList
-                                    .filter(f => !selectedIds.has(f.id))
-                                    .map(f => ({ value: f.id, label: f.label }))
-                                }
-                                filterOption={(input, option) =>
-                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                                }
+                                size="small" value={batchMoveTarget} onChange={setBatchMoveTarget}
+                                style={{ width: 200 }} allowClear showSearch placeholder="Root level"
+                                options={flatList.filter(f => !selectedIds.has(f.id)).map(f => ({ value: f.id, label: f.label }))}
+                                filterOption={(i, o) => (o?.label ?? '').toLowerCase().includes(i.toLowerCase())}
                             />
-                            <Button size="small" type="primary" onClick={handleBatchMoveConfirm}>
-                                Confirm
-                            </Button>
+                            <Button size="small" type="primary" onClick={handleBatchMoveConfirm}>Confirm</Button>
                         </>
                     )}
-                    <Button size="small" type="text" onClick={() => setSelectedIds(new Set())}>
-                        Clear
-                    </Button>
+                    <Button size="small" type="text" onClick={() => setSelectedIds(new Set())}>Clear</Button>
                 </div>
             )}
 
-            {/* Table header row */}
+            {/* Header */}
             <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                borderBottom: '1px solid #e8e8e8',
-                padding: '4px 0',
-                color: '#999',
-                fontSize: 11,
+                display: 'flex', alignItems: 'center',
+                borderBottom: `1px solid ${borderColor}`, padding: '4px 0',
             }}>
                 <div style={{ width: 36, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Checkbox
-                        checked={isAllSelected}
-                        indeterminate={isSomeSelected && !isAllSelected}
-                        onChange={toggleSelectAll}
-                    />
+                    {anySelected && (
+                        <Checkbox checked={isAllSelected} indeterminate={anySelected && !isAllSelected} onChange={toggleSelectAll} />
+                    )}
                 </div>
                 <Text type="secondary" style={{ fontSize: 11 }}>Title</Text>
             </div>
 
-            {/* Tree rows */}
+            {/* Rows */}
             <div>
                 {loading ? (
-                    <div style={{ padding: 24, textAlign: 'center' }}>
-                        <Spin size="small" />
-                    </div>
+                    <div style={{ padding: 24, textAlign: 'center' }}><Spin size="small" /></div>
                 ) : displaySpecs.length === 0 ? (
-                    <div style={{ padding: 24, textAlign: 'center', color: '#999', fontSize: 13 }}>
+                    <div style={{ padding: 24, textAlign: 'center', color: token.colorTextQuaternary, fontSize: 13 }}>
                         {totalCount === 0 ? 'No specs yet. Click + to add one.' : 'No matching items.'}
                     </div>
                 ) : (
                     <TreeRenderer
-                        nodes={displaySpecs}
-                        depth={0}
-                        expandedKeys={expandedKeys}
-                        selectedIds={selectedIds}
-                        allContexts={allContexts}
-                        hoveredRow={hoveredRow}
-                        onToggleExpand={toggleExpand}
-                        onToggleSelect={toggleSelect}
-                        onHover={setHoveredRow}
-                        onOpen={onOpen}
-                        onAddSibling={onAddSibling}
-                        onAddChild={onAddChild}
-                        onDelete={onDelete}
+                        nodes={displaySpecs} depth={0} expandedKeys={expandedKeys} selectedIds={selectedIds}
+                        allContexts={allContexts} hoveredRow={hoveredRow} anySelected={anySelected}
+                        hoverBg={hoverBg} selectedBg={selectedBg} borderColor={borderColor}
+                        onToggleExpand={toggleExpand} onToggleSelect={toggleSelect}
+                        onHover={setHoveredRow} onOpen={onOpen} onAddSibling={onAddSibling}
+                        onAddChild={onAddChild} onDelete={onDelete}
                     />
                 )}
 
-                {/* Add row button */}
+                {/* + New spec */}
                 <div
                     style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '6px 8px',
-                        paddingLeft: 36,
-                        cursor: 'pointer',
-                        color: '#999',
-                        fontSize: 13,
-                        transition: 'color 0.15s',
+                        display: 'flex', alignItems: 'center', padding: '6px 8px', paddingLeft: 36,
+                        cursor: 'pointer', color: token.colorTextQuaternary, fontSize: 13, transition: 'color 0.15s',
                     }}
                     onClick={onAddRoot}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#1677ff')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#999')}
+                    onMouseEnter={e => (e.currentTarget.style.color = token.colorPrimary)}
+                    onMouseLeave={e => (e.currentTarget.style.color = token.colorTextQuaternary)}
                 >
-                    <PlusOutlined style={{ marginRight: 6 }} />
-                    New spec
+                    <PlusOutlined style={{ marginRight: 6 }} /> New spec
                 </div>
             </div>
         </div>
