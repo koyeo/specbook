@@ -1,14 +1,16 @@
 /**
  * Message types for Extension ↔ Webview communication.
- * Shared between extension host and webview JS.
  */
+import type { SpecItem } from './types';
 
 /** Messages sent FROM the Webview TO the Extension. */
 export type WebviewToExtensionMessage =
-    | { type: 'saveSpec'; content: string }
-    | { type: 'loadSpecs' };
+    | { type: 'addItem'; description: string; group: string }
+    | { type: 'deleteItem'; id: string }
+    | { type: 'updateItem'; item: SpecItem }
+    | { type: 'loadItems' };
 
 /** Messages sent FROM the Extension TO the Webview. */
 export type ExtensionToWebviewMessage =
-    | { type: 'saveResult'; success: boolean; filename?: string; error?: string }
-    | { type: 'specsList'; specs: Array<{ filename: string; content: string; createdAt: string }> };
+    | { type: 'itemsLoaded'; items: SpecItem[] }
+    | { type: 'error'; message: string };

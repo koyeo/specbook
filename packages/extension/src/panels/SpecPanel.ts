@@ -1,23 +1,27 @@
 /**
  * SpecPanel — Application layer.
- * Manages the Webview panel lifecycle and orchestrates
- * Domain (validation) + Infrastructure (file I/O) on incoming messages.
+ * Manages the Webview panel and orchestrates
+ * Domain (validation) + Infrastructure (file I/O).
  */
 import * as vscode from 'vscode';
 import {
-    validateSpecContent,
-    generateSpecFilename,
+    validateDescription,
+    generateId,
 } from '@specbook/shared';
 import type {
+    SpecItem,
     WebviewToExtensionMessage,
     ExtensionToWebviewMessage,
 } from '@specbook/shared';
-import { saveSpec, loadSpecs } from '../infrastructure/specFileSystem';
+import { loadSpecItems, saveSpecItems } from '../infrastructure/specFileSystem';
 import { getSpecPanelHtml } from './webview/specPanelHtml';
 
 export class SpecPanel {
     public static readonly viewType = 'specbook.specPanel';
     private static instance: SpecPanel | undefined;
+
+    /** In-memory items cache. */
+    private items: SpecItem[] = [];
 
     private constructor(
         private readonly panel: vscode.WebviewPanel,
@@ -34,7 +38,6 @@ export class SpecPanel {
         });
     }
 
-    /** Show or create the panel (singleton). */
     public static createOrShow(extensionUri: vscode.Uri): void {
         if (SpecPanel.instance) {
             SpecPanel.instance.panel.reveal(vscode.ViewColumn.One);
@@ -55,66 +58,86 @@ export class SpecPanel {
         SpecPanel.instance = new SpecPanel(panel, extensionUri);
     }
 
-    // ─── Message orchestration (semi-pure) ────────────────────────────
+    // ─── Message orchestration ────────────────────────
 
     private async handleMessage(msg: WebviewToExtensionMessage): Promise<void> {
         switch (msg.type) {
-            case 'saveSpec':
-                await this.handleSaveSpec(msg.content);
+            case 'loadItems':
+                await this.handleLoad();
                 break;
-            case 'loadSpecs':
-                await this.handleLoadSpecs();
+            case 'addItem':
+                await this.handleAdd(msg.description, msg.group);
+                break;
+            case 'deleteItem':
+                await this.handleDelete(msg.id);
+                break;
+            case 'updateItem':
+                await this.handleUpdate(msg.item);
                 break;
         }
     }
 
-    private async handleSaveSpec(content: string): Promise<void> {
-        // Domain: pure validation
-        const validation = validateSpecContent(content);
-        if (!validation.valid) {
-            this.postMessage({ type: 'saveResult', success: false, error: validation.error });
-            return;
-        }
-
-        // Domain: pure filename generation
-        const filename = generateSpecFilename();
-
-        // Infrastructure: file I/O
+    private async handleLoad(): Promise<void> {
         const workspaceUri = this.getWorkspaceUri();
         if (!workspaceUri) {
-            this.postMessage({
-                type: 'saveResult',
-                success: false,
-                error: 'No workspace folder is open.',
-            });
+            this.postMessage({ type: 'itemsLoaded', items: [] });
             return;
         }
-
         try {
-            await saveSpec(workspaceUri, filename, content);
-            this.postMessage({ type: 'saveResult', success: true, filename });
-        } catch (err) {
-            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-            this.postMessage({ type: 'saveResult', success: false, error: errorMsg });
-        }
-    }
-
-    private async handleLoadSpecs(): Promise<void> {
-        const workspaceUri = this.getWorkspaceUri();
-        if (!workspaceUri) {
-            this.postMessage({ type: 'specsList', specs: [] });
-            return;
-        }
-
-        try {
-            const specs = await loadSpecs(workspaceUri);
-            this.postMessage({ type: 'specsList', specs });
+            this.items = await loadSpecItems(workspaceUri);
+            this.postMessage({ type: 'itemsLoaded', items: this.items });
         } catch {
-            this.postMessage({ type: 'specsList', specs: [] });
+            this.postMessage({ type: 'error', message: 'Failed to load specs.' });
         }
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────
+    private async handleAdd(description: string, group: string): Promise<void> {
+        // Domain: pure validation
+        const validation = validateDescription(description);
+        if (!validation.valid) {
+            this.postMessage({ type: 'error', message: validation.error! });
+            return;
+        }
+
+        const newItem: SpecItem = {
+            id: generateId(),
+            description: description.trim(),
+            group: group.trim() || 'Ungrouped',
+            createdAt: new Date().toISOString(),
+        };
+
+        this.items.push(newItem);
+        await this.persist();
+        this.postMessage({ type: 'itemsLoaded', items: this.items });
+    }
+
+    private async handleDelete(id: string): Promise<void> {
+        this.items = this.items.filter(item => item.id !== id);
+        await this.persist();
+        this.postMessage({ type: 'itemsLoaded', items: this.items });
+    }
+
+    private async handleUpdate(updated: SpecItem): Promise<void> {
+        const idx = this.items.findIndex(item => item.id === updated.id);
+        if (idx >= 0) {
+            this.items[idx] = { ...this.items[idx], ...updated };
+            await this.persist();
+            this.postMessage({ type: 'itemsLoaded', items: this.items });
+        }
+    }
+
+    // ─── Helpers ──────────────────────────────────────
+
+    private async persist(): Promise<void> {
+        const workspaceUri = this.getWorkspaceUri();
+        if (!workspaceUri) return;
+        try {
+            await saveSpecItems(workspaceUri, this.items);
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Save failed';
+            this.postMessage({ type: 'error', message: msg });
+        }
+    }
 
     private postMessage(msg: ExtensionToWebviewMessage): void {
         this.panel.webview.postMessage(msg);
