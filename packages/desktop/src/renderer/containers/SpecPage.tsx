@@ -19,14 +19,15 @@ export const SpecPage: React.FC = () => {
         addSpec,
         updateSpec,
         deleteSpec,
+        moveSpec,
         selectWorkspace,
     } = useSpecs();
 
-    // Detail drawer state
+    // Detail drawer
     const [drawerSpecId, setDrawerSpecId] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
 
-    // Add-new modal state
+    // Add-new modal
     const [addMode, setAddMode] = useState<'root' | 'sibling' | 'child' | null>(null);
     const [addParentId, setAddParentId] = useState<string | null>(null);
     const [newTitle, setNewTitle] = useState('');
@@ -36,15 +37,6 @@ export const SpecPage: React.FC = () => {
     useEffect(() => {
         if (workspace) loadSpecs();
     }, [workspace, loadSpecs]);
-
-    // ─── Checkbox toggle ─────────────────────────────
-    const handleToggleCompleted = async (id: string, completed: boolean) => {
-        try {
-            await updateSpec({ id, completed });
-        } catch (err: any) {
-            message.error(err?.message || 'Failed to update');
-        }
-    };
 
     const handleDelete = async (id: string) => {
         try {
@@ -60,33 +52,18 @@ export const SpecPage: React.FC = () => {
         setDrawerOpen(true);
     };
 
-    const handleDrawerClose = () => {
-        setDrawerOpen(false);
-        setDrawerSpecId(null);
-    };
-
+    const handleDrawerClose = () => { setDrawerOpen(false); setDrawerSpecId(null); };
     const handleDrawerSaved = () => loadSpecs();
 
-    // ─── Add Spec Flows ──────────────────────────────
+    // ─── Add Spec ────────────────────────────────────
     const handleAddRoot = () => {
-        setAddMode('root');
-        setAddParentId(null);
-        setNewTitle('');
-        setNewContext('');
+        setAddMode('root'); setAddParentId(null); setNewTitle(''); setNewContext('');
     };
-
     const handleAddSibling = (_afterId: string, parentId: string | null) => {
-        setAddMode('sibling');
-        setAddParentId(parentId);
-        setNewTitle('');
-        setNewContext('');
+        setAddMode('sibling'); setAddParentId(parentId); setNewTitle(''); setNewContext('');
     };
-
     const handleAddChild = (parentId: string) => {
-        setAddMode('child');
-        setAddParentId(parentId);
-        setNewTitle('');
-        setNewContext('');
+        setAddMode('child'); setAddParentId(parentId); setNewTitle(''); setNewContext('');
     };
 
     const handleAddConfirm = async () => {
@@ -104,15 +81,37 @@ export const SpecPage: React.FC = () => {
             setAdding(false);
         }
     };
-
     const handleAddCancel = () => setAddMode(null);
+
+    // ─── Batch operations ────────────────────────────
+    const handleBatchDelete = async (ids: string[]) => {
+        try {
+            for (const id of ids) {
+                await deleteSpec(id);
+            }
+            message.success(`Deleted ${ids.length} spec(s)`);
+        } catch (err: any) {
+            message.error(err?.message || 'Batch delete failed');
+        }
+    };
+
+    const handleBatchMove = async (ids: string[], newParentId: string | null) => {
+        try {
+            for (const id of ids) {
+                await moveSpec({ id, newParentId });
+            }
+            message.success(`Moved ${ids.length} spec(s)`);
+        } catch (err: any) {
+            message.error(err?.message || 'Batch move failed');
+        }
+    };
+
     const handleSelectWorkspace = async () => { await selectWorkspace(); };
 
     const modalTitle = addMode === 'child' ? 'Add child spec'
         : addMode === 'sibling' ? 'Add sibling spec' : 'New spec';
     const showContext = addMode === 'root';
 
-    // Collect contexts for autocomplete
     const existingContexts: string[] = [];
     const walk = (nodes: typeof specs) => {
         for (const n of nodes) {
@@ -122,7 +121,6 @@ export const SpecPage: React.FC = () => {
     };
     walk(specs);
 
-    // ─── No workspace ────────────────────────────────
     if (!workspace) {
         return (
             <div style={{
@@ -152,12 +150,13 @@ export const SpecPage: React.FC = () => {
             <SpecTable
                 specs={specs}
                 loading={loading}
-                onToggleCompleted={handleToggleCompleted}
                 onDelete={handleDelete}
                 onOpen={handleOpen}
                 onAddSibling={handleAddSibling}
                 onAddChild={handleAddChild}
                 onAddRoot={handleAddRoot}
+                onBatchDelete={handleBatchDelete}
+                onBatchMove={handleBatchMove}
             />
 
             <SpecDetailDrawer
