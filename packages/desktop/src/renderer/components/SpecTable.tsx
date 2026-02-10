@@ -107,7 +107,7 @@ const SpecRow: React.FC<RowProps> = ({
     onToggleExpand, onToggleSelect, onHover, onOpen, onAddSibling, onAddChild, onDelete,
 }) => {
     const isHovered = hoveredRow === node.id;
-    const showCheckbox = isHovered || selected || anySelected;
+    const showCheckbox = isHovered || selected;
 
     const menuItems: MenuProps['items'] = [
         { key: 'open', label: '📂 Open detail' },
