@@ -6,7 +6,6 @@
 export interface SpecSummary {
     id: string;
     parentId: string | null;
-    context: string;
     title: string;
     hasContent: boolean;
     completed: boolean;

@@ -197,24 +197,12 @@ export function moveSpec(workspace: string, id: string, newParentId: string | nu
     if (!spec) throw new Error(`Spec ${id} not found.`);
     spec.parentId = newParentId;
 
-    // If moving to a parent, inherit the parent's context
-    if (newParentId) {
-        const parent = index.specs.find(s => s.id === newParentId);
-        if (parent) {
-            spec.context = parent.context;
-        }
-    }
-
     writeIndex(workspace, index);
 
     // Update detail file
     const detail = readSpecDetail(workspace, id);
     if (detail) {
         detail.parentId = newParentId;
-        if (newParentId) {
-            const parent = index.specs.find(s => s.id === newParentId);
-            if (parent) detail.context = parent.context;
-        }
         detail.updatedAt = new Date().toISOString();
         writeSpecDetail(workspace, detail);
     }

@@ -6,7 +6,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import {
     Input,
-    Tag,
     Button,
     Typography,
     Tooltip,
@@ -42,27 +41,11 @@ interface SpecTableProps {
     onBatchMove: (ids: string[], newParentId: string | null) => Promise<void>;
 }
 
-const CONTEXT_COLORS = [
-    'blue', 'green', 'orange', 'purple', 'cyan',
-    'magenta', 'gold', 'lime', 'geekblue', 'volcano',
-];
-
-function getContextColor(ctx: string, all: string[]): string {
-    return CONTEXT_COLORS[all.indexOf(ctx) % CONTEXT_COLORS.length];
-}
-
-function collectContexts(nodes: SpecTreeNode[]): string[] {
-    const s = new Set<string>();
-    const w = (l: SpecTreeNode[]) => { for (const n of l) { s.add(n.context); if (n.children) w(n.children); } };
-    w(nodes);
-    return [...s].sort();
-}
-
 function filterTree(nodes: SpecTreeNode[], q: string): SpecTreeNode[] {
     const r: SpecTreeNode[] = [];
     for (const n of nodes) {
         const cm = n.children ? filterTree(n.children, q) : [];
-        if (n.title.toLowerCase().includes(q) || n.context.toLowerCase().includes(q) || cm.length > 0)
+        if (n.title.toLowerCase().includes(q) || cm.length > 0)
             r.push({ ...n, children: cm.length > 0 ? cm : n.children });
     }
     return r;
@@ -102,7 +85,6 @@ function flattenTree(nodes: SpecTreeNode[], depth = 0): { id: string; label: str
 interface RowProps {
     node: SpecTreeNode;
     depth: number;
-    allContexts: string[];
     expanded: boolean;
     hasChildren: boolean;
     hoveredRow: string | null;
@@ -110,7 +92,6 @@ interface RowProps {
     anySelected: boolean;
     hoverBg: string;
     selectedBg: string;
-    borderColor: string;
     onToggleExpand: (id: string) => void;
     onToggleSelect: (id: string) => void;
     onHover: (id: string | null) => void;
@@ -121,8 +102,8 @@ interface RowProps {
 }
 
 const SpecRow: React.FC<RowProps> = ({
-    node, depth, allContexts, expanded, hasChildren, hoveredRow, selected, anySelected,
-    hoverBg, selectedBg, borderColor,
+    node, depth, expanded, hasChildren, hoveredRow, selected, anySelected,
+    hoverBg, selectedBg,
     onToggleExpand, onToggleSelect, onHover, onOpen, onAddSibling, onAddChild, onDelete,
 }) => {
     const isHovered = hoveredRow === node.id;
@@ -158,7 +139,7 @@ const SpecRow: React.FC<RowProps> = ({
                 onMouseEnter={() => onHover(node.id)}
                 onMouseLeave={() => onHover(null)}
             >
-                {/* Checkbox column — fixed width, only visible on hover/selected/anySelected */}
+                {/* Checkbox column */}
                 <div style={{ width: 36, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {showCheckbox ? (
                         <Checkbox checked={selected} onChange={() => onToggleSelect(node.id)} />
@@ -179,13 +160,6 @@ const SpecRow: React.FC<RowProps> = ({
                         {hasChildren ? (expanded ? '▼' : '▶') : ''}
                     </span>
 
-                    {/* Context tag (root only) */}
-                    {!node.parentId && (
-                        <Tag color={getContextColor(node.context, allContexts)} style={{ marginRight: 8, flexShrink: 0, fontSize: 11 }}>
-                            {node.context}
-                        </Tag>
-                    )}
-
                     {/* Title */}
                     <Text style={{ flex: 1, cursor: 'pointer' }} onClick={() => onOpen(node.id)}>
                         {node.hasContent && <FileTextOutlined style={{ color: 'var(--ant-color-primary)', marginRight: 6, fontSize: 12 }} />}
@@ -204,12 +178,10 @@ interface TreeProps {
     depth: number;
     expandedKeys: Set<string>;
     selectedIds: Set<string>;
-    allContexts: string[];
     hoveredRow: string | null;
     anySelected: boolean;
     hoverBg: string;
     selectedBg: string;
-    borderColor: string;
     onToggleExpand: (id: string) => void;
     onToggleSelect: (id: string) => void;
     onHover: (id: string | null) => void;
@@ -242,10 +214,8 @@ export const SpecTable: React.FC<SpecTableProps> = ({
     specs, loading, onDelete, onOpen, onAddSibling, onAddChild, onAddRoot, onBatchDelete, onBatchMove,
 }) => {
     const { token } = useToken();
-
-    // Theme-aware colors
-    const hoverBg = token.controlItemBgHover;          // e.g. rgba(255,255,255,0.04) in dark
-    const selectedBg = token.controlItemBgActive;       // e.g. rgba(22,119,255,0.15)
+    const hoverBg = token.controlItemBgHover;
+    const selectedBg = token.controlItemBgActive;
     const borderColor = token.colorBorderSecondary;
 
     const [filterText, setFilterText] = useState('');
@@ -253,7 +223,6 @@ export const SpecTable: React.FC<SpecTableProps> = ({
     const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-    const allContexts = useMemo(() => collectContexts(specs), [specs]);
     const displaySpecs = useMemo(() => filterText ? filterTree(specs, filterText.toLowerCase()) : specs, [specs, filterText]);
     const totalCount = useMemo(() => countNodes(specs), [specs]);
     const filteredCount = useMemo(() => countNodes(displaySpecs), [displaySpecs]);
@@ -286,28 +255,17 @@ export const SpecTable: React.FC<SpecTableProps> = ({
 
     const [batchMoveOpen, setBatchMoveOpen] = useState(false);
     const [batchMoveTarget, setBatchMoveTarget] = useState<string | null>(null);
-
     const handleBatchMoveConfirm = async () => {
         if (selectedIds.size === 0) return;
         await onBatchMove([...selectedIds], batchMoveTarget);
-        setBatchMoveOpen(false);
-        setBatchMoveTarget(null);
-        setSelectedIds(new Set());
+        setBatchMoveOpen(false); setBatchMoveTarget(null); setSelectedIds(new Set());
     };
 
     return (
         <div>
             {/* Toolbar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Input
-                    placeholder="Filter..."
-                    prefix={<SearchOutlined />}
-                    allowClear
-                    value={filterText}
-                    onChange={e => setFilterText(e.target.value)}
-                    style={{ width: 200 }}
-                    size="small"
-                />
+                <Input placeholder="Filter..." prefix={<SearchOutlined />} allowClear value={filterText} onChange={e => setFilterText(e.target.value)} style={{ width: 200 }} size="small" />
                 {allParentIds.length > 0 && (
                     <Tooltip title={isAllExpanded ? 'Collapse all' : 'Expand all'}>
                         <Button size="small" icon={isAllExpanded ? <ShrinkOutlined /> : <ExpandAltOutlined />} onClick={isAllExpanded ? collapseAll : expandAll} />
@@ -319,22 +277,15 @@ export const SpecTable: React.FC<SpecTableProps> = ({
 
             {/* Batch bar */}
             {anySelected && (
-                <div style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '6px 12px', marginBottom: 4,
-                    background: selectedBg, borderRadius: 4, fontSize: 13,
-                }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', marginBottom: 4, background: selectedBg, borderRadius: 4, fontSize: 13 }}>
                     <Text strong style={{ fontSize: 12 }}>{selectedIds.size} selected</Text>
                     <Button size="small" danger icon={<DeleteOutlined />} onClick={handleBatchDelete}>Delete</Button>
                     <Button size="small" onClick={() => setBatchMoveOpen(!batchMoveOpen)}>Move to...</Button>
                     {batchMoveOpen && (
                         <>
-                            <Select
-                                size="small" value={batchMoveTarget} onChange={setBatchMoveTarget}
-                                style={{ width: 200 }} allowClear showSearch placeholder="Root level"
+                            <Select size="small" value={batchMoveTarget} onChange={setBatchMoveTarget} style={{ width: 200 }} allowClear showSearch placeholder="Root level"
                                 options={flatList.filter(f => !selectedIds.has(f.id)).map(f => ({ value: f.id, label: f.label }))}
-                                filterOption={(i, o) => (o?.label ?? '').toLowerCase().includes(i.toLowerCase())}
-                            />
+                                filterOption={(i, o) => (o?.label ?? '').toLowerCase().includes(i.toLowerCase())} />
                             <Button size="small" type="primary" onClick={handleBatchMoveConfirm}>Confirm</Button>
                         </>
                     )}
@@ -343,14 +294,9 @@ export const SpecTable: React.FC<SpecTableProps> = ({
             )}
 
             {/* Header */}
-            <div style={{
-                display: 'flex', alignItems: 'center',
-                borderBottom: `1px solid ${borderColor}`, padding: '4px 0',
-            }}>
+            <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${borderColor}`, padding: '4px 0' }}>
                 <div style={{ width: 36, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {anySelected && (
-                        <Checkbox checked={isAllSelected} indeterminate={anySelected && !isAllSelected} onChange={toggleSelectAll} />
-                    )}
+                    {anySelected && <Checkbox checked={isAllSelected} indeterminate={anySelected && !isAllSelected} onChange={toggleSelectAll} />}
                 </div>
                 <Text type="secondary" style={{ fontSize: 11 }}>Title</Text>
             </div>
@@ -366,24 +312,15 @@ export const SpecTable: React.FC<SpecTableProps> = ({
                 ) : (
                     <TreeRenderer
                         nodes={displaySpecs} depth={0} expandedKeys={expandedKeys} selectedIds={selectedIds}
-                        allContexts={allContexts} hoveredRow={hoveredRow} anySelected={anySelected}
-                        hoverBg={hoverBg} selectedBg={selectedBg} borderColor={borderColor}
-                        onToggleExpand={toggleExpand} onToggleSelect={toggleSelect}
-                        onHover={setHoveredRow} onOpen={onOpen} onAddSibling={onAddSibling}
-                        onAddChild={onAddChild} onDelete={onDelete}
+                        hoveredRow={hoveredRow} anySelected={anySelected} hoverBg={hoverBg} selectedBg={selectedBg}
+                        onToggleExpand={toggleExpand} onToggleSelect={toggleSelect} onHover={setHoveredRow}
+                        onOpen={onOpen} onAddSibling={onAddSibling} onAddChild={onAddChild} onDelete={onDelete}
                     />
                 )}
-
-                {/* + New spec */}
-                <div
-                    style={{
-                        display: 'flex', alignItems: 'center', padding: '6px 8px', paddingLeft: 36,
-                        cursor: 'pointer', color: token.colorTextQuaternary, fontSize: 13, transition: 'color 0.15s',
-                    }}
+                <div style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', paddingLeft: 36, cursor: 'pointer', color: token.colorTextQuaternary, fontSize: 13, transition: 'color 0.15s' }}
                     onClick={onAddRoot}
                     onMouseEnter={e => (e.currentTarget.style.color = token.colorPrimary)}
-                    onMouseLeave={e => (e.currentTarget.style.color = token.colorTextQuaternary)}
-                >
+                    onMouseLeave={e => (e.currentTarget.style.color = token.colorTextQuaternary)}>
                     <PlusOutlined style={{ marginRight: 6 }} /> New spec
                 </div>
             </div>

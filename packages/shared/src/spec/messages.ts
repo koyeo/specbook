@@ -19,7 +19,6 @@ export const IPC = {
 /** Add spec payload. */
 export interface AddSpecPayload {
     title: string;
-    context: string;
     parentId?: string | null;
     content?: string;
 }
@@ -28,7 +27,6 @@ export interface AddSpecPayload {
 export interface UpdateSpecPayload {
     id: string;
     title?: string;
-    context?: string;
     content?: string;
     completed?: boolean;
 }
