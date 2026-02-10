@@ -1,23 +1,27 @@
 /**
- * Container component — orchestrates hooks and passes data to views.
+ * Container component — VS Code-like layout.
+ * Left pane: spec tree   |   Right pane: detail editor (inline panel)
  */
 import React, { useEffect, useState } from 'react';
-import { Typography, Button, Space, Divider, message, Modal, Input } from 'antd';
+import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, theme } from 'antd';
 import { FolderOpenOutlined } from '@ant-design/icons';
 import { SpecTable } from '../components/SpecTable';
-import { SpecDetailDrawer } from '../components/SpecDetailDrawer';
+import { SpecDetailPanel } from '../components/SpecDetailPanel';
 import { useSpecs } from '../hooks/useSpecs';
 
 const { Title, Text } = Typography;
+const { useToken } = theme;
 
 export const SpecPage: React.FC = () => {
+    const { token } = useToken();
     const {
         specs, loading, workspace, loadSpecs,
         addSpec, deleteSpec, moveSpec, selectWorkspace,
     } = useSpecs();
 
-    const [drawerSpecId, setDrawerSpecId] = useState<string | null>(null);
-    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [selectedSpecId, setSelectedSpecId] = useState<string | null>(null);
+
+    // Add-new modal
     const [addMode, setAddMode] = useState<'root' | 'sibling' | 'child' | null>(null);
     const [addParentId, setAddParentId] = useState<string | null>(null);
     const [newTitle, setNewTitle] = useState('');
@@ -26,13 +30,15 @@ export const SpecPage: React.FC = () => {
     useEffect(() => { if (workspace) loadSpecs(); }, [workspace, loadSpecs]);
 
     const handleDelete = async (id: string) => {
-        try { await deleteSpec(id); message.success('Deleted'); }
-        catch (err: any) { message.error(err?.message || 'Failed to delete'); }
+        try {
+            await deleteSpec(id);
+            if (selectedSpecId === id) setSelectedSpecId(null);
+            message.success('Deleted');
+        } catch (err: any) { message.error(err?.message || 'Failed to delete'); }
     };
 
-    const handleOpen = (id: string) => { setDrawerSpecId(id); setDrawerOpen(true); };
-    const handleDrawerClose = () => { setDrawerOpen(false); setDrawerSpecId(null); };
-    const handleDrawerSaved = () => loadSpecs();
+    const handleOpen = (id: string) => setSelectedSpecId(id);
+    const handleSaved = () => loadSpecs();
 
     const handleAddRoot = () => { setAddMode('root'); setAddParentId(null); setNewTitle(''); };
     const handleAddSibling = (_afterId: string, parentId: string | null) => { setAddMode('sibling'); setAddParentId(parentId); setNewTitle(''); };
@@ -50,12 +56,12 @@ export const SpecPage: React.FC = () => {
             message.error(err?.message || 'Failed to add');
         } finally { setAdding(false); }
     };
-
     const handleAddCancel = () => setAddMode(null);
 
     const handleBatchDelete = async (ids: string[]) => {
         try {
             for (const id of ids) await deleteSpec(id);
+            if (selectedSpecId && ids.includes(selectedSpecId)) setSelectedSpecId(null);
             message.success(`Deleted ${ids.length} spec(s)`);
         } catch (err: any) { message.error(err?.message || 'Batch delete failed'); }
     };
@@ -71,9 +77,10 @@ export const SpecPage: React.FC = () => {
 
     const modalTitle = addMode === 'child' ? 'Add child spec' : addMode === 'sibling' ? 'Add sibling spec' : 'New spec';
 
+    // No workspace
     if (!workspace) {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 16 }}>
                 <Title level={3}>📝 SpecBook</Title>
                 <Text type="secondary">Select a workspace folder to get started</Text>
                 <Button type="primary" size="large" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>Open Workspace</Button>
@@ -82,25 +89,43 @@ export const SpecPage: React.FC = () => {
     }
 
     return (
-        <div>
-            <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 8 }} align="center">
-                <Title level={4} style={{ margin: 0 }}>📝 Specs</Title>
-                <Space size={8}>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{workspace}</Text>
-                    <Button size="small" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>Change</Button>
+        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
+            {/* Top bar */}
+            <div style={{ flexShrink: 0, marginBottom: 8 }}>
+                <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
+                    <Title level={4} style={{ margin: 0 }}>📝 Specs</Title>
+                    <Space size={8}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>{workspace}</Text>
+                        <Button size="small" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>Change</Button>
+                    </Space>
                 </Space>
-            </Space>
-            <Divider style={{ margin: '12px 0' }} />
+                <Divider style={{ margin: '8px 0' }} />
+            </div>
 
-            <SpecTable
-                specs={specs} loading={loading}
-                onDelete={handleDelete} onOpen={handleOpen}
-                onAddSibling={handleAddSibling} onAddChild={handleAddChild} onAddRoot={handleAddRoot}
-                onBatchDelete={handleBatchDelete} onBatchMove={handleBatchMove}
-            />
+            {/* Splitter: left tree | right detail */}
+            <Splitter style={{ flex: 1, minHeight: 0 }}>
+                <Splitter.Panel defaultSize="40%" min="240px" max="70%">
+                    <div style={{ height: '100%', overflow: 'auto', paddingRight: 4 }}>
+                        <SpecTable
+                            specs={specs} loading={loading}
+                            onDelete={handleDelete} onOpen={handleOpen}
+                            onAddSibling={handleAddSibling} onAddChild={handleAddChild} onAddRoot={handleAddRoot}
+                            onBatchDelete={handleBatchDelete} onBatchMove={handleBatchMove}
+                        />
+                    </div>
+                </Splitter.Panel>
+                <Splitter.Panel>
+                    <div style={{
+                        height: '100%',
+                        borderLeft: `1px solid ${token.colorBorderSecondary}`,
+                        overflow: 'auto',
+                    }}>
+                        <SpecDetailPanel specId={selectedSpecId} specs={specs} onSaved={handleSaved} />
+                    </div>
+                </Splitter.Panel>
+            </Splitter>
 
-            <SpecDetailDrawer specId={drawerSpecId} open={drawerOpen} specs={specs} onClose={handleDrawerClose} onSaved={handleDrawerSaved} />
-
+            {/* Add modal */}
             <Modal title={modalTitle} open={!!addMode} onOk={handleAddConfirm} onCancel={handleAddCancel} confirmLoading={adding} okText="Add" destroyOnClose>
                 <Input placeholder="Spec title..." value={newTitle} onChange={e => setNewTitle(e.target.value)} onPressEnter={handleAddConfirm} autoFocus />
             </Modal>

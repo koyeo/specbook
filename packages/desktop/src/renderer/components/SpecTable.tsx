@@ -85,6 +85,8 @@ function flattenTree(nodes: SpecTreeNode[], depth = 0): { id: string; label: str
 interface RowProps {
     node: SpecTreeNode;
     depth: number;
+    guides: boolean[];  // guides[i] = true → show vertical line at level i
+    isLastChild: boolean;
     expanded: boolean;
     hasChildren: boolean;
     hoveredRow: string | null;
@@ -92,6 +94,7 @@ interface RowProps {
     anySelected: boolean;
     hoverBg: string;
     selectedBg: string;
+    guideColor: string;
     onToggleExpand: (id: string) => void;
     onToggleSelect: (id: string) => void;
     onHover: (id: string | null) => void;
@@ -102,8 +105,8 @@ interface RowProps {
 }
 
 const SpecRow: React.FC<RowProps> = ({
-    node, depth, expanded, hasChildren, hoveredRow, selected, anySelected,
-    hoverBg, selectedBg,
+    node, depth, guides, isLastChild, expanded, hasChildren, hoveredRow, selected, anySelected,
+    hoverBg, selectedBg, guideColor,
     onToggleExpand, onToggleSelect, onHover, onOpen, onAddSibling, onAddChild, onDelete,
 }) => {
     const isHovered = hoveredRow === node.id;
@@ -146,8 +149,40 @@ const SpecRow: React.FC<RowProps> = ({
                     ) : null}
                 </div>
 
-                {/* Indented content */}
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: depth * 20, paddingRight: 8 }}>
+                {/* Indented content with tree guides */}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingRight: 8, position: 'relative' }}>
+                    {/* Tree guide segments */}
+                    {depth > 0 && Array.from({ length: depth }, (_, i) => {
+                        const isConnectorLevel = i === depth - 1;
+                        const showVertical = isConnectorLevel ? true : guides[i];
+                        return (
+                            <div key={i} style={{
+                                width: 20, height: '100%', flexShrink: 0,
+                                position: 'relative',
+                            }}>
+                                {/* Vertical line */}
+                                {showVertical && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        left: 8,
+                                        top: 0,
+                                        bottom: isConnectorLevel && isLastChild ? '50%' : 0,
+                                        borderLeft: `1px dashed ${guideColor}`,
+                                    }} />
+                                )}
+                                {/* Horizontal connector at current depth */}
+                                {isConnectorLevel && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        left: 8,
+                                        top: '50%',
+                                        width: 10,
+                                        borderTop: `1px dashed ${guideColor}`,
+                                    }} />
+                                )}
+                            </div>
+                        );
+                    })}
                     {/* Expand arrow */}
                     <span
                         style={{
@@ -176,12 +211,14 @@ const SpecRow: React.FC<RowProps> = ({
 interface TreeProps {
     nodes: SpecTreeNode[];
     depth: number;
+    guides: boolean[];  // inherited guide state per depth level
     expandedKeys: Set<string>;
     selectedIds: Set<string>;
     hoveredRow: string | null;
     anySelected: boolean;
     hoverBg: string;
     selectedBg: string;
+    guideColor: string;
     onToggleExpand: (id: string) => void;
     onToggleSelect: (id: string) => void;
     onHover: (id: string | null) => void;
@@ -191,16 +228,19 @@ interface TreeProps {
     onDelete: (id: string) => void;
 }
 
-const TreeRenderer: React.FC<TreeProps> = ({ nodes, depth, expandedKeys, selectedIds, ...rest }) => (
+const TreeRenderer: React.FC<TreeProps> = ({ nodes, depth, guides, expandedKeys, selectedIds, ...rest }) => (
     <>
-        {nodes.map(node => {
+        {nodes.map((node, idx) => {
             const hasChildren = !!(node.children?.length);
             const isExpanded = expandedKeys.has(node.id);
+            const isLast = idx === nodes.length - 1;
+            // For children: pass down guide state — at this depth, show vertical line if NOT last child
+            const childGuides = [...guides, !isLast];
             return (
                 <React.Fragment key={node.id}>
-                    <SpecRow node={node} depth={depth} hasChildren={hasChildren} expanded={isExpanded} selected={selectedIds.has(node.id)} {...rest} />
+                    <SpecRow node={node} depth={depth} guides={guides} isLastChild={isLast} hasChildren={hasChildren} expanded={isExpanded} selected={selectedIds.has(node.id)} {...rest} />
                     {hasChildren && isExpanded && (
-                        <TreeRenderer nodes={node.children!} depth={depth + 1} expandedKeys={expandedKeys} selectedIds={selectedIds} {...rest} />
+                        <TreeRenderer nodes={node.children!} depth={depth + 1} guides={childGuides} expandedKeys={expandedKeys} selectedIds={selectedIds} {...rest} />
                     )}
                 </React.Fragment>
             );
@@ -311,8 +351,9 @@ export const SpecTable: React.FC<SpecTableProps> = ({
                     </div>
                 ) : (
                     <TreeRenderer
-                        nodes={displaySpecs} depth={0} expandedKeys={expandedKeys} selectedIds={selectedIds}
+                        nodes={displaySpecs} depth={0} guides={[]} expandedKeys={expandedKeys} selectedIds={selectedIds}
                         hoveredRow={hoveredRow} anySelected={anySelected} hoverBg={hoverBg} selectedBg={selectedBg}
+                        guideColor={token.colorTextQuaternary}
                         onToggleExpand={toggleExpand} onToggleSelect={toggleSelect} onHover={setHoveredRow}
                         onOpen={onOpen} onAddSibling={onAddSibling} onAddChild={onAddChild} onDelete={onDelete}
                     />

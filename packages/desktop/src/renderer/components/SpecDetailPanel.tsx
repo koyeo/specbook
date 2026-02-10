@@ -1,20 +1,20 @@
 /**
- * View component — Drawer for editing spec fields.
+ * View component — inline detail panel for editing spec fields.
+ * Replaces Drawer: sits in the right pane of a Splitter layout.
  * Edits: title, parent, content.
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Drawer, Input, Button, Select, message, Spin, Typography } from 'antd';
+import { Input, Button, Select, message, Spin, Typography, theme } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import type { SpecDetail, SpecTreeNode, UpdateSpecPayload } from '@specbook/shared';
 
 const { TextArea } = Input;
-const { Text } = Typography;
+const { Text, Title } = Typography;
+const { useToken } = theme;
 
-interface SpecDetailDrawerProps {
+interface SpecDetailPanelProps {
     specId: string | null;
-    open: boolean;
     specs: SpecTreeNode[];
-    onClose: () => void;
     onSaved: () => void;
 }
 
@@ -46,9 +46,10 @@ function collectDescendantIds(nodes: SpecTreeNode[], id: string): Set<string> {
     return result;
 }
 
-export const SpecDetailDrawer: React.FC<SpecDetailDrawerProps> = ({
-    specId, open, specs, onClose, onSaved,
+export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
+    specId, specs, onSaved,
 }) => {
+    const { token } = useToken();
     const [detail, setDetail] = useState<SpecDetail | null>(null);
     const [title, setTitle] = useState('');
     const [parentId, setParentId] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export const SpecDetailDrawer: React.FC<SpecDetailDrawerProps> = ({
     }, [specs, specId]);
 
     useEffect(() => {
-        if (open && specId) {
+        if (specId) {
             setLoading(true);
             window.api.getSpec(specId)
                 .then((d) => {
@@ -77,7 +78,7 @@ export const SpecDetailDrawer: React.FC<SpecDetailDrawerProps> = ({
         } else {
             setDetail(null); setTitle(''); setParentId(null); setContent('');
         }
-    }, [open, specId]);
+    }, [specId]);
 
     const hasChanges = detail ? (
         title !== (detail.title || '') ||
@@ -103,7 +104,6 @@ export const SpecDetailDrawer: React.FC<SpecDetailDrawerProps> = ({
 
             message.success('Saved');
             onSaved();
-            onClose();
         } catch (err: any) {
             message.error(err?.message || 'Failed to save');
         } finally {
@@ -111,32 +111,79 @@ export const SpecDetailDrawer: React.FC<SpecDetailDrawerProps> = ({
         }
     };
 
+    // Empty state — no spec selected
+    if (!specId) {
+        return (
+            <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                height: '100%', color: token.colorTextQuaternary, fontSize: 13,
+            }}>
+                Select a spec to edit
+            </div>
+        );
+    }
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
+                <Spin />
+            </div>
+        );
+    }
+
     return (
-        <Drawer title="Edit Spec" open={open} onClose={onClose} width={560}
-            extra={<Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={saving} disabled={!hasChanges}>Save</Button>}>
-            {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}><Spin /></div>
-            ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <div>
-                        <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Title</Text>
-                        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Spec title" />
-                    </div>
-                    <div>
-                        <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Parent</Text>
-                        <Select value={parentId} onChange={(val) => setParentId(val || null)}
-                            style={{ width: '100%' }} allowClear showSearch placeholder="Root level (no parent)"
-                            options={parentOptions.map(p => ({ value: p.id, label: p.label }))}
-                            filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
-                    </div>
-                    <div>
-                        <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Details</Text>
-                        <TextArea value={content} onChange={e => setContent(e.target.value)}
-                            placeholder="Requirements, acceptance criteria, notes..."
-                            autoSize={{ minRows: 8 }} style={{ fontSize: 13 }} />
-                    </div>
+        <div style={{ padding: '16px 20px', height: '100%', overflow: 'auto' }}>
+            {/* Header bar */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <Title level={5} style={{ margin: 0 }}>Edit Spec</Title>
+                <Button
+                    type="primary"
+                    size="small"
+                    icon={<SaveOutlined />}
+                    onClick={handleSave}
+                    loading={saving}
+                    disabled={!hasChanges}
+                >
+                    Save
+                </Button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Title */}
+                <div>
+                    <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Title</Text>
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Spec title" />
                 </div>
-            )}
-        </Drawer>
+
+                {/* Parent */}
+                <div>
+                    <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Parent</Text>
+                    <Select
+                        value={parentId}
+                        onChange={(val) => setParentId(val || null)}
+                        style={{ width: '100%' }}
+                        allowClear
+                        showSearch
+                        placeholder="Root level (no parent)"
+                        options={parentOptions.map(p => ({ value: p.id, label: p.label }))}
+                        filterOption={(input, option) =>
+                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                    />
+                </div>
+
+                {/* Content */}
+                <div style={{ flex: 1 }}>
+                    <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Details</Text>
+                    <TextArea
+                        value={content}
+                        onChange={e => setContent(e.target.value)}
+                        placeholder="Requirements, acceptance criteria, notes..."
+                        autoSize={{ minRows: 12 }}
+                        style={{ fontSize: 13 }}
+                    />
+                </div>
+            </div>
+        </div>
     );
 };
