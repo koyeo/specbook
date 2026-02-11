@@ -83,6 +83,7 @@ export function registerIpcHandlers(): void {
             id,
             parentId: payload.parentId ?? null,
             title: payload.title.trim(),
+            type: payload.type,
             hasContent: !!(payload.content?.trim()),
             completed: false,
             content: payload.content?.trim() || '',
@@ -107,6 +108,7 @@ export function registerIpcHandlers(): void {
         const updated: SpecDetail = {
             ...existing,
             title: payload.title?.trim() ?? existing.title,
+            type: payload.type ?? existing.type,
             content: payload.content?.trim() ?? existing.content,
             completed: payload.completed ?? existing.completed ?? false,
             updatedAt: new Date().toISOString(),
@@ -132,6 +134,41 @@ export function registerIpcHandlers(): void {
     ipcMain.handle(IPC.MOVE_SPEC, (_event, payload: MoveSpecPayload) => {
         const ws = requireWorkspace();
         specStore.moveSpec(ws, payload.id, payload.newParentId);
+    });
+
+    ipcMain.handle(IPC.EXPORT_MARKDOWN, async () => {
+        const ws = requireWorkspace();
+        const tree = specStore.loadAllSpecs(ws);
+
+        // Build numbered outline from tree
+        const lines: string[] = [];
+        const renderChildren = (nodes: any[], prefix: string, depth: number) => {
+            nodes.forEach((node: any, idx: number) => {
+                const num = prefix ? `${prefix}.${idx + 1}` : `${idx + 1}`;
+                const indent = '    '.repeat(depth);
+                lines.push(`${indent}${num} ${node.title}`);
+                if (node.children) {
+                    renderChildren(node.children, num, depth + 1);
+                }
+            });
+        };
+        renderChildren(tree, '', 0);
+
+        const markdown = lines.join('\n');
+
+        // Save dialog
+        const win = BrowserWindow.getFocusedWindow();
+        const result = await dialog.showSaveDialog(win!, {
+            title: 'Export Specs as Markdown',
+            defaultPath: 'specs.md',
+            filters: [{ name: 'Markdown', extensions: ['md'] }],
+        });
+
+        if (result.canceled || !result.filePath) return false;
+
+        const fs = await import('fs');
+        fs.writeFileSync(result.filePath, markdown, 'utf-8');
+        return true;
     });
 }
 

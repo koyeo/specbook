@@ -25,6 +25,7 @@ import {
     DeleteOutlined,
 } from '@ant-design/icons';
 import type { SpecTreeNode } from '@specbook/shared';
+import { SPEC_TYPE_COLORS } from '../constants/specTypes';
 
 const { Text } = Typography;
 const { useToken } = theme;
@@ -197,6 +198,12 @@ const SpecRow: React.FC<RowProps> = ({
 
                     {/* Title */}
                     <Text style={{ flex: 1, cursor: 'pointer' }} onClick={() => onOpen(node.id)}>
+                        <span style={{
+                            display: 'inline-block',
+                            width: 8, height: 8, borderRadius: '50%',
+                            backgroundColor: SPEC_TYPE_COLORS[node.type as keyof typeof SPEC_TYPE_COLORS] || '#999',
+                            marginRight: 6, verticalAlign: 'middle',
+                        }} />
                         {node.hasContent && <FileTextOutlined style={{ color: 'var(--ant-color-primary)', marginRight: 6, fontSize: 12 }} />}
                         {node.title}
                     </Text>

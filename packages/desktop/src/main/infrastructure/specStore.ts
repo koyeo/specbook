@@ -109,6 +109,7 @@ export function readSpecDetail(workspace: string, id: string): SpecDetail | null
         id: entry.id,
         parentId: entry.parentId,
         title: entry.title,
+        type: entry.type || 'action_entry',
         hasContent: content.trim().length > 0,
         completed: entry.completed,
         content,
@@ -124,6 +125,7 @@ function buildIndexEntry(workspace: string, detail: SpecDetail): SpecIndexEntry 
     return {
         id: detail.id,
         title: detail.title,
+        type: detail.type,
         parentId: detail.parentId,
         completed: detail.completed,
         contentHash: computeContentHash(filePath),
@@ -170,6 +172,7 @@ export function loadAllSpecs(workspace: string): SpecTreeNode[] {
             id: entry.id,
             parentId: entry.parentId,
             title: entry.title,
+            type: entry.type || 'action_entry',
             hasContent,
             completed: entry.completed,
             createdAt: entry.createdAt,

@@ -3,11 +3,13 @@
  * Left pane: spec tree   |   Right pane: detail editor (inline panel)
  */
 import React, { useEffect, useState } from 'react';
-import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, theme } from 'antd';
-import { FolderOpenOutlined } from '@ant-design/icons';
+import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, theme, Select } from 'antd';
+import { FolderOpenOutlined, ExportOutlined } from '@ant-design/icons';
 import { SpecTable } from '../components/SpecTable';
 import { SpecDetailPanel } from '../components/SpecDetailPanel';
 import { useSpecs } from '../hooks/useSpecs';
+import type { SpecType } from '@specbook/shared';
+import { SPEC_TYPE_LABELS } from '../constants/specTypes';
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
@@ -25,6 +27,7 @@ export const SpecPage: React.FC = () => {
     const [addMode, setAddMode] = useState<'root' | 'sibling' | 'child' | null>(null);
     const [addParentId, setAddParentId] = useState<string | null>(null);
     const [newTitle, setNewTitle] = useState('');
+    const [newType, setNewType] = useState<SpecType>('information_display');
     const [adding, setAdding] = useState(false);
 
     useEffect(() => { if (workspace) loadSpecs(); }, [workspace, loadSpecs]);
@@ -40,16 +43,16 @@ export const SpecPage: React.FC = () => {
     const handleOpen = (id: string) => setSelectedSpecId(id);
     const handleSaved = () => loadSpecs();
 
-    const handleAddRoot = () => { setAddMode('root'); setAddParentId(null); setNewTitle(''); };
-    const handleAddSibling = (_afterId: string, parentId: string | null) => { setAddMode('sibling'); setAddParentId(parentId); setNewTitle(''); };
-    const handleAddChild = (parentId: string) => { setAddMode('child'); setAddParentId(parentId); setNewTitle(''); };
+    const handleAddRoot = () => { setAddMode('root'); setAddParentId(null); setNewTitle(''); setNewType('action_entry'); };
+    const handleAddSibling = (_afterId: string, parentId: string | null) => { setAddMode('sibling'); setAddParentId(parentId); setNewTitle(''); setNewType('action_entry'); };
+    const handleAddChild = (parentId: string) => { setAddMode('child'); setAddParentId(parentId); setNewTitle(''); setNewType('action_entry'); };
 
     const handleAddConfirm = async () => {
         if (!newTitle.trim()) return;
         setAdding(true);
         try {
             const parentId = addMode === 'root' ? null : addParentId;
-            await addSpec({ title: newTitle.trim(), parentId });
+            await addSpec({ title: newTitle.trim(), type: newType, parentId });
             message.success('Spec added');
             setAddMode(null);
         } catch (err: any) {
@@ -75,6 +78,15 @@ export const SpecPage: React.FC = () => {
 
     const handleSelectWorkspace = async () => { await selectWorkspace(); };
 
+    const handleExport = async () => {
+        try {
+            const saved = await window.api.exportMarkdown();
+            if (saved) message.success('Exported successfully');
+        } catch (err: any) {
+            message.error(err?.message || 'Export failed');
+        }
+    };
+
     const modalTitle = addMode === 'child' ? 'Add child spec' : addMode === 'sibling' ? 'Add sibling spec' : 'New spec';
 
     // No workspace
@@ -96,6 +108,7 @@ export const SpecPage: React.FC = () => {
                     <Title level={4} style={{ margin: 0 }}>📝 Specs</Title>
                     <Space size={8}>
                         <Text type="secondary" style={{ fontSize: 12 }}>{workspace}</Text>
+                        <Button size="small" icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
                         <Button size="small" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>Change</Button>
                     </Space>
                 </Space>
@@ -127,7 +140,17 @@ export const SpecPage: React.FC = () => {
 
             {/* Add modal */}
             <Modal title={modalTitle} open={!!addMode} onOk={handleAddConfirm} onCancel={handleAddCancel} confirmLoading={adding} okText="Add" destroyOnClose>
-                <Input placeholder="Spec title..." value={newTitle} onChange={e => setNewTitle(e.target.value)} onPressEnter={handleAddConfirm} autoFocus />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <Input placeholder="Spec title..." value={newTitle} onChange={e => setNewTitle(e.target.value)} onPressEnter={handleAddConfirm} autoFocus />
+                    <Select
+                        value={newType}
+                        onChange={(val) => setNewType(val)}
+                        style={{ width: '100%' }}
+                        options={(
+                            Object.entries(SPEC_TYPE_LABELS) as [SpecType, string][]
+                        ).map(([value, label]) => ({ value, label }))}
+                    />
+                </div>
             </Modal>
         </div>
     );

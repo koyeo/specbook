@@ -15,7 +15,10 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@specbook/shared": "workspace:*",
-        "antd": "^5.24.2"
+        "antd": "^5.24.2",
+        "mermaid": "^11.12.2",
+        "react-markdown": "^10.1.0",
+        "remark-gfm": "^4.0.1"
     },
     "devDependencies": {
         "@types/react": "^19.1.6",

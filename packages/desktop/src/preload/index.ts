@@ -13,6 +13,7 @@ const api: SpecAPI = {
     deleteSpec: (id: string) => ipcRenderer.invoke(IPC.DELETE_SPEC, id),
     getSpec: (id: string) => ipcRenderer.invoke(IPC.GET_SPEC, id),
     moveSpec: (payload: MoveSpecPayload) => ipcRenderer.invoke(IPC.MOVE_SPEC, payload),
+    exportMarkdown: () => ipcRenderer.invoke(IPC.EXPORT_MARKDOWN),
     selectWorkspace: () => ipcRenderer.invoke(IPC.SELECT_WORKSPACE),
     getWorkspace: () => ipcRenderer.invoke(IPC.GET_WORKSPACE),
 };
