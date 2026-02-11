@@ -83,24 +83,15 @@ export function registerIpcHandlers(): void {
             id,
             parentId: payload.parentId ?? null,
             title: payload.title.trim(),
-            hasContent: false,
+            hasContent: !!(payload.content?.trim()),
             completed: false,
             content: payload.content?.trim() || '',
             createdAt: now,
             updatedAt: now,
         };
 
-        const summary = {
-            id: detail.id,
-            parentId: detail.parentId,
-            title: detail.title,
-            hasContent: detail.content.length > 0,
-            completed: detail.completed,
-            createdAt: detail.createdAt,
-        };
-
-        // Infrastructure: persist
-        specStore.addSpec(ws, summary, detail);
+        // Infrastructure: persist (specStore handles index entry building)
+        specStore.addSpec(ws, detail);
 
         return detail;
     });
@@ -120,17 +111,10 @@ export function registerIpcHandlers(): void {
             completed: payload.completed ?? existing.completed ?? false,
             updatedAt: new Date().toISOString(),
         };
+        updated.hasContent = updated.content.length > 0;
 
-        const summary = {
-            id: updated.id,
-            parentId: updated.parentId,
-            title: updated.title,
-            hasContent: updated.content.length > 0,
-            completed: updated.completed ?? false,
-            createdAt: updated.createdAt,
-        };
-
-        specStore.updateSpec(ws, summary, updated);
+        // Infrastructure: persist (specStore handles index entry building)
+        specStore.updateSpec(ws, updated);
 
         return updated;
     });
@@ -150,3 +134,4 @@ export function registerIpcHandlers(): void {
         specStore.moveSpec(ws, payload.id, payload.newParentId);
     });
 }
+
