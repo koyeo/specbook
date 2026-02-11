@@ -50,7 +50,7 @@ export const SpecPage: React.FC = () => {
         try {
             const parentId = addMode === 'root' ? null : addParentId;
             await addSpec({ title: newTitle.trim(), parentId });
-            message.success('Spec added');
+            message.success('Object added');
             setAddMode(null);
         } catch (err: any) {
             message.error(err?.message || 'Failed to add');
@@ -62,14 +62,14 @@ export const SpecPage: React.FC = () => {
         try {
             for (const id of ids) await deleteSpec(id);
             if (selectedSpecId && ids.includes(selectedSpecId)) setSelectedSpecId(null);
-            message.success(`Deleted ${ids.length} spec(s)`);
+            message.success(`Deleted ${ids.length} object(s)`);
         } catch (err: any) { message.error(err?.message || 'Batch delete failed'); }
     };
 
     const handleBatchMove = async (ids: string[], newParentId: string | null) => {
         try {
             for (const id of ids) await moveSpec({ id, newParentId });
-            message.success(`Moved ${ids.length} spec(s)`);
+            message.success(`Moved ${ids.length} object(s)`);
         } catch (err: any) { message.error(err?.message || 'Batch move failed'); }
     };
 
@@ -84,7 +84,7 @@ export const SpecPage: React.FC = () => {
         }
     };
 
-    const modalTitle = addMode === 'child' ? 'Add child spec' : addMode === 'sibling' ? 'Add sibling spec' : 'New spec';
+    const modalTitle = addMode === 'child' ? 'Add Child Object' : addMode === 'sibling' ? 'Add Sibling Object' : 'New Object';
 
     // No workspace
     if (!workspace) {

@@ -28,6 +28,7 @@ export interface SpecIndexEntry {
     title: string;
     parentId: string | null;
     completed: boolean;
+    isState: boolean;
     contentHash: string | null;
     createdAt: string;
     updatedAt: string;
@@ -40,6 +41,7 @@ export interface SpecSummary {
     title: string;
     hasContent: boolean;
     hasActions: boolean;
+    isState: boolean;
     completed: boolean;
     createdAt: string;
 }

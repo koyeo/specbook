@@ -145,6 +145,7 @@ export function readSpecDetail(workspace: string, id: string): SpecDetail | null
         title: entry.title,
         hasContent: content.trim().length > 0,
         hasActions,
+        isState: entry.isState ?? false,
         completed: entry.completed,
         content,
         createdAt: entry.createdAt,
@@ -161,6 +162,7 @@ function buildIndexEntry(workspace: string, detail: SpecDetail): SpecIndexEntry 
         title: detail.title,
         parentId: detail.parentId,
         completed: detail.completed,
+        isState: detail.isState ?? false,
         contentHash: computeContentHash(filePath),
         createdAt: detail.createdAt,
         updatedAt: detail.updatedAt,
@@ -208,6 +210,7 @@ export function loadAllSpecs(workspace: string): SpecTreeNode[] {
             title: entry.title,
             hasContent,
             hasActions,
+            isState: entry.isState ?? false,
             completed: entry.completed,
             createdAt: entry.createdAt,
         };

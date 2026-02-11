@@ -198,12 +198,24 @@ const SpecRow: React.FC<RowProps> = ({
                     </span>
 
                     {/* Title */}
+                    {node.isState && (
+                        <Tooltip title="State Object">
+                            <span style={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 16, height: 16, borderRadius: 3, fontSize: 10, fontWeight: 600,
+                                backgroundColor: 'rgba(250, 140, 22, 0.12)', color: '#d48806', marginRight: 4, flexShrink: 0,
+                                lineHeight: 1, cursor: 'default',
+                            }}>S</span>
+                        </Tooltip>
+                    )}
                     {node.hasActions && (
                         <Tooltip title="Action Entry">
                             <span style={{
-                                display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
-                                backgroundColor: ACTION_ENTRY_COLOR, marginRight: 6, flexShrink: 0,
-                            }} />
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 16, height: 16, borderRadius: 3, fontSize: 10, fontWeight: 600,
+                                backgroundColor: 'rgba(22, 119, 255, 0.12)', color: '#0958d9', marginRight: 4, flexShrink: 0,
+                                lineHeight: 1, cursor: 'default',
+                            }}>A</span>
                         </Tooltip>
                     )}
                     <Text style={{ flex: 1, cursor: 'pointer' }} onClick={() => onOpen(node.id)}>
@@ -357,7 +369,7 @@ export const SpecTable: React.FC<SpecTableProps> = ({
                     <div style={{ padding: 24, textAlign: 'center' }}><Spin size="small" /></div>
                 ) : displaySpecs.length === 0 ? (
                     <div style={{ padding: 24, textAlign: 'center', color: token.colorTextQuaternary, fontSize: 13 }}>
-                        {totalCount === 0 ? 'No specs yet. Click + to add one.' : 'No matching items.'}
+                        {totalCount === 0 ? 'No objects yet. Click + to add one.' : 'No matching items.'}
                     </div>
                 ) : (
                     <TreeRenderer
@@ -372,7 +384,7 @@ export const SpecTable: React.FC<SpecTableProps> = ({
                     onClick={onAddRoot}
                     onMouseEnter={e => (e.currentTarget.style.color = token.colorPrimary)}
                     onMouseLeave={e => (e.currentTarget.style.color = token.colorTextQuaternary)}>
-                    <PlusOutlined style={{ marginRight: 6 }} /> New spec
+                    <PlusOutlined style={{ marginRight: 6 }} /> New Object
                 </div>
             </div>
         </div>

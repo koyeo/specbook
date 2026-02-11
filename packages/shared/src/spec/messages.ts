@@ -32,6 +32,7 @@ export interface UpdateSpecPayload {
     title?: string;
     content?: string;
     completed?: boolean;
+    isState?: boolean;
 }
 
 /** Move spec payload — change parent. */

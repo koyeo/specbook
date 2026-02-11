@@ -4,7 +4,7 @@
  * Edit: title / parent / content / actions form, Save with confirmation.
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag } from 'antd';
+import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag, Switch, Tooltip } from 'antd';
 import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { SpecDetail, SpecTreeNode, UpdateSpecPayload, SpecAction, ActionType } from '@specbook/shared';
 
@@ -70,6 +70,7 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
     const [content, setContent] = useState('');
     const [actions, setActions] = useState<SpecAction[]>([]);
     const [savedActions, setSavedActions] = useState<SpecAction[]>([]);
+    const [isState, setIsState] = useState(false);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
 
@@ -95,12 +96,13 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                     setContent(d?.content || '');
                     setActions(acts);
                     setSavedActions(acts);
+                    setIsState(d?.isState ?? false);
                 })
                 .catch((err) => { message.error('Failed to load spec detail'); console.error(err); })
                 .finally(() => setLoading(false));
         } else {
             setDetail(null); setTitle(''); setParentId(null); setContent('');
-            setActions([]); setSavedActions([]);
+            setActions([]); setSavedActions([]); setIsState(false);
             setMode('preview');
         }
     }, [specId]);
@@ -111,6 +113,7 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
         title !== (detail.title || '') ||
         parentId !== (detail.parentId || null) ||
         content !== (detail.content || '') ||
+        isState !== (detail.isState ?? false) ||
         actionsChanged
     ) : false;
 
@@ -148,6 +151,7 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                     setParentId(detail?.parentId || null);
                     setContent(detail?.content || '');
                     setActions(savedActions);
+                    setIsState(detail?.isState ?? false);
                     setMode('preview');
                 },
             });
@@ -163,8 +167,9 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
             const payload: UpdateSpecPayload = { id: specId };
             if (title !== detail.title) payload.title = title;
             if (content !== detail.content) payload.content = content;
+            if (isState !== (detail.isState ?? false)) payload.isState = isState;
 
-            if (payload.title !== undefined || payload.content !== undefined) {
+            if (payload.title !== undefined || payload.content !== undefined || payload.isState !== undefined) {
                 await window.api.updateSpec(payload);
             }
 
@@ -183,6 +188,7 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
             setTitle(updated?.title || '');
             setParentId(updated?.parentId || null);
             setContent(updated?.content || '');
+            setIsState(updated?.isState ?? false);
             setMode('preview');
             onSaved();
         } catch (err: any) {
@@ -201,7 +207,7 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                 height: '100%', color: token.colorTextQuaternary, fontSize: 13,
             }}>
                 {contextHolder}
-                Select a spec to view
+                Select an object to view
             </div>
         );
     }
@@ -243,7 +249,22 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                             </Text>
                         )}
                         {savedActions.length > 0 && (
-                            <Tag color={ACTION_ENTRY_COLOR} style={{ fontSize: 11, margin: 0 }}>Action Entry</Tag>
+                            <Tooltip title="Action Entry">
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 18, height: 18, borderRadius: 3, fontSize: 11, fontWeight: 600,
+                                    backgroundColor: 'rgba(22, 119, 255, 0.12)', color: '#0958d9', cursor: 'default',
+                                }}>A</span>
+                            </Tooltip>
+                        )}
+                        {detail?.isState && (
+                            <Tooltip title="State Object">
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 18, height: 18, borderRadius: 3, fontSize: 11, fontWeight: 600,
+                                    backgroundColor: 'rgba(250, 140, 22, 0.12)', color: '#d48806', cursor: 'default',
+                                }}>S</span>
+                            </Tooltip>
                         )}
                     </div>
 
@@ -295,7 +316,7 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
             {contextHolder}
             {/* Header bar */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <Title level={5} style={{ margin: 0 }}>Edit Spec</Title>
+                <Title level={5} style={{ margin: 0 }}>Edit Object</Title>
                 <Space size={8}>
                     <Button
                         size="small"
@@ -321,7 +342,13 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                 {/* Title */}
                 <div>
                     <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Title</Text>
-                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Spec title" />
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Object title" />
+                </div>
+
+                {/* Stateful toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Switch size="small" checked={isState} onChange={setIsState} />
+                    <Text style={{ fontSize: 13 }}>State Object</Text>
                 </div>
 
                 {/* Parent */}
@@ -409,6 +436,6 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                     />
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

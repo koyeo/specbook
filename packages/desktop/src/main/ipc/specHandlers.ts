@@ -85,6 +85,7 @@ export function registerIpcHandlers(): void {
             title: payload.title.trim(),
             hasContent: !!(payload.content?.trim()),
             hasActions: false,
+            isState: false,
             completed: false,
             content: payload.content?.trim() || '',
             createdAt: now,
@@ -110,6 +111,7 @@ export function registerIpcHandlers(): void {
             title: payload.title?.trim() ?? existing.title,
             content: payload.content?.trim() ?? existing.content,
             completed: payload.completed ?? existing.completed ?? false,
+            isState: payload.isState ?? existing.isState ?? false,
             updatedAt: new Date().toISOString(),
         };
         updated.hasContent = updated.content.length > 0;
