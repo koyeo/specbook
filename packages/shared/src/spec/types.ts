@@ -107,7 +107,7 @@ export interface RelatedFile {
 
 /** Object mapping result returned by AI. */
 export interface ObjectMapping {
-    objectId: string;
+    objectId?: string;
     objectTitle: string;
     status: 'implemented' | 'partial' | 'not_found' | 'unknown';
     summary: string;
@@ -121,6 +121,7 @@ export interface AnalysisResult {
     systemPrompt: string;
     userPrompt: string;
     rawResponse: string;
+    directoryTree?: string;
 }
 
 /** A single log entry within an analysis task. */

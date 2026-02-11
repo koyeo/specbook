@@ -16,6 +16,7 @@ export interface AdapterResult {
     mappings: ObjectMapping[];
     tokenUsage: TokenUsage;
     rawResponse: string;
+    directoryTree?: string;
 }
 
 interface ChatCompletionResponse {
@@ -67,13 +68,14 @@ export async function callAnthropic(
 
     // Parse JSON from response (handle possible markdown code fences)
     let mappings: ObjectMapping[] = [];
+    let directoryTree: string | undefined;
     try {
         const jsonStr = rawText.replace(/^```json?\s*/i, '').replace(/```\s*$/i, '').trim();
         const parsed = JSON.parse(jsonStr);
         mappings = parsed.mappings ?? parsed ?? [];
+        directoryTree = parsed.directoryTree;
     } catch {
         mappings = [{
-            objectId: 'parse-error',
             objectTitle: 'Parse Error',
             status: 'unknown',
             summary: `Failed to parse AI response: ${rawText.substring(0, 200)}`,
@@ -88,5 +90,5 @@ export async function callAnthropic(
         timestamp: new Date().toISOString(),
     };
 
-    return { mappings, tokenUsage, rawResponse: rawText };
+    return { mappings, tokenUsage, rawResponse: rawText, directoryTree };
 }

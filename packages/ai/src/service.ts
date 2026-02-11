@@ -21,7 +21,7 @@ export async function analyzeObjectTree(
     const systemPrompt = buildSystemPrompt();
     const userPrompt = buildUserPrompt(objectTree, workspacePath);
 
-    const { mappings, tokenUsage, rawResponse } = await callAnthropic(config, systemPrompt, userPrompt);
+    const { mappings, tokenUsage, rawResponse, directoryTree } = await callAnthropic(config, systemPrompt, userPrompt);
 
-    return { mappings, tokenUsage, systemPrompt, userPrompt, rawResponse };
+    return { mappings, tokenUsage, systemPrompt, userPrompt, rawResponse, directoryTree };
 }
