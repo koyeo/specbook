@@ -4,6 +4,7 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import { registerIpcHandlers } from './ipc/specHandlers';
+import { registerAiHandlers } from './ipc/aiHandlers';
 
 function createWindow(): void {
     const win = new BrowserWindow({
@@ -28,6 +29,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
     registerIpcHandlers();
+    registerAiHandlers();
     createWindow();
 
     app.on('activate', () => {

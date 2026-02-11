@@ -2,7 +2,7 @@
  * IPC channel names and payload types.
  * Shared between main process and renderer.
  */
-import type { ObjectSummary, ObjectDetail, ObjectTreeNode, ObjectAction } from './types';
+import type { ObjectSummary, ObjectDetail, ObjectTreeNode, ObjectAction, AiConfig, AnalysisResult, TokenUsage } from './types';
 
 /** IPC channel names. */
 export const IPC = {
@@ -17,6 +17,11 @@ export const IPC = {
     EXPORT_MARKDOWN: 'object:export-markdown',
     SELECT_WORKSPACE: 'workspace:select',
     GET_WORKSPACE: 'workspace:get',
+    // AI channels
+    AI_GET_CONFIG: 'ai:get-config',
+    AI_SAVE_CONFIG: 'ai:save-config',
+    AI_ANALYZE: 'ai:analyze',
+    AI_GET_USAGE: 'ai:get-usage',
 } as const;
 
 /** Add object payload. */
@@ -54,4 +59,12 @@ export interface ObjectAPI {
     exportMarkdown(): Promise<boolean>;
     selectWorkspace(): Promise<string | null>;
     getWorkspace(): Promise<string | null>;
+}
+
+/** AI API exposed to renderer via contextBridge. */
+export interface AiAPI {
+    getAiConfig(): Promise<AiConfig | null>;
+    saveAiConfig(config: AiConfig): Promise<void>;
+    analyzeObjects(objectTree: ObjectTreeNode[]): Promise<AnalysisResult>;
+    getTokenUsage(): Promise<TokenUsage[]>;
 }

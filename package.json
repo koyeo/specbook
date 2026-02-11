@@ -5,7 +5,7 @@
   "description": "SpecBook — VS Code Extension & Web App",
   "scripts": {
     "dev": "pnpm --filter @specbook/web run dev",
-    "dev:desktop": "pnpm --filter @specbook/shared run build && pnpm --filter @specbook/desktop run dev",
+    "dev:desktop": "pnpm --filter @specbook/shared run build && pnpm --filter @specbook/ai run build && pnpm --filter @specbook/desktop run dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
     "clean": "pnpm -r run clean"

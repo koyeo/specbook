@@ -1,10 +1,13 @@
 /**
  * Preload script — contextBridge.
- * Exposes a typed ObjectAPI to the renderer process.
+ * Exposes a typed ObjectAPI and AiAPI to the renderer process.
  */
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '@specbook/shared';
-import type { ObjectAPI, AddObjectPayload, UpdateObjectPayload, MoveObjectPayload, ObjectAction } from '@specbook/shared';
+import type {
+    ObjectAPI, AddObjectPayload, UpdateObjectPayload, MoveObjectPayload, ObjectAction,
+    AiAPI, AiConfig, ObjectTreeNode,
+} from '@specbook/shared';
 
 const api: ObjectAPI = {
     loadObjects: () => ipcRenderer.invoke(IPC.LOAD_OBJECTS),
@@ -20,4 +23,13 @@ const api: ObjectAPI = {
     getWorkspace: () => ipcRenderer.invoke(IPC.GET_WORKSPACE),
 };
 
+const aiApi: AiAPI = {
+    getAiConfig: () => ipcRenderer.invoke(IPC.AI_GET_CONFIG),
+    saveAiConfig: (config: AiConfig) => ipcRenderer.invoke(IPC.AI_SAVE_CONFIG, config),
+    analyzeObjects: (objectTree: ObjectTreeNode[]) => ipcRenderer.invoke(IPC.AI_ANALYZE, objectTree),
+    getTokenUsage: () => ipcRenderer.invoke(IPC.AI_GET_USAGE),
+};
+
 contextBridge.exposeInMainWorld('api', api);
+contextBridge.exposeInMainWorld('aiApi', aiApi);
+

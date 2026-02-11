@@ -1,0 +1,19 @@
+{
+    "name": "@specbook/ai",
+    "version": "0.1.0",
+    "private": true,
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "tsc -b",
+        "clean": "rm -rf dist *.tsbuildinfo",
+        "dev": "tsc -b --watch"
+    },
+    "dependencies": {
+        "@anthropic-ai/sdk": "^0.39.0",
+        "@specbook/shared": "workspace:*"
+    },
+    "devDependencies": {
+        "typescript": "^5.7.3"
+    }
+}

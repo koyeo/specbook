@@ -4,9 +4,9 @@
  * Edit: title / parent / content / actions form, Save with confirmation.
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag, Switch, Tooltip } from 'antd';
-import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType } from '@specbook/shared';
+import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag, Switch, Tooltip, Collapse, Alert } from 'antd';
+import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined, RobotOutlined } from '@ant-design/icons';
+import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType, ObjectMapping, AnalysisResult } from '@specbook/shared';
 
 /** Action types — local copy to avoid CJS/ESM mismatch with @specbook/shared */
 const ACTION_TYPES: readonly ActionType[] = [
@@ -73,6 +73,8 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
     const [isState, setIsState] = useState(false);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [analyzing, setAnalyzing] = useState(false);
+    const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
 
     const parentOptions = useMemo(() => {
         if (!specId) return [];
@@ -136,6 +138,43 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
     };
 
     const enterEdit = () => setMode('edit');
+
+    // ─── AI Analyze ──────────────────────────────────
+
+    const findSubtree = (nodes: ObjectTreeNode[], id: string): ObjectTreeNode | null => {
+        for (const n of nodes) {
+            if (n.id === id) return n;
+            if (n.children) {
+                const found = findSubtree(n.children, id);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
+    const handleAnalyze = async () => {
+        if (!specId) return;
+        setAnalyzing(true);
+        setAnalysisResult(null);
+        try {
+            const subtree = findSubtree(specs, specId);
+            const tree = subtree ? [subtree] : [];
+            const result = await window.aiApi.analyzeObjects(tree);
+            setAnalysisResult(result);
+            message.success(`Analysis complete (${result.tokenUsage.inputTokens + result.tokenUsage.outputTokens} tokens)`);
+        } catch (err: any) {
+            message.error(err?.message || 'AI analysis failed');
+        } finally {
+            setAnalyzing(false);
+        }
+    };
+
+    const statusColor: Record<string, string> = {
+        implemented: 'green',
+        partial: 'orange',
+        not_found: 'red',
+        unknown: 'default',
+    };
 
     const handleCancel = () => {
         if (hasChanges) {
@@ -232,13 +271,23 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                         <Title level={4} style={{ margin: 0, flex: 1 }}>
                             {detail?.title || 'Untitled'}
                         </Title>
-                        <Button
-                            size="small"
-                            icon={<EditOutlined />}
-                            onClick={enterEdit}
-                        >
-                            Edit
-                        </Button>
+                        <Space size={8}>
+                            <Button
+                                size="small"
+                                icon={<RobotOutlined />}
+                                onClick={handleAnalyze}
+                                loading={analyzing}
+                            >
+                                AI Analyze
+                            </Button>
+                            <Button
+                                size="small"
+                                icon={<EditOutlined />}
+                                onClick={enterEdit}
+                            >
+                                Edit
+                            </Button>
+                        </Space>
                     </div>
 
                     {/* Meta info */}
@@ -304,6 +353,44 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
 
                     {/* Markdown body */}
                     <MarkdownPreview content={detail?.content || ''} />
+
+                    {/* AI Analysis results */}
+                    {analysisResult && (
+                        <div style={{ marginTop: 20 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <Text strong style={{ fontSize: 13 }}>🤖 AI Analysis</Text>
+                                <Text type="secondary" style={{ fontSize: 11 }}>
+                                    {analysisResult.tokenUsage.inputTokens} in / {analysisResult.tokenUsage.outputTokens} out tokens
+                                </Text>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {analysisResult.mappings.map((m) => (
+                                    <div key={m.objectId} style={{
+                                        border: `1px solid ${token.colorBorderSecondary}`,
+                                        borderRadius: token.borderRadius,
+                                        padding: '10px 14px',
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                            <Tag color={statusColor[m.status] || 'default'}>{m.status.toUpperCase()}</Tag>
+                                            <Text strong style={{ fontSize: 13 }}>{m.objectTitle}</Text>
+                                        </div>
+                                        <Text style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>{m.summary}</Text>
+                                        {m.relatedFiles.length > 0 && (
+                                            <div style={{ fontSize: 12, color: token.colorTextSecondary }}>
+                                                {m.relatedFiles.map((f, i) => (
+                                                    <div key={i} style={{ marginLeft: 8, marginBottom: 2 }}>
+                                                        📄 <Text code style={{ fontSize: 11 }}>{f.filePath}</Text>
+                                                        {f.lineRange && <Text type="secondary" style={{ fontSize: 11 }}> L{f.lineRange.start}-{f.lineRange.end}</Text>}
+                                                        {f.description && <Text type="secondary" style={{ fontSize: 11 }}> — {f.description}</Text>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </>
         );

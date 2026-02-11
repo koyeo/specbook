@@ -19,6 +19,9 @@
     "references": [
         {
             "path": "./packages/shared"
+        },
+        {
+            "path": "./packages/ai"
         }
     ],
     "exclude": [

@@ -11,6 +11,9 @@ export default defineConfig({
                 input: {
                     index: resolve(__dirname, 'src/main/index.ts'),
                 },
+                output: {
+                    format: 'cjs',
+                },
             },
         },
     },

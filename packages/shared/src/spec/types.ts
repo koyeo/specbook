@@ -80,3 +80,42 @@ export const SPEC_ACTION_FILE_EXT = '.actions.json';
 
 /** Color for the "Action Entry" indicator (dot + tag). */
 export const ACTION_ENTRY_COLOR = '#1677ff';
+
+// ─── AI Types ────────────────────────────────────────
+
+/** AI provider configuration. */
+export interface AiConfig {
+    apiKey: string;
+    baseUrl: string;          // default: https://api.anthropic.com
+    model: string;            // default: claude-sonnet-4-20250514
+}
+
+/** Token usage for a single API call. */
+export interface TokenUsage {
+    inputTokens: number;
+    outputTokens: number;
+    model: string;
+    timestamp: string;        // ISO 8601
+}
+
+/** A file related to an object mapping. */
+export interface RelatedFile {
+    filePath: string;
+    description: string;
+    lineRange?: { start: number; end: number };
+}
+
+/** Object mapping result returned by AI. */
+export interface ObjectMapping {
+    objectId: string;
+    objectTitle: string;
+    status: 'implemented' | 'partial' | 'not_found' | 'unknown';
+    summary: string;
+    relatedFiles: RelatedFile[];
+}
+
+/** Full analysis result containing mappings + token usage. */
+export interface AnalysisResult {
+    mappings: ObjectMapping[];
+    tokenUsage: TokenUsage;
+}

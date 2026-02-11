@@ -1,10 +1,14 @@
 /**
- * App shell — antd ConfigProvider + layout + theme toggle.
+ * App shell — antd ConfigProvider + layout + theme toggle + tabs.
  */
-import React, { useState, useEffect } from 'react';
-import { ConfigProvider, theme, Layout, Button, Tooltip } from 'antd';
-import { SunOutlined, MoonOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ConfigProvider, theme, Layout, Button, Tooltip, Tabs, Typography, Space } from 'antd';
+import { SunOutlined, MoonOutlined, SettingOutlined, AppstoreOutlined, RobotOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import { ObjectPage } from './containers/SpecPage';
+import { AiAnalysisPage } from './containers/AiAnalysisPage';
+import { AiSettingsModal } from './components/AiSettingsModal';
+
+const { Text, Title } = Typography;
 
 const { Content } = Layout;
 
@@ -19,6 +23,18 @@ const App: React.FC = () => {
         return (localStorage.getItem('specbook-theme') as ThemeMode) || 'system';
     });
     const [systemDark, setSystemDark] = useState(getSystemDark);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [workspace, setWorkspace] = useState<string | null>(null);
+
+    // Load saved workspace on mount
+    useEffect(() => {
+        window.api.getWorkspace().then(ws => setWorkspace(ws));
+    }, []);
+
+    const handleSelectWorkspace = useCallback(async () => {
+        const ws = await window.api.selectWorkspace();
+        if (ws) setWorkspace(ws);
+    }, []);
 
     // Listen for system theme changes
     useEffect(() => {
@@ -47,6 +63,19 @@ const App: React.FC = () => {
     const themeLabel = mode === 'system' ? 'System' : mode === 'light' ? 'Light' : 'Dark';
     const themeIcon = isDark ? <SunOutlined /> : <MoonOutlined />;
 
+    const tabItems = [
+        {
+            key: 'objects',
+            label: <span><AppstoreOutlined /> Objects</span>,
+            children: <ObjectPage workspace={workspace} />,
+        },
+        {
+            key: 'ai',
+            label: <span><RobotOutlined /> AI Analysis</span>,
+            children: <AiAnalysisPage />,
+        },
+    ];
+
     return (
         <ConfigProvider
             theme={{
@@ -59,8 +88,17 @@ const App: React.FC = () => {
             }}
         >
             <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
-                {/* Theme toggle — top right */}
-                <div style={{ position: 'fixed', top: 8, right: 12, zIndex: 100 }}>
+                {/* Theme toggle + Settings — top right */}
+                <div style={{ position: 'fixed', top: 8, right: 12, zIndex: 100, display: 'flex', gap: 4 }}>
+                    <Tooltip title="AI Settings">
+                        <Button
+                            size="small"
+                            type="text"
+                            icon={<SettingOutlined />}
+                            onClick={() => setSettingsOpen(true)}
+                            style={{ fontSize: 14, opacity: 0.6 }}
+                        />
+                    </Tooltip>
                     <Tooltip title={`Theme: ${themeLabel}`}>
                         <Button
                             size="small"
@@ -71,8 +109,32 @@ const App: React.FC = () => {
                         />
                     </Tooltip>
                 </div>
-                <Content style={{ padding: '20px 24px' }}>
-                    <ObjectPage />
+                <AiSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+                <Content style={{ padding: '12px 24px 20px' }}>
+                    {!workspace ? (
+                        /* No workspace — full-screen prompt */
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 80px)', gap: 16 }}>
+                            <Title level={3}>📝 SpecBook</Title>
+                            <Text type="secondary">Select a workspace folder to get started</Text>
+                            <Button type="primary" size="large" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>Open Workspace</Button>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Global workspace bar */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                <Space size={8}>
+                                    <FolderOpenOutlined style={{ color: '#1677ff' }} />
+                                    <Text style={{ fontSize: 12 }}>{workspace}</Text>
+                                </Space>
+                                <Button size="small" onClick={handleSelectWorkspace}>Change Workspace</Button>
+                            </div>
+                            <Tabs
+                                defaultActiveKey="objects"
+                                items={tabItems}
+                                size="small"
+                            />
+                        </>
+                    )}
                 </Content>
             </Layout>
         </ConfigProvider>
@@ -80,3 +142,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

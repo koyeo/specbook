@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, theme } from 'antd';
-import { FolderOpenOutlined, ExportOutlined } from '@ant-design/icons';
+import { ExportOutlined } from '@ant-design/icons';
 import { ObjectTable } from '../components/SpecTable';
 import { ObjectDetailPanel } from '../components/SpecDetailPanel';
 import { useObjects } from '../hooks/useSpecs';
@@ -12,11 +12,15 @@ import { useObjects } from '../hooks/useSpecs';
 const { Title, Text } = Typography;
 const { useToken } = theme;
 
-export const ObjectPage: React.FC = () => {
+interface ObjectPageProps {
+    workspace: string | null;
+}
+
+export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     const { token } = useToken();
     const {
-        objects, loading, workspace, loadObjects,
-        addObject, deleteObject, moveObject, selectWorkspace,
+        objects, loading, loadObjects,
+        addObject, deleteObject, moveObject,
     } = useObjects();
 
     const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
@@ -73,7 +77,6 @@ export const ObjectPage: React.FC = () => {
         } catch (err: any) { message.error(err?.message || 'Batch move failed'); }
     };
 
-    const handleSelectWorkspace = async () => { await selectWorkspace(); };
 
     const handleExport = async () => {
         try {
@@ -86,27 +89,16 @@ export const ObjectPage: React.FC = () => {
 
     const modalTitle = addMode === 'child' ? 'Add Child Object' : addMode === 'sibling' ? 'Add Sibling Object' : 'New Object';
 
-    // No workspace
-    if (!workspace) {
-        return (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 16 }}>
-                <Title level={3}>📝 SpecBook</Title>
-                <Text type="secondary">Select a workspace folder to get started</Text>
-                <Button type="primary" size="large" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>Open Workspace</Button>
-            </div>
-        );
-    }
+    if (!workspace) return null;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
             {/* Top bar */}
             <div style={{ flexShrink: 0, marginBottom: 8 }}>
                 <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
                     <Title level={4} style={{ margin: 0 }}>📝 Objects</Title>
                     <Space size={8}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>{workspace}</Text>
                         <Button size="small" icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
-                        <Button size="small" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>Change</Button>
                     </Space>
                 </Space>
                 <Divider style={{ margin: '8px 0' }} />

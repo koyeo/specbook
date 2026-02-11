@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "specs": [
+    {
+      "id": "019c4d29-46fb-748d-8dd3-e0cd47a3223e",
+      "title": "Objects Tab",
+      "parentId": null,
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-11T14:44:36.731Z",
+      "updatedAt": "2026-02-11T14:45:10.331Z"
+    },
+    {
+      "id": "019c4d29-aa99-76df-be66-5ee69c3cb315",
+      "title": "Objects Tree",
+      "parentId": "019c4d29-46fb-748d-8dd3-e0cd47a3223e",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-11T14:45:02.233Z",
+      "updatedAt": "2026-02-11T14:45:02.233Z"
+    },
+    {
+      "id": "019c4d29-f2ed-71df-9e61-2f24045670ed",
+      "title": "Object Detail",
+      "parentId": "019c4d29-46fb-748d-8dd3-e0cd47a3223e",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-11T14:45:20.749Z",
+      "updatedAt": "2026-02-11T14:45:20.749Z"
+    }
+  ]
+}
