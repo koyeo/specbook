@@ -2,10 +2,10 @@
  * Application layer — IPC invoke wrappers as React hooks.
  */
 import { useState, useEffect, useCallback } from 'react';
-import type { SpecTreeNode, AddSpecPayload, UpdateSpecPayload, MoveSpecPayload } from '@specbook/shared';
+import type { ObjectTreeNode, AddObjectPayload, UpdateObjectPayload, MoveObjectPayload } from '@specbook/shared';
 
-export function useSpecs() {
-    const [specs, setSpecs] = useState<SpecTreeNode[]>([]);
+export function useObjects() {
+    const [objects, setObjects] = useState<ObjectTreeNode[]>([]);
     const [loading, setLoading] = useState(false);
     const [workspace, setWorkspace] = useState<string | null>(null);
 
@@ -15,39 +15,39 @@ export function useSpecs() {
         return ws;
     }, []);
 
-    const loadSpecs = useCallback(async () => {
+    const loadObjects = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await window.api.loadSpecs();
-            setSpecs(data);
+            const data = await window.api.loadObjects();
+            setObjects(data);
         } catch (err) {
-            console.error('Failed to load specs:', err);
+            console.error('Failed to load objects:', err);
         } finally {
             setLoading(false);
         }
     }, []);
 
-    const addSpec = useCallback(async (payload: AddSpecPayload) => {
-        const detail = await window.api.addSpec(payload);
-        await loadSpecs();
+    const addObject = useCallback(async (payload: AddObjectPayload) => {
+        const detail = await window.api.addObject(payload);
+        await loadObjects();
         return detail;
-    }, [loadSpecs]);
+    }, [loadObjects]);
 
-    const updateSpec = useCallback(async (payload: UpdateSpecPayload) => {
-        const detail = await window.api.updateSpec(payload);
-        await loadSpecs();
+    const updateObject = useCallback(async (payload: UpdateObjectPayload) => {
+        const detail = await window.api.updateObject(payload);
+        await loadObjects();
         return detail;
-    }, [loadSpecs]);
+    }, [loadObjects]);
 
-    const deleteSpec = useCallback(async (id: string) => {
-        await window.api.deleteSpec(id);
-        await loadSpecs();
-    }, [loadSpecs]);
+    const deleteObject = useCallback(async (id: string) => {
+        await window.api.deleteObject(id);
+        await loadObjects();
+    }, [loadObjects]);
 
-    const moveSpec = useCallback(async (payload: MoveSpecPayload) => {
-        await window.api.moveSpec(payload);
-        await loadSpecs();
-    }, [loadSpecs]);
+    const moveObject = useCallback(async (payload: MoveObjectPayload) => {
+        await window.api.moveObject(payload);
+        await loadObjects();
+    }, [loadObjects]);
 
     const selectWorkspace = useCallback(async () => {
         const ws = await window.api.selectWorkspace();
@@ -55,10 +55,10 @@ export function useSpecs() {
             setWorkspace(ws);
             setLoading(true);
             try {
-                const data = await window.api.loadSpecs();
-                setSpecs(data);
+                const data = await window.api.loadObjects();
+                setObjects(data);
             } catch {
-                setSpecs([]);
+                setObjects([]);
             } finally {
                 setLoading(false);
             }
@@ -71,14 +71,14 @@ export function useSpecs() {
     }, [refreshWorkspace]);
 
     return {
-        specs,
+        objects,
         loading,
         workspace,
-        loadSpecs,
-        addSpec,
-        updateSpec,
-        deleteSpec,
-        moveSpec,
+        loadObjects,
+        addObject,
+        updateObject,
+        deleteObject,
+        moveObject,
         selectWorkspace,
     };
 }

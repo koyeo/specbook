@@ -1,5 +1,5 @@
 /**
- * Infrastructure layer — Spec storage with JSON index + Markdown files.
+ * Infrastructure layer — Object storage with JSON index + Markdown files.
  * Index: .spec/specs.json (all metadata)
  * Content: .spec/specs/{id}.md (pure body text, created on-demand)
  */
@@ -13,7 +13,7 @@ import {
     SPEC_FILE_EXT,
     SPEC_ACTION_FILE_EXT,
 } from '@specbook/shared';
-import type { SpecIndexEntry, SpecSummary, SpecDetail, SpecIndex, SpecTreeNode, SpecAction } from '@specbook/shared';
+import type { ObjectIndexEntry, ObjectSummary, ObjectDetail, ObjectIndex, ObjectTreeNode, ObjectAction } from '@specbook/shared';
 
 function specDir(workspace: string): string {
     return path.join(workspace, SPEC_DIR);
@@ -52,16 +52,16 @@ function computeContentHash(filePath: string): string | null {
 
 // ─── Index operations ───────────────────────────────
 
-export function readIndex(workspace: string): SpecIndex {
+export function readIndex(workspace: string): ObjectIndex {
     const filePath = indexPath(workspace);
     if (!fs.existsSync(filePath)) {
         return { version: '1.0', specs: [] };
     }
     const raw = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(raw) as SpecIndex;
+    return JSON.parse(raw) as ObjectIndex;
 }
 
-export function writeIndex(workspace: string, index: SpecIndex): void {
+export function writeIndex(workspace: string, index: ObjectIndex): void {
     ensureDirs(workspace);
     fs.writeFileSync(indexPath(workspace), JSON.stringify(index, null, 2) + '\n', 'utf-8');
 }
@@ -91,7 +91,7 @@ function writeContent(workspace: string, id: string, content: string): void {
     fs.writeFileSync(filePath, content, 'utf-8');
 }
 
-export function deleteSpecFile(workspace: string, id: string): void {
+export function deleteObjectFile(workspace: string, id: string): void {
     const filePath = specFilePath(workspace, id);
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
@@ -104,18 +104,18 @@ function actionsFilePath(workspace: string, id: string): string {
     return path.join(specsSubdir(workspace), `${id}${SPEC_ACTION_FILE_EXT}`);
 }
 
-export function readActions(workspace: string, id: string): SpecAction[] {
+export function readActions(workspace: string, id: string): ObjectAction[] {
     const filePath = actionsFilePath(workspace, id);
     if (!fs.existsSync(filePath)) return [];
     try {
         const raw = fs.readFileSync(filePath, 'utf-8');
-        return JSON.parse(raw) as SpecAction[];
+        return JSON.parse(raw) as ObjectAction[];
     } catch {
         return [];
     }
 }
 
-export function writeActions(workspace: string, id: string, actions: SpecAction[]): void {
+export function writeActions(workspace: string, id: string, actions: ObjectAction[]): void {
     ensureDirs(workspace);
     const filePath = actionsFilePath(workspace, id);
     if (actions.length === 0) {
@@ -130,9 +130,9 @@ export function deleteActionsFile(workspace: string, id: string): void {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 }
 
-// ─── Spec detail assembly ───────────────────────────
+// ─── Object detail assembly ─────────────────────────
 
-export function readSpecDetail(workspace: string, id: string): SpecDetail | null {
+export function readObjectDetail(workspace: string, id: string): ObjectDetail | null {
     const index = readIndex(workspace);
     const entry = index.specs.find(s => s.id === id);
     if (!entry) return null;
@@ -155,7 +155,7 @@ export function readSpecDetail(workspace: string, id: string): SpecDetail | null
 
 // ─── Index entry builder ────────────────────────────
 
-function buildIndexEntry(workspace: string, detail: SpecDetail): SpecIndexEntry {
+function buildIndexEntry(workspace: string, detail: ObjectDetail): ObjectIndexEntry {
     const filePath = specFilePath(workspace, detail.id);
     return {
         id: detail.id,
@@ -171,15 +171,15 @@ function buildIndexEntry(workspace: string, detail: SpecDetail): SpecIndexEntry 
 
 // ─── Tree builder ───────────────────────────────────
 
-function buildTree(flatSpecs: SpecSummary[]): SpecTreeNode[] {
-    const map = new Map<string, SpecTreeNode>();
-    const roots: SpecTreeNode[] = [];
+function buildTree(flatObjects: ObjectSummary[]): ObjectTreeNode[] {
+    const map = new Map<string, ObjectTreeNode>();
+    const roots: ObjectTreeNode[] = [];
 
-    for (const s of flatSpecs) {
+    for (const s of flatObjects) {
         map.set(s.id, { ...s, children: [] });
     }
 
-    for (const s of flatSpecs) {
+    for (const s of flatObjects) {
         const node = map.get(s.id)!;
         if (s.parentId && map.has(s.parentId)) {
             map.get(s.parentId)!.children!.push(node);
@@ -199,9 +199,9 @@ function buildTree(flatSpecs: SpecSummary[]): SpecTreeNode[] {
 
 // ─── Composite operations ───────────────────────────
 
-export function loadAllSpecs(workspace: string): SpecTreeNode[] {
+export function loadAllObjects(workspace: string): ObjectTreeNode[] {
     const index = readIndex(workspace);
-    const flatSpecs: SpecSummary[] = index.specs.map(entry => {
+    const flatObjects: ObjectSummary[] = index.specs.map(entry => {
         const hasContent = computeContentHash(specFilePath(workspace, entry.id)) !== null;
         const hasActions = readActions(workspace, entry.id).length > 0;
         return {
@@ -215,10 +215,10 @@ export function loadAllSpecs(workspace: string): SpecTreeNode[] {
             createdAt: entry.createdAt,
         };
     });
-    return buildTree(flatSpecs);
+    return buildTree(flatObjects);
 }
 
-export function addSpec(workspace: string, detail: SpecDetail): void {
+export function addObject(workspace: string, detail: ObjectDetail): void {
     // Write .md file only if there's content
     writeContent(workspace, detail.id, detail.content);
 
@@ -227,7 +227,7 @@ export function addSpec(workspace: string, detail: SpecDetail): void {
     writeIndex(workspace, index);
 }
 
-export function updateSpec(workspace: string, detail: SpecDetail): void {
+export function updateObject(workspace: string, detail: ObjectDetail): void {
     // Write or remove .md file based on content
     writeContent(workspace, detail.id, detail.content);
 
@@ -239,8 +239,8 @@ export function updateSpec(workspace: string, detail: SpecDetail): void {
     writeIndex(workspace, index);
 }
 
-/** Delete spec and all its descendants recursively. */
-export function deleteSpec(workspace: string, id: string): void {
+/** Delete object and all its descendants recursively. */
+export function deleteObject(workspace: string, id: string): void {
     const index = readIndex(workspace);
 
     const idsToDelete = new Set<string>();
@@ -258,12 +258,12 @@ export function deleteSpec(workspace: string, id: string): void {
     writeIndex(workspace, index);
 
     for (const delId of idsToDelete) {
-        deleteSpecFile(workspace, delId);
+        deleteObjectFile(workspace, delId);
     }
 }
 
-/** Move spec to a new parent (or root if newParentId is null). */
-export function moveSpec(workspace: string, id: string, newParentId: string | null): void {
+/** Move object to a new parent (or root if newParentId is null). */
+export function moveObject(workspace: string, id: string, newParentId: string | null): void {
     const index = readIndex(workspace);
 
     // Prevent circular
@@ -275,12 +275,12 @@ export function moveSpec(workspace: string, id: string, newParentId: string | nu
             return isDescendant(entry.parentId, ancestorId);
         };
         if (newParentId === id || isDescendant(newParentId, id)) {
-            throw new Error('Cannot move a spec into its own descendant.');
+            throw new Error('Cannot move an object into its own descendant.');
         }
     }
 
     const entry = index.specs.find(s => s.id === id);
-    if (!entry) throw new Error(`Spec ${id} not found.`);
+    if (!entry) throw new Error(`Object ${id} not found.`);
     entry.parentId = newParentId;
     entry.updatedAt = new Date().toISOString();
 

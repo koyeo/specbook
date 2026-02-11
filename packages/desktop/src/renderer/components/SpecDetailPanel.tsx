@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag, Switch, Tooltip } from 'antd';
 import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { SpecDetail, SpecTreeNode, UpdateSpecPayload, SpecAction, ActionType } from '@specbook/shared';
+import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType } from '@specbook/shared';
 
 /** Action types — local copy to avoid CJS/ESM mismatch with @specbook/shared */
 const ACTION_TYPES: readonly ActionType[] = [
@@ -22,13 +22,13 @@ const ACTION_ENTRY_COLOR = '#1677ff';
 
 type PanelMode = 'preview' | 'edit';
 
-interface SpecDetailPanelProps {
+interface ObjectDetailPanelProps {
     specId: string | null;
-    specs: SpecTreeNode[];
+    specs: ObjectTreeNode[];
     onSaved: () => void;
 }
 
-function flattenTree(nodes: SpecTreeNode[], depth = 0): { id: string; label: string }[] {
+function flattenTree(nodes: ObjectTreeNode[], depth = 0): { id: string; label: string }[] {
     const r: { id: string; label: string }[] = [];
     for (const n of nodes) {
         r.push({ id: n.id, label: '\u00A0\u00A0'.repeat(depth) + n.title });
@@ -37,12 +37,12 @@ function flattenTree(nodes: SpecTreeNode[], depth = 0): { id: string; label: str
     return r;
 }
 
-function collectDescendantIds(nodes: SpecTreeNode[], id: string): Set<string> {
+function collectDescendantIds(nodes: ObjectTreeNode[], id: string): Set<string> {
     const result = new Set<string>();
-    const findAndCollect = (list: SpecTreeNode[]): boolean => {
+    const findAndCollect = (list: ObjectTreeNode[]): boolean => {
         for (const n of list) {
             if (n.id === id) {
-                const walk = (children: SpecTreeNode[]) => {
+                const walk = (children: ObjectTreeNode[]) => {
                     for (const c of children) { result.add(c.id); if (c.children) walk(c.children); }
                 };
                 if (n.children) walk(n.children);
@@ -58,18 +58,18 @@ function collectDescendantIds(nodes: SpecTreeNode[], id: string): Set<string> {
 
 const actionTypeOptions = ACTION_TYPES.map(t => ({ value: t, label: t }));
 
-export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
+export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
     specId, specs, onSaved,
 }) => {
     const { token } = useToken();
     const [modal, contextHolder] = Modal.useModal();
     const [mode, setMode] = useState<PanelMode>('preview');
-    const [detail, setDetail] = useState<SpecDetail | null>(null);
+    const [detail, setDetail] = useState<ObjectDetail | null>(null);
     const [title, setTitle] = useState('');
     const [parentId, setParentId] = useState<string | null>(null);
     const [content, setContent] = useState('');
-    const [actions, setActions] = useState<SpecAction[]>([]);
-    const [savedActions, setSavedActions] = useState<SpecAction[]>([]);
+    const [actions, setActions] = useState<ObjectAction[]>([]);
+    const [savedActions, setSavedActions] = useState<ObjectAction[]>([]);
     const [isState, setIsState] = useState(false);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -86,7 +86,7 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
             setMode('preview');
             setLoading(true);
             Promise.all([
-                window.api.getSpec(specId),
+                window.api.getObject(specId),
                 window.api.loadActions(specId),
             ])
                 .then(([d, acts]) => {
@@ -123,7 +123,7 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
         setActions(prev => [...prev, { action: 'Click' as ActionType, stateChange: '' }]);
     };
 
-    const updateAction = (index: number, field: keyof SpecAction, value: string) => {
+    const updateAction = (index: number, field: keyof ObjectAction, value: string) => {
         setActions(prev => {
             const copy = [...prev];
             copy[index] = { ...copy[index], [field]: value };
@@ -164,17 +164,17 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
         if (!specId || !detail) return;
         setSaving(true);
         try {
-            const payload: UpdateSpecPayload = { id: specId };
+            const payload: UpdateObjectPayload = { id: specId };
             if (title !== detail.title) payload.title = title;
             if (content !== detail.content) payload.content = content;
             if (isState !== (detail.isState ?? false)) payload.isState = isState;
 
             if (payload.title !== undefined || payload.content !== undefined || payload.isState !== undefined) {
-                await window.api.updateSpec(payload);
+                await window.api.updateObject(payload);
             }
 
             if (parentId !== (detail.parentId || null)) {
-                await window.api.moveSpec({ id: specId, newParentId: parentId });
+                await window.api.moveObject({ id: specId, newParentId: parentId });
             }
 
             if (actionsChanged) {
@@ -183,7 +183,7 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
             }
 
             message.success('Saved');
-            const updated = await window.api.getSpec(specId);
+            const updated = await window.api.getObject(specId);
             setDetail(updated);
             setTitle(updated?.title || '');
             setParentId(updated?.parentId || null);

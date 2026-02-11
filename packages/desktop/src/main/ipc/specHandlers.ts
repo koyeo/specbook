@@ -1,6 +1,6 @@
 /**
  * IPC handlers — Application layer.
- * Orchestrates Domain (validation) + Infrastructure (specStore).
+ * Orchestrates Domain (validation) + Infrastructure (objectStore).
  */
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 import {
@@ -9,12 +9,12 @@ import {
     generateId,
 } from '@specbook/shared';
 import type {
-    AddSpecPayload,
-    UpdateSpecPayload,
-    MoveSpecPayload,
-    SpecDetail,
+    AddObjectPayload,
+    UpdateObjectPayload,
+    MoveObjectPayload,
+    ObjectDetail,
 } from '@specbook/shared';
-import * as specStore from '../infrastructure/specStore';
+import * as objectStore from '../infrastructure/specStore';
 import { getLastWorkspace, saveLastWorkspace } from '../infrastructure/appConfig';
 
 let currentWorkspace: string | null = null;
@@ -59,14 +59,14 @@ export function registerIpcHandlers(): void {
         return currentWorkspace;
     });
 
-    // ─── Specs CRUD ─────────────────────────────────
+    // ─── Objects CRUD ───────────────────────────────
 
-    ipcMain.handle(IPC.LOAD_SPECS, () => {
+    ipcMain.handle(IPC.LOAD_OBJECTS, () => {
         const ws = requireWorkspace();
-        return specStore.loadAllSpecs(ws);
+        return objectStore.loadAllObjects(ws);
     });
 
-    ipcMain.handle(IPC.ADD_SPEC, (_event, payload: AddSpecPayload) => {
+    ipcMain.handle(IPC.ADD_OBJECT, (_event, payload: AddObjectPayload) => {
         const ws = requireWorkspace();
 
         // Domain: validate
@@ -79,7 +79,7 @@ export function registerIpcHandlers(): void {
         const now = new Date().toISOString();
         const id = generateId();
 
-        const detail: SpecDetail = {
+        const detail: ObjectDetail = {
             id,
             parentId: payload.parentId ?? null,
             title: payload.title.trim(),
@@ -92,21 +92,21 @@ export function registerIpcHandlers(): void {
             updatedAt: now,
         };
 
-        // Infrastructure: persist (specStore handles index entry building)
-        specStore.addSpec(ws, detail);
+        // Infrastructure: persist
+        objectStore.addObject(ws, detail);
 
         return detail;
     });
 
-    ipcMain.handle(IPC.UPDATE_SPEC, (_event, payload: UpdateSpecPayload) => {
+    ipcMain.handle(IPC.UPDATE_OBJECT, (_event, payload: UpdateObjectPayload) => {
         const ws = requireWorkspace();
 
-        const existing = specStore.readSpecDetail(ws, payload.id);
+        const existing = objectStore.readObjectDetail(ws, payload.id);
         if (!existing) {
-            throw new Error(`Spec ${payload.id} not found.`);
+            throw new Error(`Object ${payload.id} not found.`);
         }
 
-        const updated: SpecDetail = {
+        const updated: ObjectDetail = {
             ...existing,
             title: payload.title?.trim() ?? existing.title,
             content: payload.content?.trim() ?? existing.content,
@@ -116,43 +116,43 @@ export function registerIpcHandlers(): void {
         };
         updated.hasContent = updated.content.length > 0;
 
-        // Infrastructure: persist (specStore handles index entry building)
-        specStore.updateSpec(ws, updated);
+        // Infrastructure: persist
+        objectStore.updateObject(ws, updated);
 
         return updated;
     });
 
-    ipcMain.handle(IPC.DELETE_SPEC, (_event, id: string) => {
+    ipcMain.handle(IPC.DELETE_OBJECT, (_event, id: string) => {
         const ws = requireWorkspace();
-        specStore.deleteSpec(ws, id);
-        specStore.deleteActionsFile(ws, id);
+        objectStore.deleteObject(ws, id);
+        objectStore.deleteActionsFile(ws, id);
     });
 
-    ipcMain.handle(IPC.GET_SPEC, (_event, id: string) => {
+    ipcMain.handle(IPC.GET_OBJECT, (_event, id: string) => {
         const ws = requireWorkspace();
-        return specStore.readSpecDetail(ws, id);
+        return objectStore.readObjectDetail(ws, id);
     });
 
-    ipcMain.handle(IPC.MOVE_SPEC, (_event, payload: MoveSpecPayload) => {
+    ipcMain.handle(IPC.MOVE_OBJECT, (_event, payload: MoveObjectPayload) => {
         const ws = requireWorkspace();
-        specStore.moveSpec(ws, payload.id, payload.newParentId);
+        objectStore.moveObject(ws, payload.id, payload.newParentId);
     });
 
     // ─── Actions ─────────────────────────────────────
 
     ipcMain.handle(IPC.LOAD_ACTIONS, (_event, id: string) => {
         const ws = requireWorkspace();
-        return specStore.readActions(ws, id);
+        return objectStore.readActions(ws, id);
     });
 
-    ipcMain.handle(IPC.SAVE_ACTIONS, (_event, id: string, actions: import('@specbook/shared').SpecAction[]) => {
+    ipcMain.handle(IPC.SAVE_ACTIONS, (_event, id: string, actions: import('@specbook/shared').ObjectAction[]) => {
         const ws = requireWorkspace();
-        specStore.writeActions(ws, id, actions);
+        objectStore.writeActions(ws, id, actions);
     });
 
     ipcMain.handle(IPC.EXPORT_MARKDOWN, async () => {
         const ws = requireWorkspace();
-        const tree = specStore.loadAllSpecs(ws);
+        const tree = objectStore.loadAllObjects(ws);
 
         // Build numbered outline from tree
         const lines: string[] = [];
@@ -173,8 +173,8 @@ export function registerIpcHandlers(): void {
         // Save dialog
         const win = BrowserWindow.getFocusedWindow();
         const result = await dialog.showSaveDialog(win!, {
-            title: 'Export Specs as Markdown',
-            defaultPath: 'specs.md',
+            title: 'Export Objects as Markdown',
+            defaultPath: 'objects.md',
             filters: [{ name: 'Markdown', extensions: ['md'] }],
         });
 
@@ -185,4 +185,3 @@ export function registerIpcHandlers(): void {
         return true;
     });
 }
-

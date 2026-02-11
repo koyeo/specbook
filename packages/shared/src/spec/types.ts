@@ -1,8 +1,8 @@
 /**
- * Spec domain types.
+ * Object domain types.
  */
 
-/** Available action types for spec actions. */
+/** Available action types for object actions. */
 export const ACTION_TYPES = [
     'Click',
     'Double Click',
@@ -16,14 +16,14 @@ export const ACTION_TYPES = [
 
 export type ActionType = typeof ACTION_TYPES[number];
 
-/** A single spec action — describes a user interaction and the resulting state change. */
-export interface SpecAction {
+/** A single object action — describes a user interaction and the resulting state change. */
+export interface ObjectAction {
     action: ActionType;
     stateChange: string;
 }
 
 /** Index entry — stored in specs.json */
-export interface SpecIndexEntry {
+export interface ObjectIndexEntry {
     id: string;
     title: string;
     parentId: string | null;
@@ -35,7 +35,7 @@ export interface SpecIndexEntry {
 }
 
 /** In-memory summary — assembled from index + markdown files */
-export interface SpecSummary {
+export interface ObjectSummary {
     id: string;
     parentId: string | null;
     title: string;
@@ -46,21 +46,21 @@ export interface SpecSummary {
     createdAt: string;
 }
 
-/** Full spec detail — specs/{id}.md contains only body content */
-export interface SpecDetail extends SpecSummary {
+/** Full object detail — specs/{id}.md contains only body content */
+export interface ObjectDetail extends ObjectSummary {
     content: string;
     updatedAt: string;
 }
 
-/** Tree node — SpecSummary with children for UI rendering */
-export interface SpecTreeNode extends SpecSummary {
-    children?: SpecTreeNode[];
+/** Tree node — ObjectSummary with children for UI rendering */
+export interface ObjectTreeNode extends ObjectSummary {
+    children?: ObjectTreeNode[];
 }
 
 /** Root index file structure (.spec/specs.json) */
-export interface SpecIndex {
+export interface ObjectIndex {
     version: string;
-    specs: SpecIndexEntry[];
+    specs: ObjectIndexEntry[];
 }
 
 /** Directory name for spec storage. */

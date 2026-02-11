@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, theme, Layout, Button, Tooltip } from 'antd';
 import { SunOutlined, MoonOutlined } from '@ant-design/icons';
-import { SpecPage } from './containers/SpecPage';
+import { ObjectPage } from './containers/SpecPage';
 
 const { Content } = Layout;
 
@@ -72,7 +72,7 @@ const App: React.FC = () => {
                     </Tooltip>
                 </div>
                 <Content style={{ padding: '20px 24px' }}>
-                    <SpecPage />
+                    <ObjectPage />
                 </Content>
             </Layout>
         </ConfigProvider>

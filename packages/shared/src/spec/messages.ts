@@ -2,32 +2,32 @@
  * IPC channel names and payload types.
  * Shared between main process and renderer.
  */
-import type { SpecSummary, SpecDetail, SpecTreeNode, SpecAction } from './types';
+import type { ObjectSummary, ObjectDetail, ObjectTreeNode, ObjectAction } from './types';
 
 /** IPC channel names. */
 export const IPC = {
-    LOAD_SPECS: 'spec:load-all',
-    ADD_SPEC: 'spec:add',
-    UPDATE_SPEC: 'spec:update',
-    DELETE_SPEC: 'spec:delete',
-    GET_SPEC: 'spec:get',
-    MOVE_SPEC: 'spec:move',
-    LOAD_ACTIONS: 'spec:load-actions',
-    SAVE_ACTIONS: 'spec:save-actions',
-    EXPORT_MARKDOWN: 'spec:export-markdown',
+    LOAD_OBJECTS: 'object:load-all',
+    ADD_OBJECT: 'object:add',
+    UPDATE_OBJECT: 'object:update',
+    DELETE_OBJECT: 'object:delete',
+    GET_OBJECT: 'object:get',
+    MOVE_OBJECT: 'object:move',
+    LOAD_ACTIONS: 'object:load-actions',
+    SAVE_ACTIONS: 'object:save-actions',
+    EXPORT_MARKDOWN: 'object:export-markdown',
     SELECT_WORKSPACE: 'workspace:select',
     GET_WORKSPACE: 'workspace:get',
 } as const;
 
-/** Add spec payload. */
-export interface AddSpecPayload {
+/** Add object payload. */
+export interface AddObjectPayload {
     title: string;
     parentId?: string | null;
     content?: string;
 }
 
-/** Update spec payload. */
-export interface UpdateSpecPayload {
+/** Update object payload. */
+export interface UpdateObjectPayload {
     id: string;
     title?: string;
     content?: string;
@@ -35,22 +35,22 @@ export interface UpdateSpecPayload {
     isState?: boolean;
 }
 
-/** Move spec payload — change parent. */
-export interface MoveSpecPayload {
+/** Move object payload — change parent. */
+export interface MoveObjectPayload {
     id: string;
     newParentId: string | null;
 }
 
 /** API exposed to renderer via contextBridge. */
-export interface SpecAPI {
-    loadSpecs(): Promise<SpecTreeNode[]>;
-    addSpec(payload: AddSpecPayload): Promise<SpecDetail>;
-    updateSpec(payload: UpdateSpecPayload): Promise<SpecDetail>;
-    deleteSpec(id: string): Promise<void>;
-    getSpec(id: string): Promise<SpecDetail | null>;
-    moveSpec(payload: MoveSpecPayload): Promise<void>;
-    loadActions(id: string): Promise<SpecAction[]>;
-    saveActions(id: string, actions: SpecAction[]): Promise<void>;
+export interface ObjectAPI {
+    loadObjects(): Promise<ObjectTreeNode[]>;
+    addObject(payload: AddObjectPayload): Promise<ObjectDetail>;
+    updateObject(payload: UpdateObjectPayload): Promise<ObjectDetail>;
+    deleteObject(id: string): Promise<void>;
+    getObject(id: string): Promise<ObjectDetail | null>;
+    moveObject(payload: MoveObjectPayload): Promise<void>;
+    loadActions(id: string): Promise<ObjectAction[]>;
+    saveActions(id: string, actions: ObjectAction[]): Promise<void>;
     exportMarkdown(): Promise<boolean>;
     selectWorkspace(): Promise<string | null>;
     getWorkspace(): Promise<string | null>;

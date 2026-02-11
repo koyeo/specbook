@@ -25,14 +25,14 @@ import {
     PlusOutlined,
     DeleteOutlined,
 } from '@ant-design/icons';
-import type { SpecTreeNode } from '@specbook/shared';
+import type { ObjectTreeNode } from '@specbook/shared';
 
 const { Text } = Typography;
 const { useToken } = theme;
 const ACTION_ENTRY_COLOR = '#1677ff';
 
-interface SpecTableProps {
-    specs: SpecTreeNode[];
+interface ObjectTableProps {
+    objects: ObjectTreeNode[];
     loading: boolean;
     onDelete: (id: string) => Promise<void>;
     onOpen: (id: string) => void;
@@ -43,8 +43,8 @@ interface SpecTableProps {
     onBatchMove: (ids: string[], newParentId: string | null) => Promise<void>;
 }
 
-function filterTree(nodes: SpecTreeNode[], q: string): SpecTreeNode[] {
-    const r: SpecTreeNode[] = [];
+function filterTree(nodes: ObjectTreeNode[], q: string): ObjectTreeNode[] {
+    const r: ObjectTreeNode[] = [];
     for (const n of nodes) {
         const cm = n.children ? filterTree(n.children, q) : [];
         if (n.title.toLowerCase().includes(q) || cm.length > 0)
@@ -53,27 +53,27 @@ function filterTree(nodes: SpecTreeNode[], q: string): SpecTreeNode[] {
     return r;
 }
 
-function countNodes(nodes: SpecTreeNode[]): number {
+function countNodes(nodes: ObjectTreeNode[]): number {
     let c = 0;
     for (const n of nodes) { c++; if (n.children) c += countNodes(n.children); }
     return c;
 }
 
-function collectParentIds(nodes: SpecTreeNode[]): string[] {
+function collectParentIds(nodes: ObjectTreeNode[]): string[] {
     const ids: string[] = [];
-    const w = (l: SpecTreeNode[]) => { for (const n of l) { if (n.children?.length) { ids.push(n.id); w(n.children); } } };
+    const w = (l: ObjectTreeNode[]) => { for (const n of l) { if (n.children?.length) { ids.push(n.id); w(n.children); } } };
     w(nodes);
     return ids;
 }
 
-function collectAllIds(nodes: SpecTreeNode[]): string[] {
+function collectAllIds(nodes: ObjectTreeNode[]): string[] {
     const ids: string[] = [];
-    const w = (l: SpecTreeNode[]) => { for (const n of l) { ids.push(n.id); if (n.children) w(n.children); } };
+    const w = (l: ObjectTreeNode[]) => { for (const n of l) { ids.push(n.id); if (n.children) w(n.children); } };
     w(nodes);
     return ids;
 }
 
-function flattenTree(nodes: SpecTreeNode[], depth = 0): { id: string; label: string }[] {
+function flattenTree(nodes: ObjectTreeNode[], depth = 0): { id: string; label: string }[] {
     const r: { id: string; label: string }[] = [];
     for (const n of nodes) {
         r.push({ id: n.id, label: '\u00A0\u00A0'.repeat(depth) + n.title });
@@ -85,7 +85,7 @@ function flattenTree(nodes: SpecTreeNode[], depth = 0): { id: string; label: str
 // ─── Row ─────────────────────────────────────────────
 
 interface RowProps {
-    node: SpecTreeNode;
+    node: ObjectTreeNode;
     depth: number;
     guides: boolean[];  // guides[i] = true → show vertical line at level i
     isLastChild: boolean;
@@ -106,7 +106,7 @@ interface RowProps {
     onDelete: (id: string) => void;
 }
 
-const SpecRow: React.FC<RowProps> = ({
+const ObjectRow: React.FC<RowProps> = ({
     node, depth, guides, isLastChild, expanded, hasChildren, hoveredRow, selected, anySelected,
     hoverBg, selectedBg, guideColor,
     onToggleExpand, onToggleSelect, onHover, onOpen, onAddSibling, onAddChild, onDelete,
@@ -231,7 +231,7 @@ const SpecRow: React.FC<RowProps> = ({
 // ─── Tree renderer ───────────────────────────────────
 
 interface TreeProps {
-    nodes: SpecTreeNode[];
+    nodes: ObjectTreeNode[];
     depth: number;
     guides: boolean[];  // inherited guide state per depth level
     expandedKeys: Set<string>;
@@ -260,7 +260,7 @@ const TreeRenderer: React.FC<TreeProps> = ({ nodes, depth, guides, expandedKeys,
             const childGuides = [...guides, !isLast];
             return (
                 <React.Fragment key={node.id}>
-                    <SpecRow node={node} depth={depth} guides={guides} isLastChild={isLast} hasChildren={hasChildren} expanded={isExpanded} selected={selectedIds.has(node.id)} {...rest} />
+                    <ObjectRow node={node} depth={depth} guides={guides} isLastChild={isLast} hasChildren={hasChildren} expanded={isExpanded} selected={selectedIds.has(node.id)} {...rest} />
                     {hasChildren && isExpanded && (
                         <TreeRenderer nodes={node.children!} depth={depth + 1} guides={childGuides} expandedKeys={expandedKeys} selectedIds={selectedIds} {...rest} />
                     )}
@@ -272,8 +272,8 @@ const TreeRenderer: React.FC<TreeProps> = ({ nodes, depth, guides, expandedKeys,
 
 // ─── Main ────────────────────────────────────────────
 
-export const SpecTable: React.FC<SpecTableProps> = ({
-    specs, loading, onDelete, onOpen, onAddSibling, onAddChild, onAddRoot, onBatchDelete, onBatchMove,
+export const ObjectTable: React.FC<ObjectTableProps> = ({
+    objects, loading, onDelete, onOpen, onAddSibling, onAddChild, onAddRoot, onBatchDelete, onBatchMove,
 }) => {
     const { token } = useToken();
     const hoverBg = token.controlItemBgHover;
@@ -285,15 +285,15 @@ export const SpecTable: React.FC<SpecTableProps> = ({
     const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-    const displaySpecs = useMemo(() => filterText ? filterTree(specs, filterText.toLowerCase()) : specs, [specs, filterText]);
-    const totalCount = useMemo(() => countNodes(specs), [specs]);
-    const filteredCount = useMemo(() => countNodes(displaySpecs), [displaySpecs]);
-    const allParentIds = useMemo(() => collectParentIds(displaySpecs), [displaySpecs]);
-    const allIds = useMemo(() => collectAllIds(displaySpecs), [displaySpecs]);
-    const flatList = useMemo(() => flattenTree(specs), [specs]);
+    const displayObjects = useMemo(() => filterText ? filterTree(objects, filterText.toLowerCase()) : objects, [objects, filterText]);
+    const totalCount = useMemo(() => countNodes(objects), [objects]);
+    const filteredCount = useMemo(() => countNodes(displayObjects), [displayObjects]);
+    const allParentIds = useMemo(() => collectParentIds(displayObjects), [displayObjects]);
+    const allIds = useMemo(() => collectAllIds(displayObjects), [displayObjects]);
+    const flatList = useMemo(() => flattenTree(objects), [objects]);
 
-    useEffect(() => { setExpandedKeys(new Set(collectParentIds(specs))); }, [specs]);
-    useEffect(() => { setSelectedIds(new Set()); }, [specs]);
+    useEffect(() => { setExpandedKeys(new Set(collectParentIds(objects))); }, [objects]);
+    useEffect(() => { setSelectedIds(new Set()); }, [objects]);
 
     const isAllExpanded = allParentIds.length > 0 && expandedKeys.size >= allParentIds.length;
     const anySelected = selectedIds.size > 0;
@@ -367,13 +367,13 @@ export const SpecTable: React.FC<SpecTableProps> = ({
             <div>
                 {loading ? (
                     <div style={{ padding: 24, textAlign: 'center' }}><Spin size="small" /></div>
-                ) : displaySpecs.length === 0 ? (
+                ) : displayObjects.length === 0 ? (
                     <div style={{ padding: 24, textAlign: 'center', color: token.colorTextQuaternary, fontSize: 13 }}>
                         {totalCount === 0 ? 'No objects yet. Click + to add one.' : 'No matching items.'}
                     </div>
                 ) : (
                     <TreeRenderer
-                        nodes={displaySpecs} depth={0} guides={[]} expandedKeys={expandedKeys} selectedIds={selectedIds}
+                        nodes={displayObjects} depth={0} guides={[]} expandedKeys={expandedKeys} selectedIds={selectedIds}
                         hoveredRow={hoveredRow} anySelected={anySelected} hoverBg={hoverBg} selectedBg={selectedBg}
                         guideColor={token.colorTextQuaternary}
                         onToggleExpand={toggleExpand} onToggleSelect={toggleSelect} onHover={setHoveredRow}

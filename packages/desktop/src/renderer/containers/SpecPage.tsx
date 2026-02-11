@@ -1,25 +1,25 @@
 /**
  * Container component — VS Code-like layout.
- * Left pane: spec tree   |   Right pane: detail editor (inline panel)
+ * Left pane: object tree   |   Right pane: detail editor (inline panel)
  */
 import React, { useEffect, useState } from 'react';
 import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, theme } from 'antd';
 import { FolderOpenOutlined, ExportOutlined } from '@ant-design/icons';
-import { SpecTable } from '../components/SpecTable';
-import { SpecDetailPanel } from '../components/SpecDetailPanel';
-import { useSpecs } from '../hooks/useSpecs';
+import { ObjectTable } from '../components/SpecTable';
+import { ObjectDetailPanel } from '../components/SpecDetailPanel';
+import { useObjects } from '../hooks/useSpecs';
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
 
-export const SpecPage: React.FC = () => {
+export const ObjectPage: React.FC = () => {
     const { token } = useToken();
     const {
-        specs, loading, workspace, loadSpecs,
-        addSpec, deleteSpec, moveSpec, selectWorkspace,
-    } = useSpecs();
+        objects, loading, workspace, loadObjects,
+        addObject, deleteObject, moveObject, selectWorkspace,
+    } = useObjects();
 
-    const [selectedSpecId, setSelectedSpecId] = useState<string | null>(null);
+    const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
 
     // Add-new modal
     const [addMode, setAddMode] = useState<'root' | 'sibling' | 'child' | null>(null);
@@ -27,18 +27,18 @@ export const SpecPage: React.FC = () => {
     const [newTitle, setNewTitle] = useState('');
     const [adding, setAdding] = useState(false);
 
-    useEffect(() => { if (workspace) loadSpecs(); }, [workspace, loadSpecs]);
+    useEffect(() => { if (workspace) loadObjects(); }, [workspace, loadObjects]);
 
     const handleDelete = async (id: string) => {
         try {
-            await deleteSpec(id);
-            if (selectedSpecId === id) setSelectedSpecId(null);
+            await deleteObject(id);
+            if (selectedObjectId === id) setSelectedObjectId(null);
             message.success('Deleted');
         } catch (err: any) { message.error(err?.message || 'Failed to delete'); }
     };
 
-    const handleOpen = (id: string) => setSelectedSpecId(id);
-    const handleSaved = () => loadSpecs();
+    const handleOpen = (id: string) => setSelectedObjectId(id);
+    const handleSaved = () => loadObjects();
 
     const handleAddRoot = () => { setAddMode('root'); setAddParentId(null); setNewTitle(''); };
     const handleAddSibling = (_afterId: string, parentId: string | null) => { setAddMode('sibling'); setAddParentId(parentId); setNewTitle(''); };
@@ -49,7 +49,7 @@ export const SpecPage: React.FC = () => {
         setAdding(true);
         try {
             const parentId = addMode === 'root' ? null : addParentId;
-            await addSpec({ title: newTitle.trim(), parentId });
+            await addObject({ title: newTitle.trim(), parentId });
             message.success('Object added');
             setAddMode(null);
         } catch (err: any) {
@@ -60,15 +60,15 @@ export const SpecPage: React.FC = () => {
 
     const handleBatchDelete = async (ids: string[]) => {
         try {
-            for (const id of ids) await deleteSpec(id);
-            if (selectedSpecId && ids.includes(selectedSpecId)) setSelectedSpecId(null);
+            for (const id of ids) await deleteObject(id);
+            if (selectedObjectId && ids.includes(selectedObjectId)) setSelectedObjectId(null);
             message.success(`Deleted ${ids.length} object(s)`);
         } catch (err: any) { message.error(err?.message || 'Batch delete failed'); }
     };
 
     const handleBatchMove = async (ids: string[], newParentId: string | null) => {
         try {
-            for (const id of ids) await moveSpec({ id, newParentId });
+            for (const id of ids) await moveObject({ id, newParentId });
             message.success(`Moved ${ids.length} object(s)`);
         } catch (err: any) { message.error(err?.message || 'Batch move failed'); }
     };
@@ -102,7 +102,7 @@ export const SpecPage: React.FC = () => {
             {/* Top bar */}
             <div style={{ flexShrink: 0, marginBottom: 8 }}>
                 <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
-                    <Title level={4} style={{ margin: 0 }}>📝 Specs</Title>
+                    <Title level={4} style={{ margin: 0 }}>📝 Objects</Title>
                     <Space size={8}>
                         <Text type="secondary" style={{ fontSize: 12 }}>{workspace}</Text>
                         <Button size="small" icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
@@ -116,8 +116,8 @@ export const SpecPage: React.FC = () => {
             <Splitter style={{ flex: 1, minHeight: 0 }}>
                 <Splitter.Panel defaultSize="40%" min="240px" max="70%">
                     <div style={{ height: '100%', overflow: 'auto', paddingRight: 4 }}>
-                        <SpecTable
-                            specs={specs} loading={loading}
+                        <ObjectTable
+                            objects={objects} loading={loading}
                             onDelete={handleDelete} onOpen={handleOpen}
                             onAddSibling={handleAddSibling} onAddChild={handleAddChild} onAddRoot={handleAddRoot}
                             onBatchDelete={handleBatchDelete} onBatchMove={handleBatchMove}
@@ -130,14 +130,14 @@ export const SpecPage: React.FC = () => {
                         borderLeft: `1px solid ${token.colorBorderSecondary}`,
                         overflow: 'auto',
                     }}>
-                        <SpecDetailPanel specId={selectedSpecId} specs={specs} onSaved={handleSaved} />
+                        <ObjectDetailPanel specId={selectedObjectId} specs={objects} onSaved={handleSaved} />
                     </div>
                 </Splitter.Panel>
             </Splitter>
 
             {/* Add modal */}
             <Modal title={modalTitle} open={!!addMode} onOk={handleAddConfirm} onCancel={handleAddCancel} confirmLoading={adding} okText="Add" destroyOnClose>
-                <Input placeholder="Spec title..." value={newTitle} onChange={e => setNewTitle(e.target.value)} onPressEnter={handleAddConfirm} autoFocus />
+                <Input placeholder="Object title..." value={newTitle} onChange={e => setNewTitle(e.target.value)} onPressEnter={handleAddConfirm} autoFocus />
             </Modal>
         </div>
     );
