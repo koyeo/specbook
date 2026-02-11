@@ -13,6 +13,7 @@ import {
     Dropdown,
     Spin,
     Select,
+    Tag,
     theme,
 } from 'antd';
 import type { MenuProps } from 'antd';
@@ -28,6 +29,7 @@ import type { SpecTreeNode } from '@specbook/shared';
 
 const { Text } = Typography;
 const { useToken } = theme;
+const ACTION_ENTRY_COLOR = '#1677ff';
 
 interface SpecTableProps {
     specs: SpecTreeNode[];
@@ -196,6 +198,14 @@ const SpecRow: React.FC<RowProps> = ({
                     </span>
 
                     {/* Title */}
+                    {node.hasActions && (
+                        <Tooltip title="Action Entry">
+                            <span style={{
+                                display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                                backgroundColor: ACTION_ENTRY_COLOR, marginRight: 6, flexShrink: 0,
+                            }} />
+                        </Tooltip>
+                    )}
                     <Text style={{ flex: 1, cursor: 'pointer' }} onClick={() => onOpen(node.id)}>
                         {node.hasContent && <FileTextOutlined style={{ color: 'var(--ant-color-primary)', marginRight: 6, fontSize: 12 }} />}
                         {node.title}

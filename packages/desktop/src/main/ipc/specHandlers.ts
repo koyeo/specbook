@@ -84,6 +84,7 @@ export function registerIpcHandlers(): void {
             parentId: payload.parentId ?? null,
             title: payload.title.trim(),
             hasContent: !!(payload.content?.trim()),
+            hasActions: false,
             completed: false,
             content: payload.content?.trim() || '',
             createdAt: now,

@@ -39,6 +39,7 @@ export interface SpecSummary {
     parentId: string | null;
     title: string;
     hasContent: boolean;
+    hasActions: boolean;
     completed: boolean;
     createdAt: string;
 }
@@ -74,3 +75,6 @@ export const SPEC_FILE_EXT = '.md';
 
 /** File extension for individual spec action files. */
 export const SPEC_ACTION_FILE_EXT = '.actions.json';
+
+/** Color for the "Action Entry" indicator (dot + tag). */
+export const ACTION_ENTRY_COLOR = '#1677ff';

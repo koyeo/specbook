@@ -4,7 +4,7 @@
  * Edit: title / parent / content / actions form, Save with confirmation.
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space } from 'antd';
+import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag } from 'antd';
 import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { SpecDetail, SpecTreeNode, UpdateSpecPayload, SpecAction, ActionType } from '@specbook/shared';
 
@@ -18,6 +18,7 @@ import { MarkdownPreview } from './MarkdownPreview';
 const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { useToken } = theme;
+const ACTION_ENTRY_COLOR = '#1677ff';
 
 type PanelMode = 'preview' | 'edit';
 
@@ -235,20 +236,20 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                     </div>
 
                     {/* Meta info */}
-                    {detail?.parentId && (
-                        <div style={{ marginBottom: 12 }}>
+                    <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+                        {detail?.parentId && (
                             <Text type="secondary" style={{ fontSize: 12 }}>
                                 Parent: {parentOptions.find(p => p.id === detail.parentId)?.label.trim() || detail.parentId}
                             </Text>
-                        </div>
-                    )}
-
-                    {/* Markdown body */}
-                    <MarkdownPreview content={detail?.content || ''} />
+                        )}
+                        {savedActions.length > 0 && (
+                            <Tag color={ACTION_ENTRY_COLOR} style={{ fontSize: 11, margin: 0 }}>Action Entry</Tag>
+                        )}
+                    </div>
 
                     {/* Actions preview */}
                     {savedActions.length > 0 && (
-                        <div style={{ marginTop: 20 }}>
+                        <div style={{ marginBottom: 20 }}>
                             <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>Actions</Text>
                             <div style={{
                                 border: `1px solid ${token.colorBorderSecondary}`,
@@ -279,6 +280,9 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                             </div>
                         </div>
                     )}
+
+                    {/* Markdown body */}
+                    <MarkdownPreview content={detail?.content || ''} />
                 </div>
             </>
         );
@@ -337,18 +341,6 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                     />
                 </div>
 
-                {/* Content */}
-                <div style={{ flex: 1 }}>
-                    <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Details (Markdown)</Text>
-                    <TextArea
-                        value={content}
-                        onChange={e => setContent(e.target.value)}
-                        placeholder="Requirements, acceptance criteria, notes... (supports Markdown)"
-                        autoSize={{ minRows: 8 }}
-                        style={{ fontSize: 13, fontFamily: 'Menlo, Monaco, Consolas, monospace' }}
-                    />
-                </div>
-
                 {/* Actions editor */}
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -403,6 +395,18 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                             ))}
                         </div>
                     )}
+                </div>
+
+                {/* Content */}
+                <div style={{ flex: 1 }}>
+                    <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Details (Markdown)</Text>
+                    <TextArea
+                        value={content}
+                        onChange={e => setContent(e.target.value)}
+                        placeholder="Requirements, acceptance criteria, notes... (supports Markdown)"
+                        autoSize={{ minRows: 8 }}
+                        style={{ fontSize: 13, fontFamily: 'Menlo, Monaco, Consolas, monospace' }}
+                    />
                 </div>
             </div>
         </div>

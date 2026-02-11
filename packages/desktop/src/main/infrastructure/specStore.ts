@@ -138,11 +138,13 @@ export function readSpecDetail(workspace: string, id: string): SpecDetail | null
     if (!entry) return null;
 
     const content = readContent(workspace, id);
+    const hasActions = readActions(workspace, id).length > 0;
     return {
         id: entry.id,
         parentId: entry.parentId,
         title: entry.title,
         hasContent: content.trim().length > 0,
+        hasActions,
         completed: entry.completed,
         content,
         createdAt: entry.createdAt,
@@ -199,11 +201,13 @@ export function loadAllSpecs(workspace: string): SpecTreeNode[] {
     const index = readIndex(workspace);
     const flatSpecs: SpecSummary[] = index.specs.map(entry => {
         const hasContent = computeContentHash(specFilePath(workspace, entry.id)) !== null;
+        const hasActions = readActions(workspace, entry.id).length > 0;
         return {
             id: entry.id,
             parentId: entry.parentId,
             title: entry.title,
             hasContent,
+            hasActions,
             completed: entry.completed,
             createdAt: entry.createdAt,
         };
