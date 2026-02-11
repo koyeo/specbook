@@ -93,32 +93,44 @@ export const AiAnalysisPage: React.FC<Props> = ({ objects }) => {
             const result = await window.aiApi.analyzeObjects(objects);
             const doneAt = new Date().toISOString();
 
+            const logEntries: typeof newTask.logs = [
+                newTask.logs[0],
+                {
+                    type: 'prompt',
+                    label: 'System Prompt',
+                    content: result.systemPrompt,
+                    timestamp: now,
+                },
+                {
+                    type: 'prompt',
+                    label: 'User Prompt',
+                    content: result.userPrompt,
+                    timestamp: now,
+                },
+                {
+                    type: 'response',
+                    label: 'AI Response (raw)',
+                    content: result.rawResponse,
+                    timestamp: doneAt,
+                },
+            ];
+
+            // Add directory tree if returned by AI
+            if (result.directoryTree) {
+                logEntries.push({
+                    type: 'context',
+                    label: 'Scanned Directory Tree',
+                    content: result.directoryTree,
+                    timestamp: doneAt,
+                });
+            }
+
             updateTask(taskId, {
                 status: 'completed',
                 completedAt: doneAt,
                 tokenUsage: result.tokenUsage,
                 mappings: result.mappings,
-                logs: [
-                    newTask.logs[0],
-                    {
-                        type: 'prompt',
-                        label: 'System Prompt',
-                        content: result.systemPrompt,
-                        timestamp: now,
-                    },
-                    {
-                        type: 'prompt',
-                        label: 'User Prompt',
-                        content: result.userPrompt,
-                        timestamp: now,
-                    },
-                    {
-                        type: 'response',
-                        label: 'AI Response (raw)',
-                        content: result.rawResponse,
-                        timestamp: doneAt,
-                    },
-                ],
+                logs: logEntries,
             });
 
             message.success(`Analysis complete — ${result.mappings.length} mappings, ${result.tokenUsage.inputTokens + result.tokenUsage.outputTokens} tokens`);

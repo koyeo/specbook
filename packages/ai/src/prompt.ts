@@ -76,15 +76,31 @@ Respond ONLY with valid JSON matching this schema:
 /**
  * Build the user prompt containing the Object Tree context.
  */
-export function buildUserPrompt(objectTree: ObjectTreeNode[], workspacePath?: string): string {
+export function buildUserPrompt(objectTree: ObjectTreeNode[], workspacePath?: string, projectTree?: string): string {
   const treeText = renderTree(objectTree);
   const wsInfo = workspacePath ? `\nProject workspace: ${workspacePath}` : '';
 
-  return `Analyse the following Spec Object Tree and determine the implementation status of each object by searching the project's source code.${wsInfo}
+  let prompt = `Analyse the following Spec Object Tree and determine the implementation status of each object by searching the project's source code.${wsInfo}
 
 ## Object Tree
 
-${treeText}
+${treeText}`;
 
-For every object listed above, find the related code by name and semantic meaning, then respond with the JSON analysis including the scanned directory tree.`;
+  if (projectTree) {
+    prompt += `
+
+## Project File Tree (Real)
+
+The following is the ACTUAL file structure of the project. Use this to find related source files for each object:
+
+\`\`\`
+${projectTree}
+\`\`\``;
+  }
+
+  prompt += `
+
+For every object listed above, find the related code by semantic meaning, then respond with the JSON analysis.`;
+
+  return prompt;
 }

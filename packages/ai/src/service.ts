@@ -4,6 +4,7 @@
 import type { AiConfig, ObjectTreeNode, AnalysisResult } from '@specbook/shared';
 import { buildSystemPrompt, buildUserPrompt } from './prompt';
 import { callAnthropic } from './anthropicAdapter';
+import { scanProjectTree } from './scanner';
 
 /**
  * Analyse an Object Tree against the project codebase using the configured AI provider.
@@ -18,8 +19,11 @@ export async function analyzeObjectTree(
     config: AiConfig,
     workspacePath?: string,
 ): Promise<AnalysisResult> {
+    // Scan real project files if workspace is available
+    const projectTree = workspacePath ? scanProjectTree(workspacePath) : undefined;
+
     const systemPrompt = buildSystemPrompt();
-    const userPrompt = buildUserPrompt(objectTree, workspacePath);
+    const userPrompt = buildUserPrompt(objectTree, workspacePath, projectTree);
 
     const { mappings, tokenUsage, rawResponse, directoryTree } = await callAnthropic(config, systemPrompt, userPrompt);
 

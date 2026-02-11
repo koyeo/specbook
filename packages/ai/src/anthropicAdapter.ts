@@ -37,8 +37,7 @@ export async function callAnthropic(
     const requestBody = {
         model,
         messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
+            { role: 'user', content: `${systemPrompt}\n\n---\n\n${userPrompt}` },
         ],
         max_tokens: 8192,
         temperature: 0.3,
