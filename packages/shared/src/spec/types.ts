@@ -2,27 +2,30 @@
  * Spec domain types.
  */
 
-/** Spec type — required classification for each spec. */
-export type SpecType = 'information_display' | 'action_entry' | 'state_change';
+/** Available action types for spec actions. */
+export const ACTION_TYPES = [
+    'Click',
+    'Double Click',
+    'Mouse Enter',
+    'Mouse Leave',
+    'Mouse Down',
+    'Mouse Up',
+    'Right Click',
+    'Press and Drag',
+] as const;
 
-/** Display labels for spec types. */
-export const SPEC_TYPE_LABELS: Record<SpecType, string> = {
-    information_display: 'Information Display',
-    action_entry: 'Action Entry',
-    state_change: 'State Change',
-};
+export type ActionType = typeof ACTION_TYPES[number];
 
-/** Colors for spec types (used in UI). */
-export const SPEC_TYPE_COLORS: Record<SpecType, string> = {
-    information_display: '#1677ff',
-    action_entry: '#52c41a',
-    state_change: '#fa8c16',
-};
+/** A single spec action — describes a user interaction and the resulting state change. */
+export interface SpecAction {
+    action: ActionType;
+    stateChange: string;
+}
+
 /** Index entry — stored in specs.json */
 export interface SpecIndexEntry {
     id: string;
     title: string;
-    type: SpecType;
     parentId: string | null;
     completed: boolean;
     contentHash: string | null;
@@ -35,7 +38,6 @@ export interface SpecSummary {
     id: string;
     parentId: string | null;
     title: string;
-    type: SpecType;
     hasContent: boolean;
     completed: boolean;
     createdAt: string;
@@ -69,3 +71,6 @@ export const SPECS_SUBDIR = 'specs';
 
 /** File extension for individual spec markdown files. */
 export const SPEC_FILE_EXT = '.md';
+
+/** File extension for individual spec action files. */
+export const SPEC_ACTION_FILE_EXT = '.actions.json';

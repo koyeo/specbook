@@ -2,7 +2,7 @@
  * IPC channel names and payload types.
  * Shared between main process and renderer.
  */
-import type { SpecSummary, SpecDetail, SpecTreeNode, SpecType } from './types';
+import type { SpecSummary, SpecDetail, SpecTreeNode, SpecAction } from './types';
 
 /** IPC channel names. */
 export const IPC = {
@@ -12,6 +12,8 @@ export const IPC = {
     DELETE_SPEC: 'spec:delete',
     GET_SPEC: 'spec:get',
     MOVE_SPEC: 'spec:move',
+    LOAD_ACTIONS: 'spec:load-actions',
+    SAVE_ACTIONS: 'spec:save-actions',
     EXPORT_MARKDOWN: 'spec:export-markdown',
     SELECT_WORKSPACE: 'workspace:select',
     GET_WORKSPACE: 'workspace:get',
@@ -20,7 +22,6 @@ export const IPC = {
 /** Add spec payload. */
 export interface AddSpecPayload {
     title: string;
-    type: SpecType;
     parentId?: string | null;
     content?: string;
 }
@@ -29,7 +30,6 @@ export interface AddSpecPayload {
 export interface UpdateSpecPayload {
     id: string;
     title?: string;
-    type?: SpecType;
     content?: string;
     completed?: boolean;
 }
@@ -48,6 +48,8 @@ export interface SpecAPI {
     deleteSpec(id: string): Promise<void>;
     getSpec(id: string): Promise<SpecDetail | null>;
     moveSpec(payload: MoveSpecPayload): Promise<void>;
+    loadActions(id: string): Promise<SpecAction[]>;
+    saveActions(id: string, actions: SpecAction[]): Promise<void>;
     exportMarkdown(): Promise<boolean>;
     selectWorkspace(): Promise<string | null>;
     getWorkspace(): Promise<string | null>;

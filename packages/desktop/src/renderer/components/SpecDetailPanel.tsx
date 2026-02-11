@@ -1,13 +1,18 @@
 /**
  * View component — inline detail panel with Preview / Edit modes.
  * Preview: renders Markdown (with Mermaid diagrams), shows Edit button.
- * Edit: title / parent / content form, Save with confirmation, Cancel with discard check.
+ * Edit: title / parent / content / actions form, Save with confirmation.
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag } from 'antd';
-import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled } from '@ant-design/icons';
-import type { SpecDetail, SpecTreeNode, UpdateSpecPayload, SpecType } from '@specbook/shared';
-import { SPEC_TYPE_LABELS, SPEC_TYPE_COLORS } from '../constants/specTypes';
+import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space } from 'antd';
+import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import type { SpecDetail, SpecTreeNode, UpdateSpecPayload, SpecAction, ActionType } from '@specbook/shared';
+
+/** Action types — local copy to avoid CJS/ESM mismatch with @specbook/shared */
+const ACTION_TYPES: readonly ActionType[] = [
+    'Click', 'Double Click', 'Mouse Enter', 'Mouse Leave',
+    'Mouse Down', 'Mouse Up', 'Right Click', 'Press and Drag',
+];
 import { MarkdownPreview } from './MarkdownPreview';
 
 const { TextArea } = Input;
@@ -50,6 +55,8 @@ function collectDescendantIds(nodes: SpecTreeNode[], id: string): Set<string> {
     return result;
 }
 
+const actionTypeOptions = ACTION_TYPES.map(t => ({ value: t, label: t }));
+
 export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
     specId, specs, onSaved,
 }) => {
@@ -58,9 +65,10 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
     const [mode, setMode] = useState<PanelMode>('preview');
     const [detail, setDetail] = useState<SpecDetail | null>(null);
     const [title, setTitle] = useState('');
-    const [specType, setSpecType] = useState<SpecType>('action_entry');
     const [parentId, setParentId] = useState<string | null>(null);
     const [content, setContent] = useState('');
+    const [actions, setActions] = useState<SpecAction[]>([]);
+    const [savedActions, setSavedActions] = useState<SpecAction[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
 
@@ -70,35 +78,58 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
         return flattenTree(specs).filter(f => f.id !== specId && !descendants.has(f.id));
     }, [specs, specId]);
 
-    // Load spec detail
+    // Load spec detail + actions
     useEffect(() => {
         if (specId) {
             setMode('preview');
             setLoading(true);
-            window.api.getSpec(specId)
-                .then((d) => {
+            Promise.all([
+                window.api.getSpec(specId),
+                window.api.loadActions(specId),
+            ])
+                .then(([d, acts]) => {
                     setDetail(d);
                     setTitle(d?.title || '');
-                    setSpecType(d?.type || 'action_entry');
                     setParentId(d?.parentId || null);
                     setContent(d?.content || '');
+                    setActions(acts);
+                    setSavedActions(acts);
                 })
                 .catch((err) => { message.error('Failed to load spec detail'); console.error(err); })
                 .finally(() => setLoading(false));
         } else {
             setDetail(null); setTitle(''); setParentId(null); setContent('');
+            setActions([]); setSavedActions([]);
             setMode('preview');
         }
     }, [specId]);
 
+    const actionsChanged = JSON.stringify(actions) !== JSON.stringify(savedActions);
+
     const hasChanges = detail ? (
         title !== (detail.title || '') ||
-        specType !== (detail.type || 'action_entry') ||
         parentId !== (detail.parentId || null) ||
-        content !== (detail.content || '')
+        content !== (detail.content || '') ||
+        actionsChanged
     ) : false;
 
     // ─── Actions ─────────────────────────────────────
+
+    const addAction = () => {
+        setActions(prev => [...prev, { action: 'Click' as ActionType, stateChange: '' }]);
+    };
+
+    const updateAction = (index: number, field: keyof SpecAction, value: string) => {
+        setActions(prev => {
+            const copy = [...prev];
+            copy[index] = { ...copy[index], [field]: value };
+            return copy;
+        });
+    };
+
+    const removeAction = (index: number) => {
+        setActions(prev => prev.filter((_, i) => i !== index));
+    };
 
     const enterEdit = () => setMode('edit');
 
@@ -112,11 +143,10 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                 okType: 'danger',
                 cancelText: 'Keep editing',
                 onOk() {
-                    // Reset to original values
                     setTitle(detail?.title || '');
-                    setSpecType(detail?.type || 'action_entry');
                     setParentId(detail?.parentId || null);
                     setContent(detail?.content || '');
+                    setActions(savedActions);
                     setMode('preview');
                 },
             });
@@ -131,10 +161,9 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
         try {
             const payload: UpdateSpecPayload = { id: specId };
             if (title !== detail.title) payload.title = title;
-            if (specType !== detail.type) payload.type = specType;
             if (content !== detail.content) payload.content = content;
 
-            if (payload.title !== undefined || payload.content !== undefined || payload.type !== undefined) {
+            if (payload.title !== undefined || payload.content !== undefined) {
                 await window.api.updateSpec(payload);
             }
 
@@ -142,12 +171,15 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                 await window.api.moveSpec({ id: specId, newParentId: parentId });
             }
 
+            if (actionsChanged) {
+                await window.api.saveActions(specId, actions);
+                setSavedActions(actions);
+            }
+
             message.success('Saved');
-            // Refresh detail after save
             const updated = await window.api.getSpec(specId);
             setDetail(updated);
             setTitle(updated?.title || '');
-            setSpecType(updated?.type || 'action_entry');
             setParentId(updated?.parentId || null);
             setContent(updated?.content || '');
             setMode('preview');
@@ -203,19 +235,50 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                     </div>
 
                     {/* Meta info */}
-                    <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
-                        {detail && (
-                            <Tag color={SPEC_TYPE_COLORS[detail.type]}>{SPEC_TYPE_LABELS[detail.type]}</Tag>
-                        )}
-                        {detail?.parentId && (
+                    {detail?.parentId && (
+                        <div style={{ marginBottom: 12 }}>
                             <Text type="secondary" style={{ fontSize: 12 }}>
                                 Parent: {parentOptions.find(p => p.id === detail.parentId)?.label.trim() || detail.parentId}
                             </Text>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
                     {/* Markdown body */}
                     <MarkdownPreview content={detail?.content || ''} />
+
+                    {/* Actions preview */}
+                    {savedActions.length > 0 && (
+                        <div style={{ marginTop: 20 }}>
+                            <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>Actions</Text>
+                            <div style={{
+                                border: `1px solid ${token.colorBorderSecondary}`,
+                                borderRadius: token.borderRadius,
+                                overflow: 'hidden',
+                            }}>
+                                <div style={{
+                                    display: 'grid', gridTemplateColumns: '160px 1fr',
+                                    padding: '6px 12px',
+                                    background: token.colorFillQuaternary,
+                                    fontWeight: 500, fontSize: 12, color: token.colorTextSecondary,
+                                }}>
+                                    <span>Action</span>
+                                    <span>State Change</span>
+                                </div>
+                                {savedActions.map((a, i) => (
+                                    <div key={i} style={{
+                                        display: 'grid', gridTemplateColumns: '160px 1fr',
+                                        padding: '6px 12px', fontSize: 13,
+                                        borderTop: `1px solid ${token.colorBorderSecondary}`,
+                                    }}>
+                                        <span>{a.action}</span>
+                                        <span style={{ color: a.stateChange ? undefined : token.colorTextQuaternary }}>
+                                            {a.stateChange || '—'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </>
         );
@@ -257,19 +320,6 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                     <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Spec title" />
                 </div>
 
-                {/* Type */}
-                <div>
-                    <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Type</Text>
-                    <Select
-                        value={specType}
-                        onChange={(val) => setSpecType(val)}
-                        style={{ width: '100%' }}
-                        options={(
-                            Object.entries(SPEC_TYPE_LABELS) as [SpecType, string][]
-                        ).map(([value, label]) => ({ value, label }))}
-                    />
-                </div>
-
                 {/* Parent */}
                 <div>
                     <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Parent</Text>
@@ -294,9 +344,65 @@ export const SpecDetailPanel: React.FC<SpecDetailPanelProps> = ({
                         value={content}
                         onChange={e => setContent(e.target.value)}
                         placeholder="Requirements, acceptance criteria, notes... (supports Markdown)"
-                        autoSize={{ minRows: 12 }}
+                        autoSize={{ minRows: 8 }}
                         style={{ fontSize: 13, fontFamily: 'Menlo, Monaco, Consolas, monospace' }}
                     />
+                </div>
+
+                {/* Actions editor */}
+                <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>Actions</Text>
+                        <Button
+                            size="small"
+                            type="dashed"
+                            icon={<PlusOutlined />}
+                            onClick={addAction}
+                        >
+                            Add Action
+                        </Button>
+                    </div>
+
+                    {actions.length === 0 ? (
+                        <Text type="secondary" style={{ fontSize: 12, fontStyle: 'italic' }}>
+                            No actions defined. Click "Add Action" to describe interactions.
+                        </Text>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {actions.map((a, i) => (
+                                <div key={i} style={{
+                                    display: 'flex', gap: 8, alignItems: 'center',
+                                    padding: '8px 10px',
+                                    borderRadius: token.borderRadius,
+                                    border: `1px solid ${token.colorBorderSecondary}`,
+                                    background: token.colorFillQuaternary,
+                                }}>
+                                    <Select
+                                        value={a.action}
+                                        onChange={(val) => updateAction(i, 'action', val)}
+                                        style={{ width: 160, flexShrink: 0 }}
+                                        options={actionTypeOptions}
+                                        size="small"
+                                    />
+                                    <Input
+                                        value={a.stateChange}
+                                        onChange={(e) => updateAction(i, 'stateChange', e.target.value)}
+                                        placeholder="State change description..."
+                                        size="small"
+                                        style={{ flex: 1 }}
+                                    />
+                                    <Button
+                                        type="text"
+                                        danger
+                                        size="small"
+                                        icon={<DeleteOutlined />}
+                                        onClick={() => removeAction(i)}
+                                        style={{ flexShrink: 0 }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

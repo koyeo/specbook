@@ -11,8 +11,9 @@ import {
     SPEC_INDEX_FILE,
     SPECS_SUBDIR,
     SPEC_FILE_EXT,
+    SPEC_ACTION_FILE_EXT,
 } from '@specbook/shared';
-import type { SpecIndexEntry, SpecSummary, SpecDetail, SpecIndex, SpecTreeNode } from '@specbook/shared';
+import type { SpecIndexEntry, SpecSummary, SpecDetail, SpecIndex, SpecTreeNode, SpecAction } from '@specbook/shared';
 
 function specDir(workspace: string): string {
     return path.join(workspace, SPEC_DIR);
@@ -97,6 +98,38 @@ export function deleteSpecFile(workspace: string, id: string): void {
     }
 }
 
+// ─── Actions file operations ────────────────────────
+
+function actionsFilePath(workspace: string, id: string): string {
+    return path.join(specsSubdir(workspace), `${id}${SPEC_ACTION_FILE_EXT}`);
+}
+
+export function readActions(workspace: string, id: string): SpecAction[] {
+    const filePath = actionsFilePath(workspace, id);
+    if (!fs.existsSync(filePath)) return [];
+    try {
+        const raw = fs.readFileSync(filePath, 'utf-8');
+        return JSON.parse(raw) as SpecAction[];
+    } catch {
+        return [];
+    }
+}
+
+export function writeActions(workspace: string, id: string, actions: SpecAction[]): void {
+    ensureDirs(workspace);
+    const filePath = actionsFilePath(workspace, id);
+    if (actions.length === 0) {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        return;
+    }
+    fs.writeFileSync(filePath, JSON.stringify(actions, null, 2) + '\n', 'utf-8');
+}
+
+export function deleteActionsFile(workspace: string, id: string): void {
+    const filePath = actionsFilePath(workspace, id);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+}
+
 // ─── Spec detail assembly ───────────────────────────
 
 export function readSpecDetail(workspace: string, id: string): SpecDetail | null {
@@ -109,7 +142,6 @@ export function readSpecDetail(workspace: string, id: string): SpecDetail | null
         id: entry.id,
         parentId: entry.parentId,
         title: entry.title,
-        type: entry.type || 'action_entry',
         hasContent: content.trim().length > 0,
         completed: entry.completed,
         content,
@@ -125,7 +157,6 @@ function buildIndexEntry(workspace: string, detail: SpecDetail): SpecIndexEntry 
     return {
         id: detail.id,
         title: detail.title,
-        type: detail.type,
         parentId: detail.parentId,
         completed: detail.completed,
         contentHash: computeContentHash(filePath),
@@ -172,7 +203,6 @@ export function loadAllSpecs(workspace: string): SpecTreeNode[] {
             id: entry.id,
             parentId: entry.parentId,
             title: entry.title,
-            type: entry.type || 'action_entry',
             hasContent,
             completed: entry.completed,
             createdAt: entry.createdAt,

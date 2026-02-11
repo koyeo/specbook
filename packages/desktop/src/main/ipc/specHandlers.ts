@@ -83,7 +83,6 @@ export function registerIpcHandlers(): void {
             id,
             parentId: payload.parentId ?? null,
             title: payload.title.trim(),
-            type: payload.type,
             hasContent: !!(payload.content?.trim()),
             completed: false,
             content: payload.content?.trim() || '',
@@ -108,7 +107,6 @@ export function registerIpcHandlers(): void {
         const updated: SpecDetail = {
             ...existing,
             title: payload.title?.trim() ?? existing.title,
-            type: payload.type ?? existing.type,
             content: payload.content?.trim() ?? existing.content,
             completed: payload.completed ?? existing.completed ?? false,
             updatedAt: new Date().toISOString(),
@@ -124,6 +122,7 @@ export function registerIpcHandlers(): void {
     ipcMain.handle(IPC.DELETE_SPEC, (_event, id: string) => {
         const ws = requireWorkspace();
         specStore.deleteSpec(ws, id);
+        specStore.deleteActionsFile(ws, id);
     });
 
     ipcMain.handle(IPC.GET_SPEC, (_event, id: string) => {
@@ -134,6 +133,18 @@ export function registerIpcHandlers(): void {
     ipcMain.handle(IPC.MOVE_SPEC, (_event, payload: MoveSpecPayload) => {
         const ws = requireWorkspace();
         specStore.moveSpec(ws, payload.id, payload.newParentId);
+    });
+
+    // ─── Actions ─────────────────────────────────────
+
+    ipcMain.handle(IPC.LOAD_ACTIONS, (_event, id: string) => {
+        const ws = requireWorkspace();
+        return specStore.readActions(ws, id);
+    });
+
+    ipcMain.handle(IPC.SAVE_ACTIONS, (_event, id: string, actions: import('@specbook/shared').SpecAction[]) => {
+        const ws = requireWorkspace();
+        specStore.writeActions(ws, id, actions);
     });
 
     ipcMain.handle(IPC.EXPORT_MARKDOWN, async () => {
