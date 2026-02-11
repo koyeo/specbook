@@ -7,6 +7,7 @@ import { SunOutlined, MoonOutlined, SettingOutlined, AppstoreOutlined, RobotOutl
 import { ObjectPage } from './containers/SpecPage';
 import { AiAnalysisPage } from './containers/AiAnalysisPage';
 import { AiSettingsModal } from './components/AiSettingsModal';
+import type { ObjectTreeNode } from '@specbook/shared';
 
 const { Text, Title } = Typography;
 
@@ -25,10 +26,24 @@ const App: React.FC = () => {
     const [systemDark, setSystemDark] = useState(getSystemDark);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [workspace, setWorkspace] = useState<string | null>(null);
+    const [objects, setObjects] = useState<ObjectTreeNode[]>([]);
 
     // Load saved workspace on mount
     useEffect(() => {
         window.api.getWorkspace().then(ws => setWorkspace(ws));
+    }, []);
+
+    // Load objects whenever workspace changes
+    useEffect(() => {
+        if (workspace) {
+            window.api.loadObjects().then(o => setObjects(o)).catch(() => setObjects([]));
+        } else {
+            setObjects([]);
+        }
+    }, [workspace]);
+
+    const refreshObjects = useCallback(() => {
+        window.api.loadObjects().then(o => setObjects(o)).catch(() => { });
     }, []);
 
     const handleSelectWorkspace = useCallback(async () => {
@@ -72,7 +87,7 @@ const App: React.FC = () => {
         {
             key: 'ai',
             label: <span><RobotOutlined /> AI Analysis</span>,
-            children: <AiAnalysisPage />,
+            children: <AiAnalysisPage objects={objects} />,
         },
     ];
 

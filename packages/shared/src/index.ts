@@ -9,7 +9,7 @@ export type { ObjectSummary, ObjectDetail, ObjectIndex, ObjectIndexEntry, Object
 export { ACTION_TYPES, SPEC_DIR, SPEC_INDEX_FILE, SPECS_SUBDIR, SPEC_FILE_EXT, SPEC_ACTION_FILE_EXT, ACTION_ENTRY_COLOR } from './spec/types';
 
 // AI types
-export type { AiConfig, TokenUsage, RelatedFile, ObjectMapping, AnalysisResult } from './spec/types';
+export type { AiConfig, TokenUsage, RelatedFile, ObjectMapping, AnalysisResult, AnalysisTask, AnalysisLogEntry } from './spec/types';
 
 // IPC contract
 export { IPC } from './spec/messages';

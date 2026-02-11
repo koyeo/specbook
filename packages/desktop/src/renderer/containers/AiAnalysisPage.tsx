@@ -1,50 +1,244 @@
 /**
- * AI Analysis page — select objects and run AI mapping analysis.
+ * AI Analysis page — task-based analysis with task list and log drawer.
  */
-import React, { useState } from 'react';
-import { Button, Card, Typography, message, Spin, Tag, Empty, Space, theme } from 'antd';
-import { RobotOutlined, ThunderboltOutlined } from '@ant-design/icons';
-import { useObjects } from '../hooks/useSpecs';
-import type { ObjectTreeNode, AnalysisResult, ObjectMapping } from '@specbook/shared';
+import React, { useState, useCallback } from 'react';
+import { Button, Table, Typography, message, Tag, Empty, Space, theme } from 'antd';
+import { RobotOutlined, ThunderboltOutlined, EyeOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { AnalysisLogDrawer } from '../components/AnalysisLogDrawer';
+import type { ObjectTreeNode, AnalysisTask } from '@specbook/shared';
 
 const { Text, Title } = Typography;
 const { useToken } = theme;
 
-const STATUS_COLOR: Record<string, string> = {
-    implemented: 'green',
-    partial: 'orange',
-    not_found: 'red',
-    unknown: 'default',
-};
+/** Simple unique ID generator. */
+function genId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
 
-export const AiAnalysisPage: React.FC = () => {
+interface Props {
+    objects: ObjectTreeNode[];
+}
+
+/** Render an ObjectTreeNode[] into numbered outline text for display. */
+function renderTreeText(nodes: ObjectTreeNode[], prefix = '', depth = 0): string {
+    const lines: string[] = [];
+    nodes.forEach((node, idx) => {
+        const num = prefix ? `${prefix}.${idx + 1}` : `${idx + 1}`;
+        const indent = '  '.repeat(depth);
+        lines.push(`${indent}${num} ${node.title}  (id: ${node.id})`);
+        if (node.children && node.children.length > 0) {
+            lines.push(renderTreeText(node.children, num, depth + 1));
+        }
+    });
+    return lines.join('\n');
+}
+
+/** Count all nodes in a tree (including nested children). */
+function countNodes(nodes: ObjectTreeNode[]): number {
+    let count = 0;
+    for (const n of nodes) {
+        count++;
+        if (n.children) count += countNodes(n.children);
+    }
+    return count;
+}
+
+export const AiAnalysisPage: React.FC<Props> = ({ objects }) => {
     const { token } = useToken();
-    const { objects } = useObjects();
-    const [analyzing, setAnalyzing] = useState(false);
-    const [result, setResult] = useState<AnalysisResult | null>(null);
+    const [tasks, setTasks] = useState<AnalysisTask[]>([]);
+    const [selectedTask, setSelectedTask] = useState<AnalysisTask | null>(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
-    const handleAnalyzeAll = async () => {
+    const updateTask = useCallback((id: string, patch: Partial<AnalysisTask>) => {
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
+    }, []);
+
+    const handleStartAnalysis = useCallback(async () => {
         if (objects.length === 0) {
-            message.warning('No objects available. Create some objects first.');
+            message.warning('No objects available. Create some objects in the Objects tab first.');
             return;
         }
-        setAnalyzing(true);
-        setResult(null);
+
+        const now = new Date().toISOString();
+        const taskId = genId();
+        const objectCount = countNodes(objects);
+        const contextText = renderTreeText(objects);
+
+        // Fetch current AI config for model info
+        let currentModel = 'unknown';
         try {
-            const res = await window.aiApi.analyzeObjects(objects);
-            setResult(res);
-            message.success(`Analysis complete — ${res.mappings.length} mappings, ${res.tokenUsage.inputTokens + res.tokenUsage.outputTokens} tokens used`);
+            const aiConfig = await window.aiApi.getAiConfig();
+            currentModel = aiConfig?.model || 'claude-3-sonnet-20240229';
+        } catch { /* ignore */ }
+
+        const newTask: AnalysisTask = {
+            id: taskId,
+            status: 'running',
+            objectCount,
+            model: currentModel,
+            createdAt: now,
+            logs: [
+                {
+                    type: 'context',
+                    label: 'Object Tree Context',
+                    content: contextText,
+                    timestamp: now,
+                },
+            ],
+        };
+
+        setTasks(prev => [newTask, ...prev]);
+
+        try {
+            const result = await window.aiApi.analyzeObjects(objects);
+            const doneAt = new Date().toISOString();
+
+            updateTask(taskId, {
+                status: 'completed',
+                completedAt: doneAt,
+                tokenUsage: result.tokenUsage,
+                mappings: result.mappings,
+                logs: [
+                    newTask.logs[0],
+                    {
+                        type: 'prompt',
+                        label: 'System Prompt',
+                        content: result.systemPrompt,
+                        timestamp: now,
+                    },
+                    {
+                        type: 'prompt',
+                        label: 'User Prompt',
+                        content: result.userPrompt,
+                        timestamp: now,
+                    },
+                    {
+                        type: 'response',
+                        label: 'AI Response (raw)',
+                        content: result.rawResponse,
+                        timestamp: doneAt,
+                    },
+                ],
+            });
+
+            message.success(`Analysis complete — ${result.mappings.length} mappings, ${result.tokenUsage.inputTokens + result.tokenUsage.outputTokens} tokens`);
         } catch (err: any) {
+            const errAt = new Date().toISOString();
+            updateTask(taskId, {
+                status: 'error',
+                completedAt: errAt,
+                errorMessage: err?.message || 'Unknown error',
+                logs: [
+                    ...newTask.logs,
+                    {
+                        type: 'error',
+                        label: 'Error',
+                        content: err?.message || String(err),
+                        timestamp: errAt,
+                    },
+                ],
+            });
             message.error(err?.message || 'AI analysis failed');
-        } finally {
-            setAnalyzing(false);
         }
-    };
+    }, [objects, updateTask]);
+
+    const handleViewTask = useCallback((task: AnalysisTask) => {
+        setSelectedTask(task);
+        setDrawerOpen(true);
+    }, []);
+
+    const columns = [
+        {
+            title: 'Time',
+            dataIndex: 'createdAt',
+            key: 'time',
+            width: 160,
+            render: (t: string) => (
+                <Text style={{ fontSize: 12 }}>{new Date(t).toLocaleString()}</Text>
+            ),
+        },
+        {
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            width: 100,
+            render: (s: string) => {
+                const color = s === 'completed' ? 'green' : s === 'error' ? 'red' : 'processing';
+                return <Tag color={color}>{s.toUpperCase()}</Tag>;
+            },
+        },
+        {
+            title: 'Objects',
+            dataIndex: 'objectCount',
+            key: 'objects',
+            width: 80,
+            render: (n: number) => <Text>{n}</Text>,
+        },
+        {
+            title: 'Tokens',
+            key: 'tokens',
+            width: 100,
+            render: (_: any, r: AnalysisTask) => {
+                if (!r.tokenUsage) return <Text type="secondary">—</Text>;
+                return <Text style={{ fontSize: 12 }}>{r.tokenUsage.inputTokens + r.tokenUsage.outputTokens}</Text>;
+            },
+        },
+        {
+            title: 'Model',
+            dataIndex: 'model',
+            key: 'model',
+            width: 180,
+            render: (m: string) => <Text type="secondary" style={{ fontSize: 11 }}>{m}</Text>,
+        },
+        {
+            title: 'Duration',
+            key: 'duration',
+            width: 100,
+            render: (_: any, r: AnalysisTask) => {
+                if (!r.completedAt) return <Tag icon={<ClockCircleOutlined spin />} color="processing">running</Tag>;
+                const ms = new Date(r.completedAt).getTime() - new Date(r.createdAt).getTime();
+                return <Text style={{ fontSize: 12 }}>{(ms / 1000).toFixed(1)}s</Text>;
+            },
+        },
+        {
+            title: 'Mappings',
+            key: 'mappings',
+            width: 100,
+            render: (_: any, r: AnalysisTask) => {
+                if (!r.mappings) return <Text type="secondary">—</Text>;
+                const imp = r.mappings.filter(m => m.status === 'implemented').length;
+                const par = r.mappings.filter(m => m.status === 'partial').length;
+                const nf = r.mappings.filter(m => m.status === 'not_found').length;
+                return (
+                    <Space size={4}>
+                        {imp > 0 && <Tag color="green" style={{ fontSize: 10 }}>{imp}✓</Tag>}
+                        {par > 0 && <Tag color="orange" style={{ fontSize: 10 }}>{par}~</Tag>}
+                        {nf > 0 && <Tag color="red" style={{ fontSize: 10 }}>{nf}✗</Tag>}
+                    </Space>
+                );
+            },
+        },
+        {
+            title: '',
+            key: 'action',
+            width: 60,
+            render: (_: any, r: AnalysisTask) => (
+                <Button
+                    type="link"
+                    size="small"
+                    icon={<EyeOutlined />}
+                    onClick={() => handleViewTask(r)}
+                >
+                    Logs
+                </Button>
+            ),
+        },
+    ];
 
     return (
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div>
                     <Title level={4} style={{ margin: 0 }}>
                         <RobotOutlined style={{ marginRight: 8 }} />
@@ -57,102 +251,43 @@ export const AiAnalysisPage: React.FC = () => {
                 <Button
                     type="primary"
                     icon={<ThunderboltOutlined />}
-                    onClick={handleAnalyzeAll}
-                    loading={analyzing}
+                    onClick={handleStartAnalysis}
+                    loading={tasks.some(t => t.status === 'running')}
                     size="large"
                 >
-                    {analyzing ? 'Analyzing...' : `Analyze All (${objects.length} objects)`}
+                    {tasks.some(t => t.status === 'running')
+                        ? 'Analyzing...'
+                        : `Start Analysis (${countNodes(objects)} objects)`}
                 </Button>
             </div>
 
-            {/* Loading */}
-            {analyzing && (
-                <div style={{ textAlign: 'center', padding: 60 }}>
-                    <Spin size="large" />
-                    <div style={{ marginTop: 16 }}>
-                        <Text type="secondary">Sending object tree to AI for analysis...</Text>
-                    </div>
-                </div>
-            )}
-
-            {/* Empty state */}
-            {!analyzing && !result && (
+            {/* Task list */}
+            {tasks.length === 0 ? (
                 <Empty
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="Click 'Analyze All' to start AI mapping analysis"
-                    style={{ padding: 80 }}
+                    description="Click 'Start Analysis' to create your first scan task"
+                    style={{ padding: 60 }}
+                />
+            ) : (
+                <Table
+                    dataSource={tasks}
+                    columns={columns}
+                    rowKey="id"
+                    size="small"
+                    pagination={false}
+                    onRow={(record) => ({
+                        onClick: () => handleViewTask(record),
+                        style: { cursor: 'pointer' },
+                    })}
                 />
             )}
 
-            {/* Results */}
-            {!analyzing && result && (
-                <div>
-                    {/* Summary bar */}
-                    <Card size="small" style={{ marginBottom: 16 }}>
-                        <Space size={24}>
-                            <Text><strong>{result.mappings.length}</strong> objects analyzed</Text>
-                            <Text type="secondary">
-                                🎯 {result.mappings.filter(m => m.status === 'implemented').length} implemented
-                            </Text>
-                            <Text type="secondary">
-                                ⚠️ {result.mappings.filter(m => m.status === 'partial').length} partial
-                            </Text>
-                            <Text type="secondary">
-                                ❌ {result.mappings.filter(m => m.status === 'not_found').length} not found
-                            </Text>
-                            <Text type="secondary" style={{ fontSize: 11 }}>
-                                Tokens: {result.tokenUsage.inputTokens} in / {result.tokenUsage.outputTokens} out
-                            </Text>
-                        </Space>
-                    </Card>
-
-                    {/* Mapping cards */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {result.mappings.map((m: ObjectMapping) => (
-                            <Card
-                                key={m.objectId}
-                                size="small"
-                                style={{
-                                    borderLeft: `3px solid ${m.status === 'implemented' ? token.colorSuccess : m.status === 'partial' ? token.colorWarning : token.colorError}`,
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                                    <Tag color={STATUS_COLOR[m.status] || 'default'}>
-                                        {m.status.toUpperCase()}
-                                    </Tag>
-                                    <Text strong>{m.objectTitle}</Text>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>#{m.objectId.slice(0, 8)}</Text>
-                                </div>
-
-                                <Text style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>
-                                    {m.summary}
-                                </Text>
-
-                                {m.relatedFiles.length > 0 && (
-                                    <div style={{
-                                        background: token.colorFillQuaternary,
-                                        borderRadius: token.borderRadius,
-                                        padding: '8px 12px',
-                                        fontSize: 12,
-                                    }}>
-                                        {m.relatedFiles.map((f, i) => (
-                                            <div key={i} style={{ marginBottom: i < m.relatedFiles.length - 1 ? 4 : 0 }}>
-                                                📄 <Text code style={{ fontSize: 11 }}>{f.filePath}</Text>
-                                                {f.lineRange && (
-                                                    <Text type="secondary" style={{ fontSize: 11 }}> L{f.lineRange.start}–{f.lineRange.end}</Text>
-                                                )}
-                                                {f.description && (
-                                                    <Text type="secondary" style={{ fontSize: 11 }}> — {f.description}</Text>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </Card>
-                        ))}
-                    </div>
-                </div>
-            )}
+            {/* Log drawer */}
+            <AnalysisLogDrawer
+                task={selectedTask}
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+            />
         </div>
     );
 };

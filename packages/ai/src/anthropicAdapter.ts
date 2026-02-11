@@ -1,37 +1,69 @@
 /**
- * Anthropic SDK adapter — calls Claude API and returns structured results.
+ * AI adapter — calls Claude API via OpenAI-compatible endpoint format.
+ *
+ * Uses fetch + /v1/chat/completions so it works with API proxies
+ * (e.g. one-api, new-api) that route models via the OpenAI format.
  */
-import Anthropic from '@anthropic-ai/sdk';
+
+// Node 18+ global fetch — declare for TypeScript
+declare function fetch(input: string, init?: RequestInit): Promise<Response>;
+interface RequestInit { method?: string; headers?: Record<string, string>; body?: string }
+interface Response { ok: boolean; status: number; text(): Promise<string>; json(): Promise<any> }
+declare const console: { log(...args: any[]): void; error(...args: any[]): void };
 import type { AiConfig, ObjectMapping, TokenUsage } from '@specbook/shared';
 
 export interface AdapterResult {
     mappings: ObjectMapping[];
     tokenUsage: TokenUsage;
+    rawResponse: string;
+}
+
+interface ChatCompletionResponse {
+    choices: { message: { content: string } }[];
+    usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
 }
 
 /**
- * Call the Anthropic Messages API and return parsed mappings + token usage.
+ * Call the AI API via OpenAI-compatible chat completions endpoint.
  */
 export async function callAnthropic(
     config: AiConfig,
     systemPrompt: string,
     userPrompt: string,
 ): Promise<AdapterResult> {
-    const client = new Anthropic({
-        apiKey: config.apiKey,
-        baseURL: config.baseUrl || 'https://api.anthropic.com',
+    const baseUrl = (config.baseUrl || 'https://api.anthropic.com').replace(/\/+$/, '');
+    const model = config.model || 'claude-3-sonnet-20240229';
+    const requestBody = {
+        model,
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+        ],
+        max_tokens: 8192,
+        temperature: 0.3,
+    };
+
+    console.log('[AI Adapter] Request URL:', `${baseUrl}/v1/chat/completions`);
+    console.log('[AI Adapter] Request body:', JSON.stringify({ ...requestBody, messages: requestBody.messages.map(m => ({ role: m.role, content: m.content.substring(0, 100) + '...' })) }, null, 2));
+
+    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
     });
 
-    const response = await client.messages.create({
-        model: config.model || 'claude-sonnet-4-20250514',
-        max_tokens: 8192,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
-    });
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`${response.status} ${errorText}`);
+    }
+
+    const data: ChatCompletionResponse = await response.json();
 
     // Extract text content from response
-    const textBlock = response.content.find((b: { type: string }) => b.type === 'text');
-    const rawText = textBlock && textBlock.type === 'text' ? textBlock.text : '';
+    const rawText = data.choices?.[0]?.message?.content ?? '';
 
     // Parse JSON from response (handle possible markdown code fences)
     let mappings: ObjectMapping[] = [];
@@ -40,7 +72,6 @@ export async function callAnthropic(
         const parsed = JSON.parse(jsonStr);
         mappings = parsed.mappings ?? parsed ?? [];
     } catch {
-        // If parsing fails, return a single "unknown" mapping
         mappings = [{
             objectId: 'parse-error',
             objectTitle: 'Parse Error',
@@ -51,11 +82,11 @@ export async function callAnthropic(
     }
 
     const tokenUsage: TokenUsage = {
-        inputTokens: response.usage.input_tokens,
-        outputTokens: response.usage.output_tokens,
-        model: config.model || 'claude-sonnet-4-20250514',
+        inputTokens: data.usage?.prompt_tokens ?? 0,
+        outputTokens: data.usage?.completion_tokens ?? 0,
+        model,
         timestamp: new Date().toISOString(),
     };
 
-    return { mappings, tokenUsage };
+    return { mappings, tokenUsage, rawResponse: rawText };
 }

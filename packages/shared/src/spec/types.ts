@@ -114,8 +114,33 @@ export interface ObjectMapping {
     relatedFiles: RelatedFile[];
 }
 
-/** Full analysis result containing mappings + token usage. */
+/** Full analysis result containing mappings + token usage + prompts for logging. */
 export interface AnalysisResult {
     mappings: ObjectMapping[];
     tokenUsage: TokenUsage;
+    systemPrompt: string;
+    userPrompt: string;
+    rawResponse: string;
+}
+
+/** A single log entry within an analysis task. */
+export interface AnalysisLogEntry {
+    type: 'context' | 'prompt' | 'response' | 'result' | 'error';
+    label: string;
+    content: string;
+    timestamp: string;
+}
+
+/** A tracked analysis task with progress, logs, and results. */
+export interface AnalysisTask {
+    id: string;
+    status: 'running' | 'completed' | 'error';
+    objectCount: number;
+    model: string;
+    createdAt: string;
+    completedAt?: string;
+    tokenUsage?: TokenUsage;
+    mappings?: ObjectMapping[];
+    logs: AnalysisLogEntry[];
+    errorMessage?: string;
 }

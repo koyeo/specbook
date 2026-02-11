@@ -14,9 +14,11 @@ interface AiSettingsModalProps {
 }
 
 const MODEL_OPTIONS = [
+    { label: 'Claude 3 Sonnet', value: 'claude-3-sonnet-20240229' },
+    { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' },
+    { label: 'Claude 3.5 Haiku', value: 'claude-3-5-haiku-20241022' },
     { label: 'Claude Sonnet 4', value: 'claude-sonnet-4-20250514' },
     { label: 'Claude Opus 4', value: 'claude-opus-4-20250514' },
-    { label: 'Claude Haiku 3.5', value: 'claude-3-5-haiku-20241022' },
 ];
 
 export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ open, onClose }) => {
@@ -66,13 +68,16 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ open, onClose 
                     <Input placeholder="https://api.anthropic.com" />
                 </Form.Item>
 
-                <Form.Item name="model" label="Model">
+                <Form.Item name="model" label="Model" extra="Select a preset or type a custom model name">
                     <Select
                         options={MODEL_OPTIONS}
                         showSearch
                         allowClear={false}
-                        placeholder="Select a model"
-                    />
+                        placeholder="Select or type a model name"
+                        mode={undefined}
+                    >
+                        {/* Allow free-text by not restricting input */}
+                    </Select>
                 </Form.Item>
             </Form>
 
