@@ -2,11 +2,12 @@
  * App shell — antd ConfigProvider + sidebar layout + CSS variable theme.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { ConfigProvider, theme, Layout, Menu, Button, Tooltip, Typography, Space, Dropdown } from 'antd';
+import { ConfigProvider, theme, Layout, Menu, Button, Tooltip, Typography, Space, Dropdown, Splitter } from 'antd';
 import {
     SunOutlined, MoonOutlined, SettingOutlined,
-    AppstoreOutlined, BookOutlined, CommentOutlined,
+    AppstoreOutlined, BookOutlined,
     FolderOpenOutlined, BulbOutlined, DesktopOutlined,
+    RobotOutlined,
 } from '@ant-design/icons';
 import { ObjectPage } from './containers/SpecPage';
 import { AiAnalysisPage } from './containers/AiAnalysisPage';
@@ -20,7 +21,7 @@ const { Text, Title } = Typography;
 const { Sider, Content } = Layout;
 
 type ThemeMode = 'system' | 'light' | 'dark';
-type PageKey = 'objects' | 'ai' | 'glossary' | 'playground' | 'knowledge';
+type PageKey = 'objects' | 'ai' | 'glossary' | 'knowledge';
 
 function getSystemDark(): boolean {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
@@ -36,6 +37,14 @@ const App: React.FC = () => {
     const [objects, setObjects] = useState<ObjectTreeNode[]>([]);
     const [currentPage, setCurrentPage] = useState<PageKey>('objects');
     const [siderCollapsed, setSiderCollapsed] = useState(false);
+    const [copilotOpen, setCopilotOpen] = useState<boolean>(() => {
+        return localStorage.getItem('specbook-copilot') !== 'false';
+    });
+
+    // Persist copilot state
+    useEffect(() => {
+        localStorage.setItem('specbook-copilot', String(copilotOpen));
+    }, [copilotOpen]);
 
     // Load saved workspace on mount
     useEffect(() => {
@@ -91,7 +100,6 @@ const App: React.FC = () => {
         { key: 'objects', icon: <AppstoreOutlined />, label: 'Features' },
         { key: 'knowledge', icon: <BulbOutlined />, label: 'Knowledge' },
         { key: 'glossary', icon: <BookOutlined />, label: 'Glossary' },
-        { key: 'playground', icon: <CommentOutlined />, label: 'Playground' },
     ];
 
     const renderPage = () => {
@@ -104,8 +112,6 @@ const App: React.FC = () => {
                 return <GlossaryPage workspace={workspace} />;
             case 'knowledge':
                 return <KnowledgePage workspace={workspace} />;
-            case 'playground':
-                return <PlaygroundPage workspace={workspace} />;
             default:
                 return <ObjectPage workspace={workspace} />;
         }
@@ -230,12 +236,55 @@ const App: React.FC = () => {
                                     >
                                         <Button size="small" type="text" icon={currentThemeIcon} />
                                     </Dropdown>
+                                    <Tooltip title={copilotOpen ? 'Hide Copilot' : 'Show Copilot'}>
+                                        <Button
+                                            size="small"
+                                            type={copilotOpen ? 'primary' : 'text'}
+                                            icon={<RobotOutlined />}
+                                            onClick={() => setCopilotOpen(!copilotOpen)}
+                                        />
+                                    </Tooltip>
                                 </div>
                             </div>
 
-                            {/* Page content */}
-                            <div style={{ flex: 1, padding: '0 24px 20px', overflow: 'auto' }}>
-                                {renderPage()}
+                            {/* Page content + Copilot panel */}
+                            <div style={{ flex: 1, overflow: 'hidden' }}>
+                                {copilotOpen ? (
+                                    <Splitter>
+                                        <Splitter.Panel defaultSize="60%" min="30%">
+                                            <div style={{ height: '100%', padding: '0 24px 20px', overflow: 'auto' }}>
+                                                {renderPage()}
+                                            </div>
+                                        </Splitter.Panel>
+                                        <Splitter.Panel defaultSize="40%" min="280px">
+                                            <div style={{
+                                                height: '100%',
+                                                borderLeft: '1px solid var(--sb-border)',
+                                                padding: '0 16px 16px',
+                                                overflow: 'hidden',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                            }}>
+                                                <div style={{
+                                                    flexShrink: 0,
+                                                    padding: '8px 0',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                }}>
+                                                    <Text strong style={{ fontSize: 14 }}>🤖 Copilot</Text>
+                                                </div>
+                                                <div style={{ flex: 1, overflow: 'hidden' }}>
+                                                    <PlaygroundPage workspace={workspace} />
+                                                </div>
+                                            </div>
+                                        </Splitter.Panel>
+                                    </Splitter>
+                                ) : (
+                                    <div style={{ height: '100%', padding: '0 24px 20px', overflow: 'auto' }}>
+                                        {renderPage()}
+                                    </div>
+                                )}
                             </div>
                         </Content>
                     </Layout>
