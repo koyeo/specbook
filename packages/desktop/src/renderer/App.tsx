@@ -2,11 +2,11 @@
  * App shell — antd ConfigProvider + sidebar layout + CSS variable theme.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { ConfigProvider, theme, Layout, Menu, Button, Tooltip, Typography, Space } from 'antd';
+import { ConfigProvider, theme, Layout, Menu, Button, Tooltip, Typography, Space, Dropdown } from 'antd';
 import {
     SunOutlined, MoonOutlined, SettingOutlined,
     AppstoreOutlined, BookOutlined, CommentOutlined,
-    FolderOpenOutlined, BulbOutlined,
+    FolderOpenOutlined, BulbOutlined, DesktopOutlined,
 } from '@ant-design/icons';
 import { ObjectPage } from './containers/SpecPage';
 import { AiAnalysisPage } from './containers/AiAnalysisPage';
@@ -77,16 +77,15 @@ const App: React.FC = () => {
         document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
     }, [isDark]);
 
-    const cycleTheme = () => {
-        setMode(prev => {
-            if (prev === 'system') return 'light';
-            if (prev === 'light') return 'dark';
-            return 'system';
-        });
-    };
+    const themeMenuItems = [
+        { key: 'system', icon: <DesktopOutlined />, label: 'System' },
+        { key: 'light', icon: <SunOutlined />, label: 'Light' },
+        { key: 'dark', icon: <MoonOutlined />, label: 'Dark' },
+    ];
 
-    const themeLabel = mode === 'system' ? 'System' : mode === 'light' ? 'Light' : 'Dark';
-    const themeIcon = isDark ? <SunOutlined /> : <MoonOutlined />;
+    const currentThemeIcon = mode === 'system'
+        ? <DesktopOutlined />
+        : mode === 'light' ? <SunOutlined /> : <MoonOutlined />;
 
     const menuItems = [
         { key: 'objects', icon: <AppstoreOutlined />, label: 'Features' },
@@ -133,11 +132,18 @@ const App: React.FC = () => {
                         justifyContent: 'center', height: '100vh', gap: 16,
                     }}>
                         <div style={{ display: 'flex', gap: 4, position: 'absolute', top: 12, right: 16 }}>
-                            <Tooltip title={`Theme: ${themeLabel}`}>
-                                <Button size="small" type="text" icon={themeIcon} onClick={cycleTheme} />
-                            </Tooltip>
+                            <Dropdown
+                                menu={{
+                                    items: themeMenuItems,
+                                    selectedKeys: [mode],
+                                    onClick: ({ key }) => setMode(key as ThemeMode),
+                                }}
+                                trigger={['click']}
+                            >
+                                <Button size="small" type="text" icon={currentThemeIcon} />
+                            </Dropdown>
                         </div>
-                        <Title level={3}>📝 SpecBook</Title>
+                        <Title level={3}>📝 Specbook</Title>
                         <Text type="secondary">Select a workspace folder to get started</Text>
                         <Button type="primary" size="large" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>
                             Open Workspace
@@ -179,7 +185,7 @@ const App: React.FC = () => {
                             >
                                 <span style={{ fontSize: 18 }}>📝</span>
                                 {!siderCollapsed && (
-                                    <Text strong style={{ marginLeft: 8, fontSize: 14 }}>SpecBook</Text>
+                                    <Text strong style={{ marginLeft: 8, fontSize: 14 }}>Specbook</Text>
                                 )}
                             </div>
 
@@ -214,9 +220,16 @@ const App: React.FC = () => {
                                     <Tooltip title="AI Settings">
                                         <Button size="small" type="text" icon={<SettingOutlined />} onClick={() => setSettingsOpen(true)} />
                                     </Tooltip>
-                                    <Tooltip title={`Theme: ${themeLabel}`}>
-                                        <Button size="small" type="text" icon={themeIcon} onClick={cycleTheme} />
-                                    </Tooltip>
+                                    <Dropdown
+                                        menu={{
+                                            items: themeMenuItems,
+                                            selectedKeys: [mode],
+                                            onClick: ({ key }) => setMode(key as ThemeMode),
+                                        }}
+                                        trigger={['click']}
+                                    >
+                                        <Button size="small" type="text" icon={currentThemeIcon} />
+                                    </Dropdown>
                                 </div>
                             </div>
 
