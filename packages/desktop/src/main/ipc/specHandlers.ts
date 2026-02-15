@@ -85,6 +85,8 @@ export function registerIpcHandlers(): void {
             title: payload.title.trim(),
             hasContent: !!(payload.content?.trim()),
             hasActions: false,
+            hasImpls: false,
+            hasTests: false,
             isState: false,
             completed: false,
             content: payload.content?.trim() || '',
@@ -148,6 +150,55 @@ export function registerIpcHandlers(): void {
     ipcMain.handle(IPC.SAVE_ACTIONS, (_event, id: string, actions: import('@specbook/shared').ObjectAction[]) => {
         const ws = requireWorkspace();
         objectStore.writeActions(ws, id, actions);
+    });
+
+    // ─── Impl/Test Mappings ─────────────────────────
+
+    ipcMain.handle(IPC.LOAD_IMPLS, (_event, id: string) => {
+        const ws = requireWorkspace();
+        return objectStore.readImpls(ws, id);
+    });
+
+    ipcMain.handle(IPC.SAVE_IMPLS, (_event, id: string, files: import('@specbook/shared').RelatedFile[]) => {
+        const ws = requireWorkspace();
+        objectStore.writeImpls(ws, id, files);
+    });
+
+    ipcMain.handle(IPC.LOAD_TESTS, (_event, id: string) => {
+        const ws = requireWorkspace();
+        return objectStore.readTests(ws, id);
+    });
+
+    ipcMain.handle(IPC.SAVE_TESTS, (_event, id: string, files: import('@specbook/shared').RelatedFile[]) => {
+        const ws = requireWorkspace();
+        objectStore.writeTests(ws, id, files);
+    });
+
+    // ─── Open in Editor ─────────────────────────────
+
+    ipcMain.handle(IPC.OPEN_IN_EDITOR, async (_event, filePath: string, line?: number) => {
+        const ws = requireWorkspace();
+        const path = await import('path');
+        const { exec } = await import('child_process');
+
+        // Resolve relative paths against workspace
+        const absPath = path.isAbsolute(filePath) ? filePath : path.join(ws, filePath);
+
+        // Build editor command: antigravity --goto file:line
+        const editor = process.env.SPECBOOK_EDITOR || 'antigravity';
+        const target = line ? `${absPath}:${line}` : absPath;
+        const cmd = `${editor} --goto "${target}"`;
+
+        return new Promise<void>((resolve, reject) => {
+            exec(cmd, (error) => {
+                if (error) {
+                    console.error('[openInEditor] Failed:', cmd, error.message);
+                    reject(new Error(`Failed to open editor: ${error.message}`));
+                } else {
+                    resolve();
+                }
+            });
+        });
     });
 
     ipcMain.handle(IPC.EXPORT_MARKDOWN, async () => {

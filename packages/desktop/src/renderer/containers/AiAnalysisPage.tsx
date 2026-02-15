@@ -3,9 +3,9 @@
  */
 import React, { useState, useCallback } from 'react';
 import { Button, Table, Typography, message, Tag, Empty, Space, theme } from 'antd';
-import { RobotOutlined, ThunderboltOutlined, EyeOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { RobotOutlined, ThunderboltOutlined, EyeOutlined, ClockCircleOutlined, CloudUploadOutlined } from '@ant-design/icons';
 import { AnalysisLogDrawer } from '../components/AnalysisLogDrawer';
-import type { ObjectTreeNode, AnalysisTask } from '@specbook/shared';
+import type { ObjectTreeNode, AnalysisTask, RelatedFile } from '@specbook/shared';
 
 const { Text, Title } = Typography;
 const { useToken } = theme;
@@ -52,6 +52,57 @@ export const AiAnalysisPage: React.FC<Props> = ({ objects }) => {
     const updateTask = useCallback((id: string, patch: Partial<AnalysisTask>) => {
         setTasks(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
     }, []);
+
+    /** Classify a file as impl or test using AI-provided type with filename fallback. */
+    const classifyFile = useCallback((f: RelatedFile): 'impl' | 'test' => {
+        if (f.type === 'impl' || f.type === 'test') return f.type;
+        const fp = f.filePath.toLowerCase();
+        if (/\.(test|spec)\./i.test(fp) || /\/__tests__\//i.test(fp) || /\/test\//i.test(fp)) return 'test';
+        return 'impl';
+    }, []);
+
+    /** Flatten all nodes in the object tree. */
+    const flattenAllNodes = useCallback((nodes: ObjectTreeNode[]): ObjectTreeNode[] => {
+        const result: ObjectTreeNode[] = [];
+        for (const n of nodes) {
+            result.push(n);
+            if (n.children) result.push(...flattenAllNodes(n.children));
+        }
+        return result;
+    }, []);
+
+    /** Match an object node by title (case-insensitive, trimmed, includes-fallback). */
+    const matchNodeByTitle = useCallback((nodes: ObjectTreeNode[], title: string): ObjectTreeNode | undefined => {
+        const t = title.trim().toLowerCase();
+        return nodes.find(n => n.title.trim().toLowerCase() === t)
+            || nodes.find(n => n.title.trim().toLowerCase().includes(t) || t.includes(n.title.trim().toLowerCase()));
+    }, []);
+
+    const handleSaveAllResults = useCallback(async (task: AnalysisTask) => {
+        if (!task.mappings || task.mappings.length === 0) return;
+        const allNodes = flattenAllNodes(objects);
+        let savedCount = 0;
+        console.log('[SaveAll] Total mappings:', task.mappings.length, 'Total nodes:', allNodes.length);
+        try {
+            for (const mapping of task.mappings) {
+                const matchNode = matchNodeByTitle(allNodes, mapping.objectTitle);
+                const targetId = mapping.objectId || matchNode?.id;
+                console.log('[SaveAll] mapping:', mapping.objectTitle, '→ targetId:', targetId, ', files:', mapping.relatedFiles.length);
+                if (!targetId || mapping.relatedFiles.length === 0) continue;
+
+                const implList = mapping.relatedFiles.filter(f => classifyFile(f) === 'impl');
+                const testList = mapping.relatedFiles.filter(f => classifyFile(f) === 'test');
+
+                console.log('[SaveAll]   impl:', implList.length, 'test:', testList.length);
+                if (implList.length > 0) await window.api.saveImpls(targetId, implList);
+                if (testList.length > 0) await window.api.saveTests(targetId, testList);
+                savedCount++;
+            }
+            message.success(`Saved results for ${savedCount} object(s)`);
+        } catch (err: any) {
+            message.error(err?.message || 'Failed to save results');
+        }
+    }, [objects, flattenAllNodes, classifyFile, matchNodeByTitle]);
 
     const handleStartAnalysis = useCallback(async () => {
         if (objects.length === 0) {
@@ -232,18 +283,21 @@ export const AiAnalysisPage: React.FC<Props> = ({ objects }) => {
         },
         {
             title: '',
-            key: 'action',
-            width: 60,
-            render: (_: any, r: AnalysisTask) => (
-                <Button
-                    type="link"
-                    size="small"
-                    icon={<EyeOutlined />}
-                    onClick={() => handleViewTask(r)}
-                >
-                    Logs
-                </Button>
-            ),
+            key: 'save',
+            width: 80,
+            render: (_: any, r: AnalysisTask) => {
+                if (r.status !== 'completed' || !r.mappings?.length) return null;
+                return (
+                    <Button
+                        type="link"
+                        size="small"
+                        icon={<CloudUploadOutlined />}
+                        onClick={(e) => { e.stopPropagation(); handleSaveAllResults(r); }}
+                    >
+                        Save All
+                    </Button>
+                );
+            },
         },
     ];
 
@@ -299,6 +353,7 @@ export const AiAnalysisPage: React.FC<Props> = ({ objects }) => {
                 task={selectedTask}
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
+                objects={objects}
             />
         </div>
     );

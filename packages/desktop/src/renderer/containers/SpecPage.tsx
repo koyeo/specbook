@@ -1,16 +1,71 @@
 /**
  * Container component — VS Code-like layout.
- * Left pane: object tree   |   Right pane: detail editor (inline panel)
+ * Left: object tree | Detail | Implementations | Tests
  */
 import React, { useEffect, useState } from 'react';
-import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, theme } from 'antd';
+import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, Tooltip, theme } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
 import { ObjectTable } from '../components/SpecTable';
 import { ObjectDetailPanel } from '../components/SpecDetailPanel';
 import { useObjects } from '../hooks/useSpecs';
+import type { RelatedFile } from '@specbook/shared';
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
+
+/** Clickable file item for impl/test panels. */
+const FileLink: React.FC<{ file: RelatedFile; color: string }> = ({ file, color }) => {
+    const basename = file.filePath.split('/').pop() || file.filePath;
+    return (
+        <Tooltip title={`${file.filePath}${file.lineRange ? ` L${file.lineRange.start}-${file.lineRange.end}` : ''}${file.description ? `\n${file.description}` : ''}`}>
+            <div
+                style={{
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    color,
+                    padding: '4px 12px',
+                    transition: 'background 0.15s',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--ant-color-fill-secondary)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                onClick={() => {
+                    window.api.openInEditor(file.filePath, file.lineRange?.start).catch((err: any) => {
+                        message.error(err?.message || 'Failed to open file');
+                    });
+                }}
+            >
+                📄 {basename}
+                {file.lineRange && <span style={{ opacity: 0.5, marginLeft: 4 }}>:{file.lineRange.start}</span>}
+                {file.description && (
+                    <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>— {file.description}</Text>
+                )}
+            </div>
+        </Tooltip>
+    );
+};
+
+/** A panel showing a list of files (impl or test). */
+const FileListPanel: React.FC<{ title: string; files: RelatedFile[]; color: string; borderColor: string }> = ({
+    title, files, color, borderColor,
+}) => (
+    <div style={{ height: '100%', borderLeft: `1px solid ${borderColor}`, overflow: 'auto' }}>
+        <div style={{ padding: '8px 12px', borderBottom: `1px solid ${borderColor}` }}>
+            <Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {title} ({files.length})
+            </Text>
+        </div>
+        {files.length === 0 ? (
+            <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--ant-color-text-quaternary)', fontSize: 12 }}>
+                No {title.toLowerCase()} linked
+            </div>
+        ) : (
+            files.map((f, i) => <FileLink key={i} file={f} color={color} />)
+        )}
+    </div>
+);
 
 interface ObjectPageProps {
     workspace: string | null;
@@ -25,6 +80,10 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
 
     const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
 
+    // Impl/test files for the selected object
+    const [implFiles, setImplFiles] = useState<RelatedFile[]>([]);
+    const [testFiles, setTestFiles] = useState<RelatedFile[]>([]);
+
     // Add-new modal
     const [addMode, setAddMode] = useState<'root' | 'sibling' | 'child' | null>(null);
     const [addParentId, setAddParentId] = useState<string | null>(null);
@@ -32,6 +91,29 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     const [adding, setAdding] = useState(false);
 
     useEffect(() => { if (workspace) loadObjects(); }, [workspace, loadObjects]);
+
+    // Load impl/test files when selection changes
+    useEffect(() => {
+        if (!selectedObjectId) {
+            setImplFiles([]);
+            setTestFiles([]);
+            return;
+        }
+        const load = async () => {
+            try {
+                const [impls, tests] = await Promise.all([
+                    window.api.loadImpls(selectedObjectId),
+                    window.api.loadTests(selectedObjectId),
+                ]);
+                setImplFiles(impls);
+                setTestFiles(tests);
+            } catch {
+                setImplFiles([]);
+                setTestFiles([]);
+            }
+        };
+        load();
+    }, [selectedObjectId]);
 
     const handleDelete = async (id: string) => {
         try {
@@ -42,7 +124,19 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     };
 
     const handleOpen = (id: string) => setSelectedObjectId(id);
-    const handleSaved = () => loadObjects();
+    const handleSaved = () => {
+        loadObjects();
+        // Reload files after save (detail panel may have changed impls/tests)
+        if (selectedObjectId) {
+            Promise.all([
+                window.api.loadImpls(selectedObjectId),
+                window.api.loadTests(selectedObjectId),
+            ]).then(([impls, tests]) => {
+                setImplFiles(impls);
+                setTestFiles(tests);
+            }).catch(() => { });
+        }
+    };
 
     const handleAddRoot = () => { setAddMode('root'); setAddParentId(null); setNewTitle(''); };
     const handleAddSibling = (_afterId: string, parentId: string | null) => { setAddMode('sibling'); setAddParentId(parentId); setNewTitle(''); };
@@ -104,9 +198,9 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                 <Divider style={{ margin: '8px 0' }} />
             </div>
 
-            {/* Splitter: left tree | right detail */}
+            {/* Splitter: tree | detail | impls | tests */}
             <Splitter style={{ flex: 1, minHeight: 0 }}>
-                <Splitter.Panel defaultSize="40%" min="240px" max="70%">
+                <Splitter.Panel defaultSize="30%" min="200px" max="50%">
                     <div style={{ height: '100%', overflow: 'auto', paddingRight: 4 }}>
                         <ObjectTable
                             objects={objects} loading={loading}
@@ -116,7 +210,7 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                         />
                     </div>
                 </Splitter.Panel>
-                <Splitter.Panel>
+                <Splitter.Panel defaultSize="30%">
                     <div style={{
                         height: '100%',
                         borderLeft: `1px solid ${token.colorBorderSecondary}`,
@@ -124,6 +218,22 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                     }}>
                         <ObjectDetailPanel specId={selectedObjectId} specs={objects} onSaved={handleSaved} />
                     </div>
+                </Splitter.Panel>
+                <Splitter.Panel defaultSize="20%">
+                    <FileListPanel
+                        title="Implementations"
+                        files={implFiles}
+                        color="#52c41a"
+                        borderColor={token.colorBorderSecondary}
+                    />
+                </Splitter.Panel>
+                <Splitter.Panel defaultSize="20%">
+                    <FileListPanel
+                        title="Tests"
+                        files={testFiles}
+                        color="#1677ff"
+                        borderColor={token.colorBorderSecondary}
+                    />
                 </Splitter.Panel>
             </Splitter>
 

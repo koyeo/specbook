@@ -41,8 +41,9 @@ For each object in the tree, search the project source code by **semantic meanin
 ## Analysis Rules
 
 1. **Semantic matching**: Match objects to code by purpose, not by name. Use your understanding of the object's role, its parent-child context, and common software patterns to find related code.
-2. **Scan broadly**: Look through the entire project directory tree to find related code.
+2. **Scan broadly**: Look through the entire project directory tree to find related source files.
 3. **Hierarchical context**: Parent–child relationships in the object tree imply containment. A child object is a sub-feature of its parent.
+4. **File classification**: For each related file, set \`type\` to \`"impl"\` for source/implementation code, or \`"test"\` for test/spec files (e.g. files in \`__tests__\`, \`*.test.*\`, \`*.spec.*\`, test directories).
 
 ## Response Format
 
@@ -59,7 +60,8 @@ Respond ONLY with valid JSON matching this schema:
         {
           "filePath": "<relative file path>",
           "description": "<how this file relates to the object>",
-          "lineRange": { "start": <number>, "end": <number> }
+          "lineRange": { "start": <number>, "end": <number> },
+          "type": "impl" | "test"
         }
       ]
     }

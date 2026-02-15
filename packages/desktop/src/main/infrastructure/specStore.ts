@@ -12,8 +12,10 @@ import {
     SPECS_SUBDIR,
     SPEC_FILE_EXT,
     SPEC_ACTION_FILE_EXT,
+    IMPLS_SUBDIR,
+    TESTS_SUBDIR,
 } from '@specbook/shared';
-import type { ObjectIndexEntry, ObjectSummary, ObjectDetail, ObjectIndex, ObjectTreeNode, ObjectAction } from '@specbook/shared';
+import type { ObjectIndexEntry, ObjectSummary, ObjectDetail, ObjectIndex, ObjectTreeNode, ObjectAction, RelatedFile } from '@specbook/shared';
 
 function specDir(workspace: string): string {
     return path.join(workspace, SPEC_DIR);
@@ -32,7 +34,12 @@ function specFilePath(workspace: string, id: string): string {
 }
 
 function ensureDirs(workspace: string): void {
-    const dirs = [specDir(workspace), specsSubdir(workspace)];
+    const dirs = [
+        specDir(workspace),
+        specsSubdir(workspace),
+        path.join(specDir(workspace), IMPLS_SUBDIR),
+        path.join(specDir(workspace), TESTS_SUBDIR),
+    ];
     for (const dir of dirs) {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -130,6 +137,66 @@ export function deleteActionsFile(workspace: string, id: string): void {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 }
 
+// ─── Impl/Test mapping file operations ──────────────
+
+function implFilePath(workspace: string, id: string): string {
+    return path.join(specDir(workspace), IMPLS_SUBDIR, `${id}.json`);
+}
+
+function testFilePath(workspace: string, id: string): string {
+    return path.join(specDir(workspace), TESTS_SUBDIR, `${id}.json`);
+}
+
+export function readImpls(workspace: string, id: string): RelatedFile[] {
+    const filePath = implFilePath(workspace, id);
+    if (!fs.existsSync(filePath)) return [];
+    try {
+        return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as RelatedFile[];
+    } catch {
+        return [];
+    }
+}
+
+export function writeImpls(workspace: string, id: string, files: RelatedFile[]): void {
+    ensureDirs(workspace);
+    const filePath = implFilePath(workspace, id);
+    if (files.length === 0) {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        return;
+    }
+    fs.writeFileSync(filePath, JSON.stringify(files, null, 2) + '\n', 'utf-8');
+}
+
+export function readTests(workspace: string, id: string): RelatedFile[] {
+    const filePath = testFilePath(workspace, id);
+    if (!fs.existsSync(filePath)) return [];
+    try {
+        return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as RelatedFile[];
+    } catch {
+        return [];
+    }
+}
+
+export function writeTests(workspace: string, id: string, files: RelatedFile[]): void {
+    ensureDirs(workspace);
+    const filePath = testFilePath(workspace, id);
+    if (files.length === 0) {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        return;
+    }
+    fs.writeFileSync(filePath, JSON.stringify(files, null, 2) + '\n', 'utf-8');
+}
+
+function deleteImplFile(workspace: string, id: string): void {
+    const filePath = implFilePath(workspace, id);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+}
+
+function deleteTestFile(workspace: string, id: string): void {
+    const filePath = testFilePath(workspace, id);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+}
+
 // ─── Object detail assembly ─────────────────────────
 
 export function readObjectDetail(workspace: string, id: string): ObjectDetail | null {
@@ -139,12 +206,16 @@ export function readObjectDetail(workspace: string, id: string): ObjectDetail | 
 
     const content = readContent(workspace, id);
     const hasActions = readActions(workspace, id).length > 0;
+    const hasImpls = readImpls(workspace, id).length > 0;
+    const hasTests = readTests(workspace, id).length > 0;
     return {
         id: entry.id,
         parentId: entry.parentId,
         title: entry.title,
         hasContent: content.trim().length > 0,
         hasActions,
+        hasImpls,
+        hasTests,
         isState: entry.isState ?? false,
         completed: entry.completed,
         content,
@@ -204,12 +275,16 @@ export function loadAllObjects(workspace: string): ObjectTreeNode[] {
     const flatObjects: ObjectSummary[] = index.specs.map(entry => {
         const hasContent = computeContentHash(specFilePath(workspace, entry.id)) !== null;
         const hasActions = readActions(workspace, entry.id).length > 0;
+        const hasImpls = readImpls(workspace, entry.id).length > 0;
+        const hasTests = readTests(workspace, entry.id).length > 0;
         return {
             id: entry.id,
             parentId: entry.parentId,
             title: entry.title,
             hasContent,
             hasActions,
+            hasImpls,
+            hasTests,
             isState: entry.isState ?? false,
             completed: entry.completed,
             createdAt: entry.createdAt,
@@ -259,6 +334,9 @@ export function deleteObject(workspace: string, id: string): void {
 
     for (const delId of idsToDelete) {
         deleteObjectFile(workspace, delId);
+        deleteActionsFile(workspace, delId);
+        deleteImplFile(workspace, delId);
+        deleteTestFile(workspace, delId);
     }
 }
 

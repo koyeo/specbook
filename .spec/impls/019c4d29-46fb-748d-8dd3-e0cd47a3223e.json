@@ -1,0 +1,38 @@
+[
+  {
+    "filePath": "packages/desktop/src/renderer/containers/SpecPage.tsx",
+    "description": "Main page container for spec/object management interface",
+    "lineRange": {
+      "start": 1,
+      "end": 100
+    },
+    "type": "impl"
+  },
+  {
+    "filePath": "packages/desktop/src/renderer/hooks/useSpecs.ts",
+    "description": "Hook for managing spec/object data and state",
+    "lineRange": {
+      "start": 1,
+      "end": 50
+    },
+    "type": "impl"
+  },
+  {
+    "filePath": "packages/desktop/src/main/infrastructure/specStore.ts",
+    "description": "Backend store for spec/object data persistence",
+    "lineRange": {
+      "start": 1,
+      "end": 100
+    },
+    "type": "impl"
+  },
+  {
+    "filePath": "packages/desktop/src/main/ipc/specHandlers.ts",
+    "description": "IPC handlers for spec/object operations",
+    "lineRange": {
+      "start": 1,
+      "end": 100
+    },
+    "type": "impl"
+  }
+]

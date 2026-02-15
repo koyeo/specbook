@@ -10,7 +10,6 @@ import {
     RobotOutlined,
 } from '@ant-design/icons';
 import { ObjectPage } from './containers/SpecPage';
-import { AiAnalysisPage } from './containers/AiAnalysisPage';
 import { GlossaryPage } from './containers/GlossaryPage';
 import { PlaygroundPage } from './containers/PlaygroundPage';
 import { KnowledgePage } from './containers/KnowledgePage';
@@ -21,7 +20,7 @@ const { Text, Title } = Typography;
 const { Sider, Content } = Layout;
 
 type ThemeMode = 'system' | 'light' | 'dark';
-type PageKey = 'objects' | 'ai' | 'glossary' | 'knowledge';
+type PageKey = 'objects' | 'glossary' | 'knowledge';
 
 function getSystemDark(): boolean {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
@@ -106,8 +105,6 @@ const App: React.FC = () => {
         switch (currentPage) {
             case 'objects':
                 return <ObjectPage workspace={workspace} />;
-            case 'ai':
-                return <AiAnalysisPage objects={objects} />;
             case 'glossary':
                 return <GlossaryPage workspace={workspace} />;
             case 'knowledge':
@@ -275,7 +272,7 @@ const App: React.FC = () => {
                                                     <Text strong style={{ fontSize: 14 }}>🤖 Copilot</Text>
                                                 </div>
                                                 <div style={{ flex: 1, overflow: 'hidden' }}>
-                                                    <PlaygroundPage workspace={workspace} />
+                                                    <PlaygroundPage workspace={workspace} objects={objects} />
                                                 </div>
                                             </div>
                                         </Splitter.Panel>

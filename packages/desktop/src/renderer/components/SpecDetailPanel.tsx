@@ -5,8 +5,8 @@
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag, Switch, Tooltip, Collapse, Alert } from 'antd';
-import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined, RobotOutlined } from '@ant-design/icons';
-import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType, ObjectMapping, AnalysisResult } from '@specbook/shared';
+import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined, RobotOutlined, CloudUploadOutlined } from '@ant-design/icons';
+import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType, ObjectMapping, AnalysisResult, RelatedFile } from '@specbook/shared';
 
 /** Action types — local copy to avoid CJS/ESM mismatch with @specbook/shared */
 const ACTION_TYPES: readonly ActionType[] = [
@@ -76,17 +76,20 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
     const [analyzing, setAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
 
+    const [savingResults, setSavingResults] = useState(false);
+
     const parentOptions = useMemo(() => {
         if (!specId) return [];
         const descendants = collectDescendantIds(specs, specId);
         return flattenTree(specs).filter(f => f.id !== specId && !descendants.has(f.id));
     }, [specs, specId]);
 
-    // Load spec detail + actions
+    // Load spec detail + actions + impls + tests
     useEffect(() => {
         if (specId) {
             setMode('preview');
             setLoading(true);
+            setAnalysisResult(null);
             Promise.all([
                 window.api.getObject(specId),
                 window.api.loadActions(specId),
@@ -166,6 +169,64 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
             message.error(err?.message || 'AI analysis failed');
         } finally {
             setAnalyzing(false);
+        }
+    };
+
+    // ─── Save AI Results to Impl/Test ─────────────────
+
+    /** Classify a file as impl or test using AI-provided type with filename fallback. */
+    const classifyFile = (f: RelatedFile): 'impl' | 'test' => {
+        if (f.type === 'impl' || f.type === 'test') return f.type;
+        const fp = f.filePath.toLowerCase();
+        if (/\.(test|spec)\./i.test(fp) || /\/__tests__\//i.test(fp) || /\/test\//i.test(fp)) return 'test';
+        return 'impl';
+    };
+
+    /** Flatten all nodes in the object tree. */
+    const flattenAllNodes = (nodes: ObjectTreeNode[]): ObjectTreeNode[] => {
+        const result: ObjectTreeNode[] = [];
+        for (const n of nodes) {
+            result.push(n);
+            if (n.children) result.push(...flattenAllNodes(n.children));
+        }
+        return result;
+    };
+
+    /** Match an object node by title (case-insensitive, trimmed, includes-fallback). */
+    const matchNodeByTitle = (nodes: ObjectTreeNode[], title: string): ObjectTreeNode | undefined => {
+        const t = title.trim().toLowerCase();
+        return nodes.find(n => n.title.trim().toLowerCase() === t)
+            || nodes.find(n => n.title.trim().toLowerCase().includes(t) || t.includes(n.title.trim().toLowerCase()));
+    };
+
+    const handleSaveResults = async () => {
+        if (!analysisResult || !specId) return;
+        setSavingResults(true);
+        try {
+            const allNodes = flattenAllNodes(specs);
+            let savedCount = 0;
+            console.log('[SaveResults] Total mappings:', analysisResult.mappings.length, 'Total nodes:', allNodes.length);
+            for (const mapping of analysisResult.mappings) {
+                // Find the matching object by title (fuzzy)
+                const matchNode = matchNodeByTitle(allNodes, mapping.objectTitle);
+                const targetId = mapping.objectId || matchNode?.id;
+                console.log('[SaveResults] mapping:', mapping.objectTitle, '→ targetId:', targetId, ', files:', mapping.relatedFiles.length);
+                if (!targetId || mapping.relatedFiles.length === 0) continue;
+
+                const implList = mapping.relatedFiles.filter(f => classifyFile(f) === 'impl');
+                const testList = mapping.relatedFiles.filter(f => classifyFile(f) === 'test');
+
+                console.log('[SaveResults]   impl:', implList.length, 'test:', testList.length);
+                if (implList.length > 0) await window.api.saveImpls(targetId, implList);
+                if (testList.length > 0) await window.api.saveTests(targetId, testList);
+                savedCount++;
+            }
+            message.success(`Saved results for ${savedCount} object(s)`);
+            onSaved();
+        } catch (err: any) {
+            message.error(err?.message || 'Failed to save results');
+        } finally {
+            setSavingResults(false);
         }
     };
 
@@ -351,6 +412,7 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                         </div>
                     )}
 
+
                     {/* Markdown body */}
                     <MarkdownPreview content={detail?.content || ''} />
 
@@ -359,13 +421,24 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                         <div style={{ marginTop: 20 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                                 <Text strong style={{ fontSize: 13 }}>🤖 AI Analysis</Text>
-                                <Text type="secondary" style={{ fontSize: 11 }}>
-                                    {analysisResult.tokenUsage.inputTokens} in / {analysisResult.tokenUsage.outputTokens} out tokens
-                                </Text>
+                                <Space size={8}>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>
+                                        {analysisResult.tokenUsage.inputTokens} in / {analysisResult.tokenUsage.outputTokens} out tokens
+                                    </Text>
+                                    <Button
+                                        size="small"
+                                        type="primary"
+                                        icon={<CloudUploadOutlined />}
+                                        onClick={handleSaveResults}
+                                        loading={savingResults}
+                                    >
+                                        Save Results
+                                    </Button>
+                                </Space>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                 {analysisResult.mappings.map((m) => (
-                                    <div key={m.objectId} style={{
+                                    <div key={m.objectId || m.objectTitle} style={{
                                         border: `1px solid ${token.colorBorderSecondary}`,
                                         borderRadius: token.borderRadius,
                                         padding: '10px 14px',
@@ -379,9 +452,10 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                                             <div style={{ fontSize: 12, color: token.colorTextSecondary }}>
                                                 {m.relatedFiles.map((f, i) => (
                                                     <div key={i} style={{ marginLeft: 8, marginBottom: 2 }}>
-                                                        📄 <Text code style={{ fontSize: 11 }}>{f.filePath}</Text>
+                                                        {classifyFile(f) === 'test' ? '🧪' : '📄'} <Text code style={{ fontSize: 11 }}>{f.filePath}</Text>
                                                         {f.lineRange && <Text type="secondary" style={{ fontSize: 11 }}> L{f.lineRange.start}-{f.lineRange.end}</Text>}
                                                         {f.description && <Text type="secondary" style={{ fontSize: 11 }}> — {f.description}</Text>}
+                                                        <Tag style={{ fontSize: 9, marginLeft: 4 }} color={classifyFile(f) === 'test' ? 'blue' : 'green'}>{classifyFile(f)}</Tag>
                                                     </div>
                                                 ))}
                                             </div>

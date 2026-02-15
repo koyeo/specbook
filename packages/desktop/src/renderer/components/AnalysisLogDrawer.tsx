@@ -4,13 +4,13 @@
  * Supports drag-to-resize via a custom handle on the left edge.
  */
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Drawer, Typography, Tag, Space, Card, Collapse, theme } from 'antd';
+import { Drawer, Typography, Tag, Space, Card, Collapse, Button, message, theme } from 'antd';
 import {
     FileTextOutlined, RobotOutlined, MessageOutlined,
     ThunderboltOutlined, CheckCircleOutlined, CloseCircleOutlined,
-    ClockCircleOutlined,
+    ClockCircleOutlined, CloudUploadOutlined,
 } from '@ant-design/icons';
-import type { AnalysisTask, ObjectMapping } from '@specbook/shared';
+import type { AnalysisTask, ObjectMapping, ObjectTreeNode, RelatedFile } from '@specbook/shared';
 
 const { Text } = Typography;
 const { useToken } = theme;
@@ -38,11 +38,14 @@ interface Props {
     task: AnalysisTask | null;
     open: boolean;
     onClose: () => void;
+    objects?: ObjectTreeNode[];
+    onSaved?: () => void;
 }
 
-export const AnalysisLogDrawer: React.FC<Props> = ({ task, open, onClose }) => {
+export const AnalysisLogDrawer: React.FC<Props> = ({ task, open, onClose, objects = [], onSaved }) => {
     const { token } = useToken();
     const [width, setWidth] = useState(DEFAULT_WIDTH);
+    const [savingResults, setSavingResults] = useState(false);
     const dragging = useRef(false);
     const startX = useRef(0);
     const startWidth = useRef(DEFAULT_WIDTH);
@@ -78,6 +81,60 @@ export const AnalysisLogDrawer: React.FC<Props> = ({ task, open, onClose }) => {
     }, []);
 
     if (!task) return null;
+
+    /** Classify a file as impl or test. */
+    const classifyFile = (f: RelatedFile): 'impl' | 'test' => {
+        if (f.type === 'impl' || f.type === 'test') return f.type;
+        const fp = f.filePath.toLowerCase();
+        if (/\.(test|spec)\./i.test(fp) || /\/__tests__\//i.test(fp) || /\/test\//i.test(fp)) return 'test';
+        return 'impl';
+    };
+
+    const flattenAllNodes = (nodes: ObjectTreeNode[]): ObjectTreeNode[] => {
+        const result: ObjectTreeNode[] = [];
+        for (const n of nodes) {
+            result.push(n);
+            if (n.children) result.push(...flattenAllNodes(n.children));
+        }
+        return result;
+    };
+
+    /** Match an object node by title (case-insensitive, trimmed, includes-fallback). */
+    const matchNodeByTitle = (nodes: ObjectTreeNode[], title: string): ObjectTreeNode | undefined => {
+        const t = title.trim().toLowerCase();
+        return nodes.find(n => n.title.trim().toLowerCase() === t)
+            || nodes.find(n => n.title.trim().toLowerCase().includes(t) || t.includes(n.title.trim().toLowerCase()));
+    };
+
+    const handleSaveAll = async () => {
+        if (!task.mappings?.length) return;
+        setSavingResults(true);
+        const allNodes = flattenAllNodes(objects);
+        let savedCount = 0;
+        console.log('[DrawerSave] Total mappings:', task.mappings.length, 'Total nodes:', allNodes.length);
+        try {
+            for (const mapping of task.mappings) {
+                const matchNode = matchNodeByTitle(allNodes, mapping.objectTitle);
+                const targetId = mapping.objectId || matchNode?.id;
+                console.log('[DrawerSave] mapping:', mapping.objectTitle, '→ targetId:', targetId, ', files:', mapping.relatedFiles.length);
+                if (!targetId || mapping.relatedFiles.length === 0) continue;
+
+                const implList = mapping.relatedFiles.filter(f => classifyFile(f) === 'impl');
+                const testList = mapping.relatedFiles.filter(f => classifyFile(f) === 'test');
+
+                console.log('[DrawerSave]   impl:', implList.length, 'test:', testList.length);
+                if (implList.length > 0) await window.api.saveImpls(targetId, implList);
+                if (testList.length > 0) await window.api.saveTests(targetId, testList);
+                savedCount++;
+            }
+            message.success(`Saved results for ${savedCount} object(s)`);
+            onSaved?.();
+        } catch (err: any) {
+            message.error(err?.message || 'Failed to save results');
+        } finally {
+            setSavingResults(false);
+        }
+    };
 
     const statusIcon = task.status === 'completed'
         ? <CheckCircleOutlined style={{ color: token.colorSuccess }} />
@@ -126,6 +183,15 @@ export const AnalysisLogDrawer: React.FC<Props> = ({ task, open, onClose }) => {
                 <Space size={8}>
                     <ThunderboltOutlined />
                     <Text strong style={{ fontSize: 13 }}>Analysis Results ({task.mappings.length} mappings)</Text>
+                    <Button
+                        size="small"
+                        type="primary"
+                        icon={<CloudUploadOutlined />}
+                        onClick={(e) => { e.stopPropagation(); handleSaveAll(); }}
+                        loading={savingResults}
+                    >
+                        Save All
+                    </Button>
                 </Space>
             ),
             children: (

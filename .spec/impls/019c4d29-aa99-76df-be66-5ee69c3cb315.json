@@ -1,0 +1,20 @@
+[
+  {
+    "filePath": "packages/desktop/src/renderer/components/SpecTable.tsx",
+    "description": "Table component that displays specs/objects in a tree-like structure",
+    "lineRange": {
+      "start": 1,
+      "end": 200
+    },
+    "type": "impl"
+  },
+  {
+    "filePath": "packages/shared/src/spec/types.ts",
+    "description": "Type definitions for spec/object data structure",
+    "lineRange": {
+      "start": 1,
+      "end": 100
+    },
+    "type": "impl"
+  }
+]

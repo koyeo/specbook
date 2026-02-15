@@ -26,10 +26,10 @@
       "title": "Object Detail",
       "parentId": "019c4d29-46fb-748d-8dd3-e0cd47a3223e",
       "completed": false,
-      "isState": false,
+      "isState": true,
       "contentHash": null,
       "createdAt": "2026-02-11T14:45:20.749Z",
-      "updatedAt": "2026-02-11T14:45:20.749Z"
+      "updatedAt": "2026-02-15T12:44:31.027Z"
     }
   ]
 }

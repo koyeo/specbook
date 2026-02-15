@@ -41,6 +41,8 @@ export interface ObjectSummary {
     title: string;
     hasContent: boolean;
     hasActions: boolean;
+    hasImpls: boolean;
+    hasTests: boolean;
     isState: boolean;
     completed: boolean;
     createdAt: string;
@@ -78,6 +80,15 @@ export const SPEC_FILE_EXT = '.md';
 /** File extension for individual spec action files. */
 export const SPEC_ACTION_FILE_EXT = '.actions.json';
 
+/** Subdirectory for implementation mapping files. */
+export const IMPLS_SUBDIR = 'impls';
+
+/** Subdirectory for test mapping files. */
+export const TESTS_SUBDIR = 'tests';
+
+/** File extension for impl/test mapping files. */
+export const MAPPING_FILE_EXT = '.json';
+
 /** Color for the "Action Entry" indicator (dot + tag). */
 export const ACTION_ENTRY_COLOR = '#1677ff';
 
@@ -103,6 +114,8 @@ export interface RelatedFile {
     filePath: string;
     description: string;
     lineRange?: { start: number; end: number };
+    /** Classification: implementation code or test code. */
+    type?: 'impl' | 'test';
 }
 
 /** Object mapping result returned by AI. */

@@ -5,7 +5,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '@specbook/shared';
 import type {
-    ObjectAPI, AddObjectPayload, UpdateObjectPayload, MoveObjectPayload, ObjectAction,
+    ObjectAPI, AddObjectPayload, UpdateObjectPayload, MoveObjectPayload, ObjectAction, RelatedFile,
     AiAPI, AiConfig, ObjectTreeNode,
     GlossaryAPI, AddGlossaryTermPayload, UpdateGlossaryTermPayload,
     ChatAPI, SendChatMessagePayload,
@@ -21,7 +21,12 @@ const api: ObjectAPI = {
     moveObject: (payload: MoveObjectPayload) => ipcRenderer.invoke(IPC.MOVE_OBJECT, payload),
     loadActions: (id: string) => ipcRenderer.invoke(IPC.LOAD_ACTIONS, id),
     saveActions: (id: string, actions: ObjectAction[]) => ipcRenderer.invoke(IPC.SAVE_ACTIONS, id, actions),
+    loadImpls: (id: string) => ipcRenderer.invoke(IPC.LOAD_IMPLS, id),
+    saveImpls: (id: string, files: RelatedFile[]) => ipcRenderer.invoke(IPC.SAVE_IMPLS, id, files),
+    loadTests: (id: string) => ipcRenderer.invoke(IPC.LOAD_TESTS, id),
+    saveTests: (id: string, files: RelatedFile[]) => ipcRenderer.invoke(IPC.SAVE_TESTS, id, files),
     exportMarkdown: () => ipcRenderer.invoke(IPC.EXPORT_MARKDOWN),
+    openInEditor: (filePath: string, line?: number) => ipcRenderer.invoke(IPC.OPEN_IN_EDITOR, filePath, line),
     selectWorkspace: () => ipcRenderer.invoke(IPC.SELECT_WORKSPACE),
     getWorkspace: () => ipcRenderer.invoke(IPC.GET_WORKSPACE),
 };

@@ -24,12 +24,12 @@ import {
     ShrinkOutlined,
     PlusOutlined,
     DeleteOutlined,
+    MoreOutlined,
 } from '@ant-design/icons';
 import type { ObjectTreeNode } from '@specbook/shared';
 
 const { Text } = Typography;
 const { useToken } = theme;
-const ACTION_ENTRY_COLOR = '#1677ff';
 
 interface ObjectTableProps {
     objects: ObjectTreeNode[];
@@ -198,30 +198,44 @@ const ObjectRow: React.FC<RowProps> = ({
                     </span>
 
                     {/* Title */}
-                    {node.isState && (
-                        <Tooltip title="State Object">
-                            <span style={{
-                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                width: 16, height: 16, borderRadius: 3, fontSize: 10, fontWeight: 600,
-                                backgroundColor: 'rgba(250, 140, 22, 0.12)', color: '#d48806', marginRight: 4, flexShrink: 0,
-                                lineHeight: 1, cursor: 'default',
-                            }}>S</span>
-                        </Tooltip>
-                    )}
-                    {node.hasActions && (
-                        <Tooltip title="Action Entry">
-                            <span style={{
-                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                width: 16, height: 16, borderRadius: 3, fontSize: 10, fontWeight: 600,
-                                backgroundColor: 'rgba(22, 119, 255, 0.12)', color: '#0958d9', marginRight: 4, flexShrink: 0,
-                                lineHeight: 1, cursor: 'default',
-                            }}>A</span>
-                        </Tooltip>
-                    )}
-                    <Text style={{ flex: 1, cursor: 'pointer' }} onClick={() => onOpen(node.id)}>
+                    <Text style={{ flex: 1, cursor: 'pointer', minWidth: 0 }} ellipsis onClick={() => onOpen(node.id)}>
                         {node.hasContent && <FileTextOutlined style={{ color: 'var(--ant-color-primary)', marginRight: 6, fontSize: 12 }} />}
                         {node.title}
                     </Text>
+
+                    {/* Tags on the right */}
+                    <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 8 }}>
+                        {node.isState && (
+                            <Tag color="orange" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>State</Tag>
+                        )}
+                        {node.hasActions && (
+                            <Tag color="blue" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>Action</Tag>
+                        )}
+                        {node.hasImpls && (
+                            <Tag color="green" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>Impl</Tag>
+                        )}
+                        {node.hasTests && (
+                            <Tag color="purple" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>Test</Tag>
+                        )}
+                    </div>
+
+                    {/* More menu button */}
+                    <Dropdown menu={{ items: menuItems, onClick: onMenu }} trigger={['click']}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<MoreOutlined />}
+                            style={{
+                                flexShrink: 0,
+                                opacity: isHovered ? 0.7 : 0,
+                                transition: 'opacity 0.15s',
+                                width: 24,
+                                height: 24,
+                                minWidth: 24,
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        />
+                    </Dropdown>
                 </div>
             </div>
         </Dropdown>
@@ -256,7 +270,6 @@ const TreeRenderer: React.FC<TreeProps> = ({ nodes, depth, guides, expandedKeys,
             const hasChildren = !!(node.children?.length);
             const isExpanded = expandedKeys.has(node.id);
             const isLast = idx === nodes.length - 1;
-            // For children: pass down guide state — at this depth, show vertical line if NOT last child
             const childGuides = [...guides, !isLast];
             return (
                 <React.Fragment key={node.id}>

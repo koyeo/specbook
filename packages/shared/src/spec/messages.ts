@@ -3,7 +3,7 @@
  * Shared between main process and renderer.
  */
 import type {
-    ObjectSummary, ObjectDetail, ObjectTreeNode, ObjectAction,
+    ObjectSummary, ObjectDetail, ObjectTreeNode, ObjectAction, RelatedFile,
     AiConfig, AnalysisResult, TokenUsage,
     GlossaryTerm, ChatSession, ChatSessionSummary, ChatMessage,
     KnowledgeEntry,
@@ -19,6 +19,11 @@ export const IPC = {
     MOVE_OBJECT: 'object:move',
     LOAD_ACTIONS: 'object:load-actions',
     SAVE_ACTIONS: 'object:save-actions',
+    LOAD_IMPLS: 'object:load-impls',
+    SAVE_IMPLS: 'object:save-impls',
+    LOAD_TESTS: 'object:load-tests',
+    SAVE_TESTS: 'object:save-tests',
+    OPEN_IN_EDITOR: 'object:open-in-editor',
     EXPORT_MARKDOWN: 'object:export-markdown',
     SELECT_WORKSPACE: 'workspace:select',
     GET_WORKSPACE: 'workspace:get',
@@ -77,7 +82,12 @@ export interface ObjectAPI {
     moveObject(payload: MoveObjectPayload): Promise<void>;
     loadActions(id: string): Promise<ObjectAction[]>;
     saveActions(id: string, actions: ObjectAction[]): Promise<void>;
+    loadImpls(id: string): Promise<RelatedFile[]>;
+    saveImpls(id: string, files: RelatedFile[]): Promise<void>;
+    loadTests(id: string): Promise<RelatedFile[]>;
+    saveTests(id: string, files: RelatedFile[]): Promise<void>;
     exportMarkdown(): Promise<boolean>;
+    openInEditor(filePath: string, line?: number): Promise<void>;
     selectWorkspace(): Promise<string | null>;
     getWorkspace(): Promise<string | null>;
 }
