@@ -2,7 +2,12 @@
  * IPC channel names and payload types.
  * Shared between main process and renderer.
  */
-import type { ObjectSummary, ObjectDetail, ObjectTreeNode, ObjectAction, AiConfig, AnalysisResult, TokenUsage } from './types';
+import type {
+    ObjectSummary, ObjectDetail, ObjectTreeNode, ObjectAction,
+    AiConfig, AnalysisResult, TokenUsage,
+    GlossaryTerm, ChatSession, ChatSessionSummary, ChatMessage,
+    KnowledgeEntry,
+} from './types';
 
 /** IPC channel names. */
 export const IPC = {
@@ -22,6 +27,22 @@ export const IPC = {
     AI_SAVE_CONFIG: 'ai:save-config',
     AI_ANALYZE: 'ai:analyze',
     AI_GET_USAGE: 'ai:get-usage',
+    // Glossary channels
+    GLOSSARY_LOAD: 'glossary:load',
+    GLOSSARY_ADD: 'glossary:add',
+    GLOSSARY_UPDATE: 'glossary:update',
+    GLOSSARY_DELETE: 'glossary:delete',
+    // Playground channels
+    CHAT_LIST_SESSIONS: 'chat:list-sessions',
+    CHAT_LOAD_SESSION: 'chat:load-session',
+    CHAT_CREATE_SESSION: 'chat:create-session',
+    CHAT_DELETE_SESSION: 'chat:delete-session',
+    CHAT_SEND_MESSAGE: 'chat:send-message',
+    // Knowledge channels
+    KNOWLEDGE_LOAD: 'knowledge:load',
+    KNOWLEDGE_ADD: 'knowledge:add',
+    KNOWLEDGE_UPDATE: 'knowledge:update',
+    KNOWLEDGE_DELETE: 'knowledge:delete',
 } as const;
 
 /** Add object payload. */
@@ -67,4 +88,67 @@ export interface AiAPI {
     saveAiConfig(config: AiConfig): Promise<void>;
     analyzeObjects(objectTree: ObjectTreeNode[]): Promise<AnalysisResult>;
     getTokenUsage(): Promise<TokenUsage[]>;
+}
+
+/** Add glossary term payload. */
+export interface AddGlossaryTermPayload {
+    name: string;
+    aliases?: string[];
+    description?: string;
+    category?: string;
+}
+
+/** Update glossary term payload. */
+export interface UpdateGlossaryTermPayload {
+    id: string;
+    name?: string;
+    aliases?: string[];
+    description?: string;
+    category?: string;
+}
+
+/** Glossary API exposed to renderer via contextBridge. */
+export interface GlossaryAPI {
+    loadTerms(): Promise<GlossaryTerm[]>;
+    addTerm(payload: AddGlossaryTermPayload): Promise<GlossaryTerm>;
+    updateTerm(payload: UpdateGlossaryTermPayload): Promise<GlossaryTerm>;
+    deleteTerm(id: string): Promise<void>;
+}
+
+/** Send chat message payload. */
+export interface SendChatMessagePayload {
+    sessionId: string;
+    content: string;
+}
+
+/** Chat API exposed to renderer via contextBridge. */
+export interface ChatAPI {
+    listSessions(): Promise<ChatSessionSummary[]>;
+    loadSession(id: string): Promise<ChatSession | null>;
+    createSession(title: string): Promise<ChatSession>;
+    deleteSession(id: string): Promise<void>;
+    sendMessage(payload: SendChatMessagePayload): Promise<ChatMessage>;
+}
+
+/** Add knowledge entry payload. */
+export interface AddKnowledgeEntryPayload {
+    title: string;
+    content?: string;
+    tags?: string[];
+}
+
+/** Update knowledge entry payload. */
+export interface UpdateKnowledgeEntryPayload {
+    id: string;
+    title?: string;
+    content?: string;
+    tags?: string[];
+}
+
+/** Knowledge API exposed to renderer via contextBridge. */
+export interface KnowledgeAPI {
+    loadEntries(): Promise<KnowledgeEntry[]>;
+    addEntry(payload: AddKnowledgeEntryPayload): Promise<KnowledgeEntry>;
+    updateEntry(payload: UpdateKnowledgeEntryPayload): Promise<KnowledgeEntry>;
+    deleteEntry(id: string): Promise<void>;
 }

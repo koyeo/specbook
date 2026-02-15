@@ -1,12 +1,15 @@
 /**
  * Preload script — contextBridge.
- * Exposes a typed ObjectAPI and AiAPI to the renderer process.
+ * Exposes a typed ObjectAPI, AiAPI, GlossaryAPI, ChatAPI, and KnowledgeAPI to the renderer process.
  */
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '@specbook/shared';
 import type {
     ObjectAPI, AddObjectPayload, UpdateObjectPayload, MoveObjectPayload, ObjectAction,
     AiAPI, AiConfig, ObjectTreeNode,
+    GlossaryAPI, AddGlossaryTermPayload, UpdateGlossaryTermPayload,
+    ChatAPI, SendChatMessagePayload,
+    KnowledgeAPI, AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload,
 } from '@specbook/shared';
 
 const api: ObjectAPI = {
@@ -30,6 +33,30 @@ const aiApi: AiAPI = {
     getTokenUsage: () => ipcRenderer.invoke(IPC.AI_GET_USAGE),
 };
 
+const glossaryApi: GlossaryAPI = {
+    loadTerms: () => ipcRenderer.invoke(IPC.GLOSSARY_LOAD),
+    addTerm: (payload: AddGlossaryTermPayload) => ipcRenderer.invoke(IPC.GLOSSARY_ADD, payload),
+    updateTerm: (payload: UpdateGlossaryTermPayload) => ipcRenderer.invoke(IPC.GLOSSARY_UPDATE, payload),
+    deleteTerm: (id: string) => ipcRenderer.invoke(IPC.GLOSSARY_DELETE, id),
+};
+
+const chatApi: ChatAPI = {
+    listSessions: () => ipcRenderer.invoke(IPC.CHAT_LIST_SESSIONS),
+    loadSession: (id: string) => ipcRenderer.invoke(IPC.CHAT_LOAD_SESSION, id),
+    createSession: (title: string) => ipcRenderer.invoke(IPC.CHAT_CREATE_SESSION, title),
+    deleteSession: (id: string) => ipcRenderer.invoke(IPC.CHAT_DELETE_SESSION, id),
+    sendMessage: (payload: SendChatMessagePayload) => ipcRenderer.invoke(IPC.CHAT_SEND_MESSAGE, payload),
+};
+
+const knowledgeApi: KnowledgeAPI = {
+    loadEntries: () => ipcRenderer.invoke(IPC.KNOWLEDGE_LOAD),
+    addEntry: (payload: AddKnowledgeEntryPayload) => ipcRenderer.invoke(IPC.KNOWLEDGE_ADD, payload),
+    updateEntry: (payload: UpdateKnowledgeEntryPayload) => ipcRenderer.invoke(IPC.KNOWLEDGE_UPDATE, payload),
+    deleteEntry: (id: string) => ipcRenderer.invoke(IPC.KNOWLEDGE_DELETE, id),
+};
+
 contextBridge.exposeInMainWorld('api', api);
 contextBridge.exposeInMainWorld('aiApi', aiApi);
-
+contextBridge.exposeInMainWorld('glossaryApi', glossaryApi);
+contextBridge.exposeInMainWorld('chatApi', chatApi);
+contextBridge.exposeInMainWorld('knowledgeApi', knowledgeApi);

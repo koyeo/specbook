@@ -11,9 +11,26 @@ export { ACTION_TYPES, SPEC_DIR, SPEC_INDEX_FILE, SPECS_SUBDIR, SPEC_FILE_EXT, S
 // AI types
 export type { AiConfig, TokenUsage, RelatedFile, ObjectMapping, AnalysisResult, AnalysisTask, AnalysisLogEntry } from './spec/types';
 
+// Glossary types
+export type { GlossaryTerm, GlossaryIndex } from './spec/types';
+export { GLOSSARY_FILE } from './spec/types';
+
+// Playground (Chat) types
+export type { ChatMessage, ChatSession, ChatSessionSummary } from './spec/types';
+export { PLAYGROUND_DIR } from './spec/types';
+
+// Knowledge Base types
+export type { KnowledgeEntry, KnowledgeIndex } from './spec/types';
+export { KNOWLEDGE_PRESET_TAGS, KNOWLEDGE_FILE } from './spec/types';
+
 // IPC contract
 export { IPC } from './spec/messages';
-export type { AddObjectPayload, UpdateObjectPayload, MoveObjectPayload, ObjectAPI, AiAPI } from './spec/messages';
+export type {
+    AddObjectPayload, UpdateObjectPayload, MoveObjectPayload, ObjectAPI, AiAPI,
+    AddGlossaryTermPayload, UpdateGlossaryTermPayload, GlossaryAPI,
+    SendChatMessagePayload, ChatAPI,
+    AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload, KnowledgeAPI,
+} from './spec/messages';
 
 // Validations
 export { validateTitle, generateId } from './spec/validations';

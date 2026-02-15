@@ -45,5 +45,8 @@ pnpm-debug.log*
 # === Testing ===
 coverage/
 
+# === Chat History ===
+.chat/
+
 # === Misc ===
 *.tgz

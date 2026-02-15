@@ -91,3 +91,53 @@ export async function callAnthropic(
 
     return { mappings, tokenUsage, rawResponse: rawText, directoryTree };
 }
+
+/**
+ * Call the AI API for multi-turn chat conversation.
+ */
+export async function callChat(
+    config: AiConfig,
+    messages: { role: string; content: string }[],
+    systemPrompt: string,
+): Promise<{ content: string; tokenUsage: TokenUsage }> {
+    const baseUrl = (config.baseUrl || 'https://api.anthropic.com').replace(/\/+$/, '');
+    const model = config.model || 'claude-3-sonnet-20240229';
+
+    const chatMessages = [
+        { role: 'system', content: systemPrompt },
+        ...messages,
+    ];
+
+    const requestBody = {
+        model,
+        messages: chatMessages,
+        max_tokens: 4096,
+        temperature: 0.5,
+    };
+
+    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`${response.status} ${errorText}`);
+    }
+
+    const data: ChatCompletionResponse = await response.json();
+    const content = data.choices?.[0]?.message?.content ?? '';
+
+    const tokenUsage: TokenUsage = {
+        inputTokens: data.usage?.prompt_tokens ?? 0,
+        outputTokens: data.usage?.completion_tokens ?? 0,
+        model,
+        timestamp: new Date().toISOString(),
+    };
+
+    return { content, tokenUsage };
+}

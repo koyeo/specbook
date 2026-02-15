@@ -1,0 +1,61 @@
+/**
+ * IPC handlers for Glossary CRUD operations.
+ */
+import { ipcMain } from 'electron';
+import { IPC, generateId } from '@specbook/shared';
+import type { AddGlossaryTermPayload, UpdateGlossaryTermPayload } from '@specbook/shared';
+import type { GlossaryTerm } from '@specbook/shared';
+import * as glossaryStore from '../infrastructure/glossaryStore';
+import { getWorkspace } from './specHandlers';
+
+function requireWorkspace(): string {
+    const ws = getWorkspace();
+    if (!ws) throw new Error('No workspace selected. Please open a folder first.');
+    return ws;
+}
+
+export function registerGlossaryHandlers(): void {
+    ipcMain.handle(IPC.GLOSSARY_LOAD, () => {
+        const ws = requireWorkspace();
+        return glossaryStore.loadAllTerms(ws);
+    });
+
+    ipcMain.handle(IPC.GLOSSARY_ADD, (_event, payload: AddGlossaryTermPayload) => {
+        const ws = requireWorkspace();
+        const now = new Date().toISOString();
+        const term: GlossaryTerm = {
+            id: generateId(),
+            name: payload.name.trim(),
+            aliases: payload.aliases ?? [],
+            description: payload.description?.trim() ?? '',
+            category: payload.category?.trim() || undefined,
+            createdAt: now,
+            updatedAt: now,
+        };
+        glossaryStore.addTerm(ws, term);
+        return term;
+    });
+
+    ipcMain.handle(IPC.GLOSSARY_UPDATE, (_event, payload: UpdateGlossaryTermPayload) => {
+        const ws = requireWorkspace();
+        const terms = glossaryStore.loadAllTerms(ws);
+        const existing = terms.find(t => t.id === payload.id);
+        if (!existing) throw new Error(`Term ${payload.id} not found.`);
+
+        const updated: GlossaryTerm = {
+            ...existing,
+            name: payload.name?.trim() ?? existing.name,
+            aliases: payload.aliases ?? existing.aliases,
+            description: payload.description?.trim() ?? existing.description,
+            category: payload.category?.trim() || existing.category,
+            updatedAt: new Date().toISOString(),
+        };
+        glossaryStore.updateTerm(ws, updated);
+        return updated;
+    });
+
+    ipcMain.handle(IPC.GLOSSARY_DELETE, (_event, id: string) => {
+        const ws = requireWorkspace();
+        glossaryStore.deleteTerm(ws, id);
+    });
+}

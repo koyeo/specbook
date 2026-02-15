@@ -145,3 +145,85 @@ export interface AnalysisTask {
     logs: AnalysisLogEntry[];
     errorMessage?: string;
 }
+
+// ─── Glossary Types ─────────────────────────────────
+
+/** A single glossary term entry. */
+export interface GlossaryTerm {
+    id: string;
+    name: string;
+    aliases: string[];
+    description: string;
+    category?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** Root glossary file structure (.spec/glossary.json) */
+export interface GlossaryIndex {
+    version: string;
+    terms: GlossaryTerm[];
+}
+
+/** Glossary file name. */
+export const GLOSSARY_FILE = 'glossary.json';
+
+// ─── Playground (Chat) Types ────────────────────────
+
+/** A single chat message. */
+export interface ChatMessage {
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: string;
+}
+
+/** A chat session with its full message history. */
+export interface ChatSession {
+    id: string;
+    title: string;
+    messages: ChatMessage[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** Summary of a chat session (without messages, for listing). */
+export interface ChatSessionSummary {
+    id: string;
+    title: string;
+    messageCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** Subdirectory for playground chat sessions. */
+export const PLAYGROUND_DIR = 'playground';
+
+// ─── Knowledge Base Types ───────────────────────────
+
+/** Predefined tag suggestions for knowledge entries. */
+export const KNOWLEDGE_PRESET_TAGS = [
+    'Architecture',
+    'Business Logic',
+    'Tech Stack',
+    'Infrastructure',
+    'Conventions',
+] as const;
+
+/** A single knowledge base entry. */
+export interface KnowledgeEntry {
+    id: string;
+    title: string;
+    content: string;
+    tags: string[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** Root knowledge file structure (.spec/knowledge.json) */
+export interface KnowledgeIndex {
+    version: string;
+    entries: KnowledgeEntry[];
+}
+
+/** Knowledge file name. */
+export const KNOWLEDGE_FILE = 'knowledge.json';

@@ -5,6 +5,9 @@ import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import { registerIpcHandlers } from './ipc/specHandlers';
 import { registerAiHandlers } from './ipc/aiHandlers';
+import { registerGlossaryHandlers } from './ipc/glossaryHandlers';
+import { registerChatHandlers } from './ipc/chatHandlers';
+import { registerKnowledgeHandlers } from './ipc/knowledgeHandlers';
 
 function createWindow(): void {
     const win = new BrowserWindow({
@@ -30,6 +33,9 @@ function createWindow(): void {
 app.whenReady().then(() => {
     registerIpcHandlers();
     registerAiHandlers();
+    registerGlossaryHandlers();
+    registerChatHandlers();
+    registerKnowledgeHandlers();
     createWindow();
 
     app.on('activate', () => {
@@ -44,3 +50,4 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 });
+
