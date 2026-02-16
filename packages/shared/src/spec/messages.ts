@@ -8,6 +8,7 @@ import type {
     GlossaryTerm, ChatSession, ChatSessionSummary, ChatMessage,
     KnowledgeEntry,
     GlobalRule, GlobalRuleCategory, GlobalTest, GlobalTestCase,
+    SourceScanResult,
 } from './types';
 
 /** IPC channel names. */
@@ -59,6 +60,8 @@ export const IPC = {
     GLOBAL_TESTS_ADD: 'global-tests:add',
     GLOBAL_TESTS_UPDATE: 'global-tests:update',
     GLOBAL_TESTS_DELETE: 'global-tests:delete',
+    // Source scanner
+    SCAN_SOURCE: 'scan:source',
 } as const;
 
 /** Add object payload. */
@@ -223,4 +226,11 @@ export interface GlobalTestsAPI {
     addTest(payload: AddGlobalTestPayload): Promise<GlobalTest>;
     updateTest(payload: UpdateGlobalTestPayload): Promise<GlobalTest>;
     deleteTest(id: string): Promise<void>;
+}
+
+// ─── Source Scanner ─────────────────────────────────
+
+/** Scan API exposed to renderer. */
+export interface ScanAPI {
+    scanSource(): Promise<SourceScanResult>;
 }

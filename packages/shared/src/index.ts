@@ -31,6 +31,9 @@ export { GLOBAL_RULES_FILE } from './spec/types';
 export type { GlobalTestCase, GlobalTest, GlobalTestIndex } from './spec/types';
 export { GLOBAL_TESTS_FILE } from './spec/types';
 
+// Source Scanner types
+export type { SourceScanResult } from './spec/types';
+
 // IPC contract
 export { IPC } from './spec/messages';
 export type {
@@ -40,6 +43,7 @@ export type {
     AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload, KnowledgeAPI,
     AddGlobalRulePayload, UpdateGlobalRulePayload, GlobalRulesAPI,
     AddGlobalTestPayload, UpdateGlobalTestPayload, GlobalTestsAPI,
+    ScanAPI,
 } from './spec/messages';
 
 // Validations

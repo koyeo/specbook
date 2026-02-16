@@ -1,20 +1,4 @@
 {
   "version": "1.0",
-  "rules": [
-    {
-      "id": "019c64fd-0813-76bd-8772-4d9314adbb7e",
-      "text": "最大长度不能超过 32",
-      "category": "impl",
-      "createdAt": "2026-02-16T05:47:10.227Z",
-      "updatedAt": "2026-02-16T05:47:10.227Z"
-    },
-    {
-      "id": "019c650c-169f-765d-a798-c07905d5add3",
-      "name": "global rule 1",
-      "text": "lala",
-      "category": "impl",
-      "createdAt": "2026-02-16T06:03:36.990Z",
-      "updatedAt": "2026-02-16T06:03:36.990Z"
-    }
-  ]
+  "rules": []
 }

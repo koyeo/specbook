@@ -1,0 +1,89 @@
+/**
+ * Source scanner IPC handler.
+ * Recursively walks workspace source files and collects all UUIDs found.
+ */
+import { ipcMain } from 'electron';
+import * as fs from 'fs';
+import * as path from 'path';
+import { IPC } from '@specbook/shared';
+import type { SourceScanResult } from '@specbook/shared';
+import { getWorkspace } from './specHandlers';
+
+/** Directories to skip during scanning. */
+const SKIP_DIRS = new Set([
+    'node_modules', '.git', '.spec', 'dist', 'build', '.next', '.cache',
+    '.turbo', 'coverage', '__pycache__', '.venv', 'vendor',
+]);
+
+/** File extensions to scan. */
+const SCAN_EXTENSIONS = new Set([
+    '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
+    '.py', '.rb', '.java', '.kt', '.go', '.rs', '.cs',
+    '.vue', '.svelte', '.astro',
+    '.html', '.css', '.scss', '.less',
+    '.yaml', '.yml', '.toml', '.json', '.md',
+    '.sh', '.bash', '.zsh',
+]);
+
+/**
+ * UUID v4/v7 pattern — matches standard 8-4-4-4-12 hex format.
+ */
+const UUID_REGEX = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
+function requireWorkspace(): string {
+    const ws = getWorkspace();
+    if (!ws) throw new Error('No workspace selected. Please open a folder first.');
+    return ws;
+}
+
+/** Recursively collect file paths to scan. */
+function collectFiles(dir: string): string[] {
+    const results: string[] = [];
+    let entries: fs.Dirent[];
+    try {
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+        return results;
+    }
+    for (const entry of entries) {
+        if (SKIP_DIRS.has(entry.name)) continue;
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            results.push(...collectFiles(fullPath));
+        } else if (entry.isFile()) {
+            const ext = path.extname(entry.name).toLowerCase();
+            if (SCAN_EXTENSIONS.has(ext)) {
+                results.push(fullPath);
+            }
+        }
+    }
+    return results;
+}
+
+/** Scan a single file for UUIDs. */
+function scanFile(filePath: string): string[] {
+    try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const matches = content.match(UUID_REGEX);
+        return matches ?? [];
+    } catch {
+        return [];
+    }
+}
+
+export function registerScanHandlers(): void {
+    ipcMain.handle(IPC.SCAN_SOURCE, async (): Promise<SourceScanResult> => {
+        const ws = requireWorkspace();
+        const files = collectFiles(ws);
+        const idSet = new Set<string>();
+
+        for (const file of files) {
+            const uuids = scanFile(file);
+            for (const uuid of uuids) {
+                idSet.add(uuid.toLowerCase());
+            }
+        }
+
+        return { foundIds: [...idSet] };
+    });
+}

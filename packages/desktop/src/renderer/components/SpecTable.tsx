@@ -18,13 +18,14 @@ import {
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
-    SearchOutlined,
-    FileTextOutlined,
+    SearchOutlined, CheckCircleFilled, BorderOutlined, CaretRightOutlined,
     ExpandAltOutlined,
     ShrinkOutlined,
     PlusOutlined,
     DeleteOutlined,
     MoreOutlined,
+    CopyOutlined,
+    FileTextOutlined,
 } from '@ant-design/icons';
 import type { ObjectTreeNode } from '@specbook/shared';
 
@@ -41,6 +42,8 @@ interface ObjectTableProps {
     onAddRoot: () => void;
     onBatchDelete: (ids: string[]) => Promise<void>;
     onBatchMove: (ids: string[], newParentId: string | null) => Promise<void>;
+    onGeneratePrompt: (id: string) => void;
+    foundIds?: Set<string>;
 }
 
 function filterTree(nodes: ObjectTreeNode[], q: string): ObjectTreeNode[] {
@@ -104,12 +107,15 @@ interface RowProps {
     onAddSibling: (afterId: string, parentId: string | null) => void;
     onAddChild: (parentId: string) => void;
     onDelete: (id: string) => void;
+    onGeneratePrompt: (id: string) => void;
+    foundIds?: Set<string>;
 }
 
 const ObjectRow: React.FC<RowProps> = ({
     node, depth, guides, isLastChild, expanded, hasChildren, hoveredRow, selected, anySelected,
     hoverBg, selectedBg, guideColor,
-    onToggleExpand, onToggleSelect, onHover, onOpen, onAddSibling, onAddChild, onDelete,
+    onToggleExpand, onToggleSelect, onHover, onOpen, onAddSibling, onAddChild, onDelete, onGeneratePrompt,
+    foundIds,
 }) => {
     const isHovered = hoveredRow === node.id;
     const showCheckbox = isHovered || selected;
@@ -120,6 +126,8 @@ const ObjectRow: React.FC<RowProps> = ({
         { key: 'add-child', label: '→ Add child' },
         { key: 'add-sibling', label: '↓ Add sibling below' },
         { type: 'divider' },
+        { key: 'gen-prompt', label: '📋 Generate Prompt' },
+        { type: 'divider' },
         { key: 'delete', label: '🗑 Delete', danger: true },
     ];
 
@@ -127,6 +135,7 @@ const ObjectRow: React.FC<RowProps> = ({
         if (key === 'open') onOpen(node.id);
         else if (key === 'add-sibling') onAddSibling(node.id, node.parentId);
         else if (key === 'add-child') onAddChild(node.id);
+        else if (key === 'gen-prompt') onGeneratePrompt(node.id);
         else if (key === 'delete') onDelete(node.id);
     };
 
@@ -203,12 +212,30 @@ const ObjectRow: React.FC<RowProps> = ({
                         {node.title}
                     </Text>
 
-                    {/* Tags on the right */}
+                    {/* Rule count tags */}
                     <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 8 }}>
-                        {node.hasImpls && (
+                        {(node.implRules?.length ?? 0) > 0 && (() => {
+                            const total = node.implRules!.length;
+                            if (foundIds) {
+                                const implemented = node.implRules!.filter(r => foundIds.has(r.id.toLowerCase())).length;
+                                const color = implemented >= total ? 'green' : 'orange';
+                                return <Tag color={color} style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>{implemented}/{total} impl</Tag>;
+                            }
+                            return <Tag color="default" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>{total} impl</Tag>;
+                        })()}
+                        {(node.testRules?.length ?? 0) > 0 && (() => {
+                            const total = node.testRules!.length;
+                            if (foundIds) {
+                                const implemented = node.testRules!.filter(r => foundIds.has(r.id.toLowerCase())).length;
+                                const color = implemented >= total ? 'green' : 'orange';
+                                return <Tag color={color} style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>{implemented}/{total} test</Tag>;
+                            }
+                            return <Tag color="default" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>{total} test</Tag>;
+                        })()}
+                        {node.hasImpls && (node.implRules?.length ?? 0) === 0 && (
                             <Tag color="green" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>Impl</Tag>
                         )}
-                        {node.hasTests && (
+                        {node.hasTests && (node.testRules?.length ?? 0) === 0 && (
                             <Tag color="purple" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>Test</Tag>
                         )}
                     </div>
@@ -256,6 +283,8 @@ interface TreeProps {
     onAddSibling: (afterId: string, parentId: string | null) => void;
     onAddChild: (parentId: string) => void;
     onDelete: (id: string) => void;
+    onGeneratePrompt: (id: string) => void;
+    foundIds?: Set<string>;
 }
 
 const TreeRenderer: React.FC<TreeProps> = ({ nodes, depth, guides, expandedKeys, selectedIds, ...rest }) => (
@@ -280,7 +309,7 @@ const TreeRenderer: React.FC<TreeProps> = ({ nodes, depth, guides, expandedKeys,
 // ─── Main ────────────────────────────────────────────
 
 export const ObjectTable: React.FC<ObjectTableProps> = ({
-    objects, loading, onDelete, onOpen, onAddSibling, onAddChild, onAddRoot, onBatchDelete, onBatchMove,
+    objects, loading, onDelete, onOpen, onAddSibling, onAddChild, onAddRoot, onBatchDelete, onBatchMove, onGeneratePrompt, foundIds,
 }) => {
     const { token } = useToken();
     const hoverBg = token.controlItemBgHover;
@@ -385,6 +414,8 @@ export const ObjectTable: React.FC<ObjectTableProps> = ({
                         guideColor={token.colorTextQuaternary}
                         onToggleExpand={toggleExpand} onToggleSelect={toggleSelect} onHover={setHoveredRow}
                         onOpen={onOpen} onAddSibling={onAddSibling} onAddChild={onAddChild} onDelete={onDelete}
+                        onGeneratePrompt={onGeneratePrompt}
+                        foundIds={foundIds}
                     />
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', paddingLeft: 36, cursor: 'pointer', color: token.colorTextQuaternary, fontSize: 13, transition: 'color 0.15s' }}

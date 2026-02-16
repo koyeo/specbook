@@ -12,6 +12,7 @@ import type {
     KnowledgeAPI, AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload,
     GlobalRulesAPI, AddGlobalRulePayload, UpdateGlobalRulePayload,
     GlobalTestsAPI, AddGlobalTestPayload, UpdateGlobalTestPayload,
+    ScanAPI,
 } from '@specbook/shared';
 
 const api: ObjectAPI = {
@@ -76,6 +77,10 @@ const globalTestsApi: GlobalTestsAPI = {
     deleteTest: (id: string) => ipcRenderer.invoke(IPC.GLOBAL_TESTS_DELETE, id),
 };
 
+const scanApi: ScanAPI = {
+    scanSource: () => ipcRenderer.invoke(IPC.SCAN_SOURCE),
+};
+
 contextBridge.exposeInMainWorld('api', api);
 contextBridge.exposeInMainWorld('aiApi', aiApi);
 contextBridge.exposeInMainWorld('glossaryApi', glossaryApi);
@@ -83,3 +88,4 @@ contextBridge.exposeInMainWorld('chatApi', chatApi);
 contextBridge.exposeInMainWorld('knowledgeApi', knowledgeApi);
 contextBridge.exposeInMainWorld('globalRulesApi', globalRulesApi);
 contextBridge.exposeInMainWorld('globalTestsApi', globalTestsApi);
+contextBridge.exposeInMainWorld('scanApi', scanApi);

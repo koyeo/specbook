@@ -309,3 +309,11 @@ export interface GlobalTestIndex {
 
 /** Global tests file name. */
 export const GLOBAL_TESTS_FILE = 'tests.json';
+
+// ─── Source Scanner Types ────────────────────────────
+
+/** Result of scanning workspace source files for known UUIDs. */
+export interface SourceScanResult {
+    /** All UUIDs found in source files (object IDs + rule IDs). */
+    foundIds: string[];
+}

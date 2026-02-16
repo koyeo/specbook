@@ -10,6 +10,7 @@ import { registerChatHandlers } from './ipc/chatHandlers';
 import { registerKnowledgeHandlers } from './ipc/knowledgeHandlers';
 import { registerGlobalRulesHandlers } from './ipc/globalRulesHandlers';
 import { registerGlobalTestsHandlers } from './ipc/globalTestsHandlers';
+import { registerScanHandlers } from './ipc/scanHandlers';
 
 function createWindow(): void {
     const win = new BrowserWindow({
@@ -40,6 +41,7 @@ app.whenReady().then(() => {
     registerKnowledgeHandlers();
     registerGlobalRulesHandlers();
     registerGlobalTestsHandlers();
+    registerScanHandlers();
     createWindow();
 
     app.on('activate', () => {
