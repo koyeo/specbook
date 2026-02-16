@@ -3,13 +3,13 @@
   "specs": [
     {
       "id": "019c4d29-46fb-748d-8dd3-e0cd47a3223e",
-      "title": "Objects Tab",
+      "title": "Features Management Page",
       "parentId": null,
       "completed": false,
       "isState": false,
       "contentHash": null,
       "createdAt": "2026-02-11T14:44:36.731Z",
-      "updatedAt": "2026-02-11T14:45:10.331Z"
+      "updatedAt": "2026-02-15T17:31:32.563Z"
     },
     {
       "id": "019c4d29-aa99-76df-be66-5ee69c3cb315",
@@ -18,18 +18,180 @@
       "completed": false,
       "isState": false,
       "contentHash": null,
+      "implRules": [
+        {
+          "id": "b807ddba-0b77-4c2f-a664-7fcb6da9ef74",
+          "text": "r11"
+        }
+      ],
+      "testRules": [
+        {
+          "id": "3f46f768-9cc8-4bc0-8def-7c45b2bd55c9",
+          "text": "r2"
+        }
+      ],
       "createdAt": "2026-02-11T14:45:02.233Z",
-      "updatedAt": "2026-02-11T14:45:02.233Z"
+      "updatedAt": "2026-02-15T18:56:56.032Z"
     },
     {
       "id": "019c4d29-f2ed-71df-9e61-2f24045670ed",
-      "title": "Object Detail",
+      "title": "Display object item detail",
       "parentId": "019c4d29-46fb-748d-8dd3-e0cd47a3223e",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-11T14:45:20.749Z",
+      "updatedAt": "2026-02-15T16:56:46.071Z"
+    },
+    {
+      "id": "019c621b-ca38-7688-aa58-23a1bc62e2be",
+      "title": "Display object item with depth retracting",
+      "parentId": "019c4d29-aa99-76df-be66-5ee69c3cb315",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:21:54.360Z",
+      "updatedAt": "2026-02-15T16:30:27.575Z"
+    },
+    {
+      "id": "019c621d-8a13-72ce-b75e-8630bd6522ae",
+      "title": "Display object item default adding entry",
+      "parentId": "019c4d29-aa99-76df-be66-5ee69c3cb315",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:23:49.011Z",
+      "updatedAt": "2026-02-15T17:35:03.305Z"
+    },
+    {
+      "id": "019c621d-dacf-742c-9d27-1301c292ba4f",
+      "title": "Display object items sorting handle",
+      "parentId": "019c4d29-aa99-76df-be66-5ee69c3cb315",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:24:09.679Z",
+      "updatedAt": "2026-02-15T17:34:16.084Z"
+    },
+    {
+      "id": "019c6222-9e8e-75a9-a57b-3df8d4d14ad8",
+      "title": "Display Search Items Entry",
+      "parentId": "019c4d29-aa99-76df-be66-5ee69c3cb315",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:29:21.934Z",
+      "updatedAt": "2026-02-15T17:33:47.866Z"
+    },
+    {
+      "id": "019c6231-5a20-7625-9823-3752131ab382",
+      "title": "Display object item title",
+      "parentId": "019c623a-203d-77ea-8fa3-d37da43714ce",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:45:27.456Z",
+      "updatedAt": "2026-02-15T16:55:22.998Z"
+    },
+    {
+      "id": "019c6238-17e2-722b-9ab3-c3205a54d69e",
+      "title": "Display object item parent",
+      "parentId": "019c623a-203d-77ea-8fa3-d37da43714ce",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:52:49.250Z",
+      "updatedAt": "2026-02-15T16:55:30.093Z"
+    },
+    {
+      "id": "019c6238-969c-71cb-8e18-b7dbfdcec571",
+      "title": "Display object item content",
+      "parentId": "019c623a-203d-77ea-8fa3-d37da43714ce",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:53:21.692Z",
+      "updatedAt": "2026-02-15T16:55:41.508Z"
+    },
+    {
+      "id": "019c623a-203d-77ea-8fa3-d37da43714ce",
+      "title": "Preview State",
+      "parentId": "019c4d29-f2ed-71df-9e61-2f24045670ed",
       "completed": false,
       "isState": true,
       "contentHash": null,
-      "createdAt": "2026-02-11T14:45:20.749Z",
-      "updatedAt": "2026-02-15T12:44:31.027Z"
+      "createdAt": "2026-02-15T16:55:02.461Z",
+      "updatedAt": "2026-02-15T16:56:38.965Z"
+    },
+    {
+      "id": "019c623b-4c7c-7659-bc4e-3227f1c56cd8",
+      "title": "Display edit object item button",
+      "parentId": "019c623a-203d-77ea-8fa3-d37da43714ce",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:56:19.324Z",
+      "updatedAt": "2026-02-15T16:56:19.324Z"
+    },
+    {
+      "id": "019c623d-5879-77bf-8438-741c6d69c330",
+      "title": "Editing State",
+      "parentId": "019c4d29-f2ed-71df-9e61-2f24045670ed",
+      "completed": false,
+      "isState": true,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:58:33.465Z",
+      "updatedAt": "2026-02-15T17:00:52.633Z"
+    },
+    {
+      "id": "019c623d-9d64-701d-9348-f95d1fb67cf5",
+      "title": "Display object item title input",
+      "parentId": "019c623d-5879-77bf-8438-741c6d69c330",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:58:51.108Z",
+      "updatedAt": "2026-02-15T16:58:51.108Z"
+    },
+    {
+      "id": "019c623d-f5b4-71ff-9c98-3450e93c7f2e",
+      "title": "Display object item parent select",
+      "parentId": "019c623d-5879-77bf-8438-741c6d69c330",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:59:13.716Z",
+      "updatedAt": "2026-02-15T16:59:13.716Z"
+    },
+    {
+      "id": "019c623e-9d2e-7326-b23d-fac01937001c",
+      "title": "Display object item content textarea",
+      "parentId": "019c623d-5879-77bf-8438-741c6d69c330",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T16:59:56.590Z",
+      "updatedAt": "2026-02-15T17:00:48.370Z"
+    },
+    {
+      "id": "019c625f-4fb1-76cf-aa9d-02e82c62ead0",
+      "title": "Display save handle",
+      "parentId": "019c623d-5879-77bf-8438-741c6d69c330",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T17:35:39.441Z",
+      "updatedAt": "2026-02-15T17:35:39.441Z"
+    },
+    {
+      "id": "019c625f-881a-72d7-9acd-cd236290faf1",
+      "title": "Display cancel handle",
+      "parentId": "019c623d-5879-77bf-8438-741c6d69c330",
+      "completed": false,
+      "isState": false,
+      "contentHash": null,
+      "createdAt": "2026-02-15T17:35:53.882Z",
+      "updatedAt": "2026-02-15T17:35:53.882Z"
     }
   ]
 }

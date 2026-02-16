@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag, Switch, Tooltip, Collapse, Alert } from 'antd';
 import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined, RobotOutlined, CloudUploadOutlined } from '@ant-design/icons';
-import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType, ObjectMapping, AnalysisResult, RelatedFile } from '@specbook/shared';
+import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType, ObjectMapping, AnalysisResult, RelatedFile, ObjectRule } from '@specbook/shared';
 
 /** Action types — local copy to avoid CJS/ESM mismatch with @specbook/shared */
 const ACTION_TYPES: readonly ActionType[] = [
@@ -68,9 +68,9 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
     const [title, setTitle] = useState('');
     const [parentId, setParentId] = useState<string | null>(null);
     const [content, setContent] = useState('');
-    const [actions, setActions] = useState<ObjectAction[]>([]);
-    const [savedActions, setSavedActions] = useState<ObjectAction[]>([]);
-    const [isState, setIsState] = useState(false);
+    const [implRules, setImplRules] = useState<ObjectRule[]>([]);
+    const [testRules, setTestRules] = useState<ObjectRule[]>([]);
+
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
@@ -90,55 +90,63 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
             setMode('preview');
             setLoading(true);
             setAnalysisResult(null);
-            Promise.all([
-                window.api.getObject(specId),
-                window.api.loadActions(specId),
-            ])
-                .then(([d, acts]) => {
+            window.api.getObject(specId)
+                .then((d) => {
                     setDetail(d);
                     setTitle(d?.title || '');
                     setParentId(d?.parentId || null);
                     setContent(d?.content || '');
-                    setActions(acts);
-                    setSavedActions(acts);
-                    setIsState(d?.isState ?? false);
+                    setImplRules(d?.implRules || []);
+                    setTestRules(d?.testRules || []);
                 })
                 .catch((err) => { message.error('Failed to load spec detail'); console.error(err); })
                 .finally(() => setLoading(false));
         } else {
-            setDetail(null); setTitle(''); setParentId(null); setContent('');
-            setActions([]); setSavedActions([]); setIsState(false);
+            setDetail(null); setTitle(''); setParentId(null); setContent(''); setImplRules([]); setTestRules([]);
             setMode('preview');
         }
     }, [specId]);
 
-    const actionsChanged = JSON.stringify(actions) !== JSON.stringify(savedActions);
+    const implRulesChanged = JSON.stringify(implRules) !== JSON.stringify(detail?.implRules || []);
+    const testRulesChanged = JSON.stringify(testRules) !== JSON.stringify(detail?.testRules || []);
 
     const hasChanges = detail ? (
         title !== (detail.title || '') ||
         parentId !== (detail.parentId || null) ||
         content !== (detail.content || '') ||
-        isState !== (detail.isState ?? false) ||
-        actionsChanged
+        implRulesChanged ||
+        testRulesChanged
     ) : false;
 
-    // ─── Actions ─────────────────────────────────────
+    // ─── Implementation Rules ─────────────────────────
 
-    const addAction = () => {
-        setActions(prev => [...prev, { action: 'Click' as ActionType, stateChange: '' }]);
+    const addImplRule = () => {
+        setImplRules(prev => [...prev, { id: crypto.randomUUID(), text: '' }]);
     };
 
-    const updateAction = (index: number, field: keyof ObjectAction, value: string) => {
-        setActions(prev => {
-            const copy = [...prev];
-            copy[index] = { ...copy[index], [field]: value };
-            return copy;
-        });
+    const updateImplRule = (id: string, text: string) => {
+        setImplRules(prev => prev.map(r => r.id === id ? { ...r, text } : r));
     };
 
-    const removeAction = (index: number) => {
-        setActions(prev => prev.filter((_, i) => i !== index));
+    const removeImplRule = (id: string) => {
+        setImplRules(prev => prev.filter(r => r.id !== id));
     };
+
+    // ─── Test Rules ────────────────────────────────
+
+    const addTestRule = () => {
+        setTestRules(prev => [...prev, { id: crypto.randomUUID(), text: '' }]);
+    };
+
+    const updateTestRule = (id: string, text: string) => {
+        setTestRules(prev => prev.map(r => r.id === id ? { ...r, text } : r));
+    };
+
+    const removeTestRule = (id: string) => {
+        setTestRules(prev => prev.filter(r => r.id !== id));
+    };
+
+
 
     const enterEdit = () => setMode('edit');
 
@@ -217,7 +225,7 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                 const testList = mapping.relatedFiles.filter(f => classifyFile(f) === 'test');
 
                 console.log('[SaveResults]   impl:', implList.length, 'test:', testList.length);
-                if (implList.length > 0) await window.api.saveImpls(targetId, implList);
+                if (implList.length > 0) await window.api.saveImpls(targetId, implList, mapping.summary);
                 if (testList.length > 0) await window.api.saveTests(targetId, testList);
                 savedCount++;
             }
@@ -250,8 +258,8 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     setTitle(detail?.title || '');
                     setParentId(detail?.parentId || null);
                     setContent(detail?.content || '');
-                    setActions(savedActions);
-                    setIsState(detail?.isState ?? false);
+                    setImplRules(detail?.implRules || []);
+                    setTestRules(detail?.testRules || []);
                     setMode('preview');
                 },
             });
@@ -267,19 +275,15 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
             const payload: UpdateObjectPayload = { id: specId };
             if (title !== detail.title) payload.title = title;
             if (content !== detail.content) payload.content = content;
-            if (isState !== (detail.isState ?? false)) payload.isState = isState;
+            if (implRulesChanged) payload.implRules = implRules;
+            if (testRulesChanged) payload.testRules = testRules;
 
-            if (payload.title !== undefined || payload.content !== undefined || payload.isState !== undefined) {
+            if (payload.title !== undefined || payload.content !== undefined || payload.implRules !== undefined || payload.testRules !== undefined) {
                 await window.api.updateObject(payload);
             }
 
             if (parentId !== (detail.parentId || null)) {
                 await window.api.moveObject({ id: specId, newParentId: parentId });
-            }
-
-            if (actionsChanged) {
-                await window.api.saveActions(specId, actions);
-                setSavedActions(actions);
             }
 
             message.success('Saved');
@@ -288,7 +292,8 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
             setTitle(updated?.title || '');
             setParentId(updated?.parentId || null);
             setContent(updated?.content || '');
-            setIsState(updated?.isState ?? false);
+            setImplRules(updated?.implRules || []);
+            setTestRules(updated?.testRules || []);
             setMode('preview');
             onSaved();
         } catch (err: any) {
@@ -358,60 +363,37 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                                 Parent: {parentOptions.find(p => p.id === detail.parentId)?.label.trim() || detail.parentId}
                             </Text>
                         )}
-                        {savedActions.length > 0 && (
-                            <Tooltip title="Action Entry">
-                                <span style={{
-                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                    width: 18, height: 18, borderRadius: 3, fontSize: 11, fontWeight: 600,
-                                    backgroundColor: 'rgba(22, 119, 255, 0.12)', color: '#0958d9', cursor: 'default',
-                                }}>A</span>
-                            </Tooltip>
-                        )}
-                        {detail?.isState && (
-                            <Tooltip title="State Object">
-                                <span style={{
-                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                    width: 18, height: 18, borderRadius: 3, fontSize: 11, fontWeight: 600,
-                                    backgroundColor: 'rgba(250, 140, 22, 0.12)', color: '#d48806', cursor: 'default',
-                                }}>S</span>
-                            </Tooltip>
-                        )}
                     </div>
 
-                    {/* Actions preview */}
-                    {savedActions.length > 0 && (
-                        <div style={{ marginBottom: 20 }}>
-                            <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>Actions</Text>
-                            <div style={{
-                                border: `1px solid ${token.colorBorderSecondary}`,
-                                borderRadius: token.borderRadius,
-                                overflow: 'hidden',
-                            }}>
-                                <div style={{
-                                    display: 'grid', gridTemplateColumns: '160px 1fr',
-                                    padding: '6px 12px',
-                                    background: token.colorFillQuaternary,
-                                    fontWeight: 500, fontSize: 12, color: token.colorTextSecondary,
-                                }}>
-                                    <span>Action</span>
-                                    <span>State Change</span>
-                                </div>
-                                {savedActions.map((a, i) => (
-                                    <div key={i} style={{
-                                        display: 'grid', gridTemplateColumns: '160px 1fr',
-                                        padding: '6px 12px', fontSize: 13,
-                                        borderTop: `1px solid ${token.colorBorderSecondary}`,
-                                    }}>
-                                        <span>{a.action}</span>
-                                        <span style={{ color: a.stateChange ? undefined : token.colorTextQuaternary }}>
-                                            {a.stateChange || '—'}
-                                        </span>
+                    {/* Implementation Rules preview */}
+                    {(detail?.implRules?.length ?? 0) > 0 && (
+                        <div style={{ marginBottom: 16 }}>
+                            <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 6 }}>Implementation Rules</Text>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                {detail!.implRules!.map((r: ObjectRule, i: number) => (
+                                    <div key={r.id} style={{ display: 'flex', gap: 6, alignItems: 'baseline', fontSize: 13 }}>
+                                        <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>{i + 1}.</Text>
+                                        <Text>{r.text}</Text>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
+                    {/* Test Rules preview */}
+                    {(detail?.testRules?.length ?? 0) > 0 && (
+                        <div style={{ marginBottom: 16 }}>
+                            <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 6 }}>Test Rules</Text>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                {detail!.testRules!.map((r: ObjectRule, i: number) => (
+                                    <div key={r.id} style={{ display: 'flex', gap: 6, alignItems: 'baseline', fontSize: 13 }}>
+                                        <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>{i + 1}.</Text>
+                                        <Text>{r.text}</Text>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Markdown body */}
                     <MarkdownPreview content={detail?.content || ''} />
@@ -506,12 +488,6 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Object title" />
                 </div>
 
-                {/* Stateful toggle */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Switch size="small" checked={isState} onChange={setIsState} />
-                    <Text style={{ fontSize: 13 }}>State Object</Text>
-                </div>
-
                 {/* Parent */}
                 <div>
                     <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Parent</Text>
@@ -529,56 +505,42 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     />
                 </div>
 
-                {/* Actions editor */}
+                {/* Implementation Rules editor */}
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>Actions</Text>
-                        <Button
-                            size="small"
-                            type="dashed"
-                            icon={<PlusOutlined />}
-                            onClick={addAction}
-                        >
-                            Add Action
-                        </Button>
+                        <Text type="secondary" style={{ fontSize: 12 }}>Implementation Rules</Text>
+                        <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={addImplRule}>Add Rule</Button>
                     </div>
-
-                    {actions.length === 0 ? (
-                        <Text type="secondary" style={{ fontSize: 12, fontStyle: 'italic' }}>
-                            No actions defined. Click "Add Action" to describe interactions.
-                        </Text>
+                    {implRules.length === 0 ? (
+                        <Text type="secondary" style={{ fontSize: 12, fontStyle: 'italic' }}>No implementation rules defined.</Text>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {actions.map((a, i) => (
-                                <div key={i} style={{
-                                    display: 'flex', gap: 8, alignItems: 'center',
-                                    padding: '8px 10px',
-                                    borderRadius: token.borderRadius,
-                                    border: `1px solid ${token.colorBorderSecondary}`,
-                                    background: token.colorFillQuaternary,
-                                }}>
-                                    <Select
-                                        value={a.action}
-                                        onChange={(val) => updateAction(i, 'action', val)}
-                                        style={{ width: 160, flexShrink: 0 }}
-                                        options={actionTypeOptions}
-                                        size="small"
-                                    />
-                                    <Input
-                                        value={a.stateChange}
-                                        onChange={(e) => updateAction(i, 'stateChange', e.target.value)}
-                                        placeholder="State change description..."
-                                        size="small"
-                                        style={{ flex: 1 }}
-                                    />
-                                    <Button
-                                        type="text"
-                                        danger
-                                        size="small"
-                                        icon={<DeleteOutlined />}
-                                        onClick={() => removeAction(i)}
-                                        style={{ flexShrink: 0 }}
-                                    />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {implRules.map((r, i) => (
+                                <div key={r.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <Text type="secondary" style={{ fontSize: 12, flexShrink: 0, width: 20, textAlign: 'right' }}>{i + 1}.</Text>
+                                    <Input value={r.text} onChange={(e) => updateImplRule(r.id, e.target.value)} placeholder="Describe an implementation rule..." size="small" style={{ flex: 1 }} />
+                                    <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => removeImplRule(r.id)} style={{ flexShrink: 0 }} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Test Rules editor */}
+                <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>Test Rules</Text>
+                        <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={addTestRule}>Add Rule</Button>
+                    </div>
+                    {testRules.length === 0 ? (
+                        <Text type="secondary" style={{ fontSize: 12, fontStyle: 'italic' }}>No test rules defined.</Text>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {testRules.map((r, i) => (
+                                <div key={r.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <Text type="secondary" style={{ fontSize: 12, flexShrink: 0, width: 20, textAlign: 'right' }}>{i + 1}.</Text>
+                                    <Input value={r.text} onChange={(e) => updateTestRule(r.id, e.target.value)} placeholder="Describe a test rule..." size="small" style={{ flex: 1 }} />
+                                    <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => removeTestRule(r.id)} style={{ flexShrink: 0 }} />
                                 </div>
                             ))}
                         </div>

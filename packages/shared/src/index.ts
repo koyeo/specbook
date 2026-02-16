@@ -5,11 +5,11 @@
  */
 
 // Object domain types
-export type { ObjectSummary, ObjectDetail, ObjectIndex, ObjectIndexEntry, ObjectTreeNode, ObjectAction, ActionType } from './spec/types';
+export type { ObjectSummary, ObjectDetail, ObjectIndex, ObjectIndexEntry, ObjectTreeNode, ObjectAction, ActionType, ObjectRule } from './spec/types';
 export { ACTION_TYPES, SPEC_DIR, SPEC_INDEX_FILE, SPECS_SUBDIR, SPEC_FILE_EXT, SPEC_ACTION_FILE_EXT, ACTION_ENTRY_COLOR, IMPLS_SUBDIR, TESTS_SUBDIR, MAPPING_FILE_EXT } from './spec/types';
 
 // AI types
-export type { AiConfig, TokenUsage, RelatedFile, ObjectMapping, AnalysisResult, AnalysisTask, AnalysisLogEntry } from './spec/types';
+export type { AiConfig, TokenUsage, RelatedFile, ImplData, ObjectMapping, AnalysisResult, AnalysisTask, AnalysisLogEntry } from './spec/types';
 
 // Glossary types
 export type { GlossaryTerm, GlossaryIndex } from './spec/types';

@@ -55,7 +55,7 @@ Respond ONLY with valid JSON matching this schema:
     {
       "objectTitle": "<name of the object>",
       "status": "implemented" | "partial" | "not_found" | "unknown",
-      "summary": "<concise analysis: what code implements this, or why not found>",
+      "summary": "<detailed Markdown analysis — see Summary Guidelines below>",
       "relatedFiles": [
         {
           "filePath": "<relative file path>",
@@ -67,6 +67,42 @@ Respond ONLY with valid JSON matching this schema:
     }
   ]
 }
+
+## Summary Guidelines
+
+The \`summary\` field for each mapping must be a **detailed Markdown document** (not a one-liner). Include:
+
+1. **Concepts Defined**: What domain concepts, data models, or abstractions does this code establish?
+2. **Key Flows**: Describe the main workflows and data flows. Use **Mermaid flowcharts** (\`\`\`mermaid ... \`\`\`) where appropriate to illustrate processes, state transitions, or component interactions.
+3. **Implementation Details**: Notable patterns, algorithms, configurations, or design decisions.
+4. **Tables**: Use Markdown tables to summarize API endpoints, configuration options, key data fields, or component props where applicable.
+5. **Relationships**: How does this code interact with other parts of the system?
+
+Example summary structure:
+\`\`\`
+## Overview
+Brief description of what this object implements.
+
+## Concepts
+- **Concept A**: definition ...
+- **Concept B**: definition ...
+
+## Key Flows
+\\\`\\\`\\\`mermaid
+graph TD
+  A[User Action] --> B[Handler]
+  B --> C[Service]
+  C --> D[Store]
+\\\`\\\`\\\`
+
+## API / Interface
+| Method | Path | Description |
+|--------|------|-------------|
+| POST   | /api/x | Creates ... |
+
+## Details
+Notable implementation patterns ...
+\`\`\`
 
 ## Important
 

@@ -151,7 +151,7 @@ export const PlaygroundPage: React.FC<PlaygroundPageProps> = ({ workspace, objec
                 const testList = mapping.relatedFiles.filter(f => classifyFile(f) === 'test');
 
                 console.log('[CopilotSave]   impl:', implList.length, 'test:', testList.length);
-                if (implList.length > 0) await window.api.saveImpls(targetId, implList);
+                if (implList.length > 0) await window.api.saveImpls(targetId, implList, mapping.summary);
                 if (testList.length > 0) await window.api.saveTests(targetId, testList);
                 savedCount++;
             }
@@ -326,28 +326,58 @@ export const PlaygroundPage: React.FC<PlaygroundPageProps> = ({ workspace, objec
                             </div>
 
                             {/* Input area */}
-                            <div style={{
-                                flexShrink: 0,
-                                borderTop: `1px solid ${token.colorBorderSecondary}`,
-                                paddingTop: 12,
-                                display: 'flex', gap: 8, alignItems: 'flex-end',
-                            }}>
-                                <TextArea
-                                    value={inputValue}
-                                    onChange={e => setInputValue(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="Ask anything... (Shift+Enter for new line)"
-                                    autoSize={{ minRows: 1, maxRows: 6 }}
-                                    disabled={sending}
-                                    style={{ flex: 1 }}
-                                />
-                                <Button
-                                    type="primary"
-                                    icon={<SendOutlined />}
-                                    onClick={handleSend}
-                                    loading={sending}
-                                    disabled={!inputValue.trim()}
-                                />
+                            <div style={{ flexShrink: 0, borderTop: `1px solid ${token.colorBorderSecondary}`, paddingTop: 12, position: 'relative' }}>
+                                {/* Command suggestion popup */}
+                                {inputValue.startsWith('/') && !sending && (
+                                    <div style={{
+                                        position: 'absolute', bottom: '100%', left: 0, right: 0,
+                                        background: token.colorBgElevated,
+                                        border: `1px solid ${token.colorBorderSecondary}`,
+                                        borderRadius: 8, marginBottom: 4, padding: '4px 0',
+                                        boxShadow: token.boxShadowSecondary,
+                                        zIndex: 10,
+                                    }}>
+                                        {[
+                                            { cmd: '/scan', desc: '扫描项目文件，生成功能结构文档' },
+                                            { cmd: '/insight', desc: '深度分析项目设计理念、核心抽象与架构' },
+                                        ]
+                                            .filter(c => c.cmd.startsWith(inputValue.trim().toLowerCase()) || inputValue.trim() === '/')
+                                            .map(c => (
+                                                <div
+                                                    key={c.cmd}
+                                                    style={{
+                                                        padding: '8px 12px', cursor: 'pointer', fontSize: 13,
+                                                        display: 'flex', alignItems: 'center', gap: 8,
+                                                        transition: 'background 0.15s',
+                                                    }}
+                                                    onMouseEnter={e => (e.currentTarget.style.background = token.colorFillSecondary)}
+                                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                                    onClick={() => { setInputValue(c.cmd); }}
+                                                >
+                                                    <Tag color="blue" style={{ margin: 0 }}>{c.cmd}</Tag>
+                                                    <Text type="secondary" style={{ fontSize: 12 }}>{c.desc}</Text>
+                                                </div>
+                                            ))}
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                                    <TextArea
+                                        value={inputValue}
+                                        onChange={e => setInputValue(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder="Ask anything... Type / for commands"
+                                        autoSize={{ minRows: 1, maxRows: 6 }}
+                                        disabled={sending}
+                                        style={{ flex: 1 }}
+                                    />
+                                    <Button
+                                        type="primary"
+                                        icon={<SendOutlined />}
+                                        onClick={handleSend}
+                                        loading={sending}
+                                        disabled={!inputValue.trim()}
+                                    />
+                                </div>
                             </div>
                         </>
                     )}

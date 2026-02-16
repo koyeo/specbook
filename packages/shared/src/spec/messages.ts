@@ -3,7 +3,7 @@
  * Shared between main process and renderer.
  */
 import type {
-    ObjectSummary, ObjectDetail, ObjectTreeNode, ObjectAction, RelatedFile,
+    ObjectSummary, ObjectDetail, ObjectTreeNode, ObjectAction, RelatedFile, ImplData,
     AiConfig, AnalysisResult, TokenUsage,
     GlossaryTerm, ChatSession, ChatSessionSummary, ChatMessage,
     KnowledgeEntry,
@@ -64,6 +64,8 @@ export interface UpdateObjectPayload {
     content?: string;
     completed?: boolean;
     isState?: boolean;
+    implRules?: import('./types').ObjectRule[];
+    testRules?: import('./types').ObjectRule[];
 }
 
 /** Move object payload — change parent. */
@@ -82,8 +84,8 @@ export interface ObjectAPI {
     moveObject(payload: MoveObjectPayload): Promise<void>;
     loadActions(id: string): Promise<ObjectAction[]>;
     saveActions(id: string, actions: ObjectAction[]): Promise<void>;
-    loadImpls(id: string): Promise<RelatedFile[]>;
-    saveImpls(id: string, files: RelatedFile[]): Promise<void>;
+    loadImpls(id: string): Promise<ImplData>;
+    saveImpls(id: string, files: RelatedFile[], summary?: string): Promise<void>;
     loadTests(id: string): Promise<RelatedFile[]>;
     saveTests(id: string, files: RelatedFile[]): Promise<void>;
     exportMarkdown(): Promise<boolean>;

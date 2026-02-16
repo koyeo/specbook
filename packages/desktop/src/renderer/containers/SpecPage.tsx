@@ -7,6 +7,7 @@ import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, To
 import { ExportOutlined } from '@ant-design/icons';
 import { ObjectTable } from '../components/SpecTable';
 import { ObjectDetailPanel } from '../components/SpecDetailPanel';
+import { MarkdownPreview } from '../components/MarkdownPreview';
 import { useObjects } from '../hooks/useSpecs';
 import type { RelatedFile } from '@specbook/shared';
 
@@ -47,25 +48,51 @@ const FileLink: React.FC<{ file: RelatedFile; color: string }> = ({ file, color 
     );
 };
 
-/** A panel showing a list of files (impl or test). */
-const FileListPanel: React.FC<{ title: string; files: RelatedFile[]; color: string; borderColor: string }> = ({
-    title, files, color, borderColor,
-}) => (
-    <div style={{ height: '100%', borderLeft: `1px solid ${borderColor}`, overflow: 'auto' }}>
+/** A panel showing a list of files (impl or test), with optional summary. */
+const FileListPanel: React.FC<{ title: string; files: RelatedFile[]; color: string; borderColor: string; summary?: string }> = React.memo(({
+    title, files, color, borderColor, summary,
+}) => {
+    const header = (
         <div style={{ padding: '8px 12px', borderBottom: `1px solid ${borderColor}` }}>
             <Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {title} ({files.length})
             </Text>
         </div>
-        {files.length === 0 ? (
-            <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--ant-color-text-quaternary)', fontSize: 12 }}>
-                No {title.toLowerCase()} linked
+    );
+
+    const fileList = files.length === 0 && !summary ? (
+        <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--ant-color-text-quaternary)', fontSize: 12 }}>
+            No {title.toLowerCase()} linked
+        </div>
+    ) : (
+        files.map((f, i) => <FileLink key={i} file={f} color={color} />)
+    );
+
+    if (!summary) {
+        return (
+            <div style={{ height: '100%', borderLeft: `1px solid ${borderColor}`, overflow: 'auto' }}>
+                {header}
+                {fileList}
             </div>
-        ) : (
-            files.map((f, i) => <FileLink key={i} file={f} color={color} />)
-        )}
-    </div>
-);
+        );
+    }
+
+    return (
+        <div style={{ height: '100%', borderLeft: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column' }}>
+            {header}
+            <Splitter layout="vertical" style={{ flex: 1, minHeight: 0 }}>
+                <Splitter.Panel defaultSize="50%" style={{ overflow: 'auto' }}>
+                    <div style={{ padding: '8px 12px', fontSize: 12 }}>
+                        <MarkdownPreview content={summary} />
+                    </div>
+                </Splitter.Panel>
+                <Splitter.Panel style={{ overflow: 'auto', borderTop: `1px solid ${borderColor}` }}>
+                    {fileList}
+                </Splitter.Panel>
+            </Splitter>
+        </div>
+    );
+});
 
 interface ObjectPageProps {
     workspace: string | null;
@@ -82,6 +109,7 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
 
     // Impl/test files for the selected object
     const [implFiles, setImplFiles] = useState<RelatedFile[]>([]);
+    const [implSummary, setImplSummary] = useState<string | undefined>(undefined);
     const [testFiles, setTestFiles] = useState<RelatedFile[]>([]);
 
     // Add-new modal
@@ -96,19 +124,22 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     useEffect(() => {
         if (!selectedObjectId) {
             setImplFiles([]);
+            setImplSummary(undefined);
             setTestFiles([]);
             return;
         }
         const load = async () => {
             try {
-                const [impls, tests] = await Promise.all([
+                const [implData, tests] = await Promise.all([
                     window.api.loadImpls(selectedObjectId),
                     window.api.loadTests(selectedObjectId),
                 ]);
-                setImplFiles(impls);
+                setImplFiles(implData.files);
+                setImplSummary(implData.summary);
                 setTestFiles(tests);
             } catch {
                 setImplFiles([]);
+                setImplSummary(undefined);
                 setTestFiles([]);
             }
         };
@@ -131,8 +162,9 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
             Promise.all([
                 window.api.loadImpls(selectedObjectId),
                 window.api.loadTests(selectedObjectId),
-            ]).then(([impls, tests]) => {
-                setImplFiles(impls);
+            ]).then(([implData, tests]) => {
+                setImplFiles(implData.files);
+                setImplSummary(implData.summary);
                 setTestFiles(tests);
             }).catch(() => { });
         }
@@ -225,6 +257,7 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                         files={implFiles}
                         color="#52c41a"
                         borderColor={token.colorBorderSecondary}
+                        summary={implSummary}
                     />
                 </Splitter.Panel>
                 <Splitter.Panel defaultSize="20%">

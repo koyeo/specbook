@@ -123,7 +123,7 @@ export const AnalysisLogDrawer: React.FC<Props> = ({ task, open, onClose, object
                 const testList = mapping.relatedFiles.filter(f => classifyFile(f) === 'test');
 
                 console.log('[DrawerSave]   impl:', implList.length, 'test:', testList.length);
-                if (implList.length > 0) await window.api.saveImpls(targetId, implList);
+                if (implList.length > 0) await window.api.saveImpls(targetId, implList, mapping.summary);
                 if (testList.length > 0) await window.api.saveTests(targetId, testList);
                 savedCount++;
             }

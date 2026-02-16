@@ -39,7 +39,6 @@ export async function callAnthropic(
         messages: [
             { role: 'user', content: `${systemPrompt}\n\n---\n\n${userPrompt}` },
         ],
-        max_tokens: 8192,
         temperature: 0.3,
     };
 

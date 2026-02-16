@@ -117,8 +117,8 @@ const ObjectRow: React.FC<RowProps> = ({
     const menuItems: MenuProps['items'] = [
         { key: 'open', label: '📂 Open detail' },
         { type: 'divider' },
-        { key: 'add-sibling', label: '↓ Add sibling below' },
         { key: 'add-child', label: '→ Add child' },
+        { key: 'add-sibling', label: '↓ Add sibling below' },
         { type: 'divider' },
         { key: 'delete', label: '🗑 Delete', danger: true },
     ];
@@ -205,12 +205,6 @@ const ObjectRow: React.FC<RowProps> = ({
 
                     {/* Tags on the right */}
                     <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 8 }}>
-                        {node.isState && (
-                            <Tag color="orange" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>State</Tag>
-                        )}
-                        {node.hasActions && (
-                            <Tag color="blue" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>Action</Tag>
-                        )}
                         {node.hasImpls && (
                             <Tag color="green" style={{ margin: 0, fontSize: 11, lineHeight: '18px', padding: '0 6px' }}>Impl</Tag>
                         )}

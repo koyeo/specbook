@@ -147,24 +147,29 @@ function testFilePath(workspace: string, id: string): string {
     return path.join(specDir(workspace), TESTS_SUBDIR, `${id}.json`);
 }
 
-export function readImpls(workspace: string, id: string): RelatedFile[] {
+export function readImpls(workspace: string, id: string): import('@specbook/shared').ImplData {
     const filePath = implFilePath(workspace, id);
-    if (!fs.existsSync(filePath)) return [];
+    if (!fs.existsSync(filePath)) return { files: [] };
     try {
-        return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as RelatedFile[];
+        const raw = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+        // Backward compatibility: raw array → wrap in ImplData
+        if (Array.isArray(raw)) return { files: raw as RelatedFile[] };
+        return raw as import('@specbook/shared').ImplData;
     } catch {
-        return [];
+        return { files: [] };
     }
 }
 
-export function writeImpls(workspace: string, id: string, files: RelatedFile[]): void {
+export function writeImpls(workspace: string, id: string, files: RelatedFile[], summary?: string): void {
     ensureDirs(workspace);
     const filePath = implFilePath(workspace, id);
-    if (files.length === 0) {
+    if (files.length === 0 && !summary) {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         return;
     }
-    fs.writeFileSync(filePath, JSON.stringify(files, null, 2) + '\n', 'utf-8');
+    const data: import('@specbook/shared').ImplData = { files };
+    if (summary) data.summary = summary;
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n', 'utf-8');
 }
 
 export function readTests(workspace: string, id: string): RelatedFile[] {
@@ -206,7 +211,7 @@ export function readObjectDetail(workspace: string, id: string): ObjectDetail | 
 
     const content = readContent(workspace, id);
     const hasActions = readActions(workspace, id).length > 0;
-    const hasImpls = readImpls(workspace, id).length > 0;
+    const hasImpls = readImpls(workspace, entry.id).files.length > 0;
     const hasTests = readTests(workspace, id).length > 0;
     return {
         id: entry.id,
@@ -218,6 +223,8 @@ export function readObjectDetail(workspace: string, id: string): ObjectDetail | 
         hasTests,
         isState: entry.isState ?? false,
         completed: entry.completed,
+        implRules: entry.implRules,
+        testRules: entry.testRules,
         content,
         createdAt: entry.createdAt,
         updatedAt: entry.updatedAt,
@@ -235,6 +242,8 @@ function buildIndexEntry(workspace: string, detail: ObjectDetail): ObjectIndexEn
         completed: detail.completed,
         isState: detail.isState ?? false,
         contentHash: computeContentHash(filePath),
+        implRules: detail.implRules,
+        testRules: detail.testRules,
         createdAt: detail.createdAt,
         updatedAt: detail.updatedAt,
     };
@@ -275,7 +284,7 @@ export function loadAllObjects(workspace: string): ObjectTreeNode[] {
     const flatObjects: ObjectSummary[] = index.specs.map(entry => {
         const hasContent = computeContentHash(specFilePath(workspace, entry.id)) !== null;
         const hasActions = readActions(workspace, entry.id).length > 0;
-        const hasImpls = readImpls(workspace, entry.id).length > 0;
+        const hasImpls = readImpls(workspace, entry.id).files.length > 0;
         const hasTests = readTests(workspace, entry.id).length > 0;
         return {
             id: entry.id,

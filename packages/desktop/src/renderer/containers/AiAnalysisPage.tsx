@@ -94,7 +94,7 @@ export const AiAnalysisPage: React.FC<Props> = ({ objects }) => {
                 const testList = mapping.relatedFiles.filter(f => classifyFile(f) === 'test');
 
                 console.log('[SaveAll]   impl:', implList.length, 'test:', testList.length);
-                if (implList.length > 0) await window.api.saveImpls(targetId, implList);
+                if (implList.length > 0) await window.api.saveImpls(targetId, implList, mapping.summary);
                 if (testList.length > 0) await window.api.saveTests(targetId, testList);
                 savedCount++;
             }

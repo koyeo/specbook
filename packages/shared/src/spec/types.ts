@@ -22,6 +22,12 @@ export interface ObjectAction {
     stateChange: string;
 }
 
+/** A single object rule — describes a constraint or requirement. */
+export interface ObjectRule {
+    id: string;
+    text: string;
+}
+
 /** Index entry — stored in specs.json */
 export interface ObjectIndexEntry {
     id: string;
@@ -30,6 +36,8 @@ export interface ObjectIndexEntry {
     completed: boolean;
     isState: boolean;
     contentHash: string | null;
+    implRules?: ObjectRule[];
+    testRules?: ObjectRule[];
     createdAt: string;
     updatedAt: string;
 }
@@ -45,6 +53,8 @@ export interface ObjectSummary {
     hasTests: boolean;
     isState: boolean;
     completed: boolean;
+    implRules?: ObjectRule[];
+    testRules?: ObjectRule[];
     createdAt: string;
 }
 
@@ -116,6 +126,12 @@ export interface RelatedFile {
     lineRange?: { start: number; end: number };
     /** Classification: implementation code or test code. */
     type?: 'impl' | 'test';
+}
+
+/** Wrapper for impl files with an optional AI-generated summary. */
+export interface ImplData {
+    summary?: string;
+    files: RelatedFile[];
 }
 
 /** Object mapping result returned by AI. */

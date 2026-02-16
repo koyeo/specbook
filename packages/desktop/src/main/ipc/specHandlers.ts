@@ -114,6 +114,8 @@ export function registerIpcHandlers(): void {
             content: payload.content?.trim() ?? existing.content,
             completed: payload.completed ?? existing.completed ?? false,
             isState: payload.isState ?? existing.isState ?? false,
+            implRules: payload.implRules ?? existing.implRules,
+            testRules: payload.testRules ?? existing.testRules,
             updatedAt: new Date().toISOString(),
         };
         updated.hasContent = updated.content.length > 0;
@@ -159,9 +161,9 @@ export function registerIpcHandlers(): void {
         return objectStore.readImpls(ws, id);
     });
 
-    ipcMain.handle(IPC.SAVE_IMPLS, (_event, id: string, files: import('@specbook/shared').RelatedFile[]) => {
+    ipcMain.handle(IPC.SAVE_IMPLS, (_event, id: string, files: import('@specbook/shared').RelatedFile[], summary?: string) => {
         const ws = requireWorkspace();
-        objectStore.writeImpls(ws, id, files);
+        objectStore.writeImpls(ws, id, files, summary);
     });
 
     ipcMain.handle(IPC.LOAD_TESTS, (_event, id: string) => {
