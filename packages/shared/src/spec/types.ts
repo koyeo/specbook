@@ -312,8 +312,24 @@ export const GLOBAL_TESTS_FILE = 'tests.json';
 
 // ─── Source Scanner Types ────────────────────────────
 
+/** A single UUID match with its line number. */
+export interface ScanMatch {
+    uuid: string;
+    line: number;
+}
+
+/** A single file's scan result for logging. */
+export interface ScanLogEntry {
+    filePath: string;
+    matches: ScanMatch[];
+}
+
 /** Result of scanning workspace source files for known UUIDs. */
 export interface SourceScanResult {
     /** All UUIDs found in source files (object IDs + rule IDs). */
     foundIds: string[];
+    /** Total number of files scanned. */
+    scannedFiles: number;
+    /** Per-file scan results (only files with UUIDs). */
+    scanLog: ScanLogEntry[];
 }

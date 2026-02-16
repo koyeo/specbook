@@ -60,12 +60,20 @@ function collectFiles(dir: string): string[] {
     return results;
 }
 
-/** Scan a single file for UUIDs. */
-function scanFile(filePath: string): string[] {
+/** Scan a single file for UUIDs, returning matches with line numbers. */
+function scanFile(filePath: string): { uuid: string; line: number }[] {
     try {
         const content = fs.readFileSync(filePath, 'utf-8');
-        const matches = content.match(UUID_REGEX);
-        return matches ?? [];
+        const lines = content.split('\n');
+        const results: { uuid: string; line: number }[] = [];
+        for (let i = 0; i < lines.length; i++) {
+            let m: RegExpExecArray | null;
+            const re = new RegExp(UUID_REGEX.source, 'gi');
+            while ((m = re.exec(lines[i])) !== null) {
+                results.push({ uuid: m[0].toLowerCase(), line: i + 1 });
+            }
+        }
+        return results;
     } catch {
         return [];
     }
@@ -76,14 +84,18 @@ export function registerScanHandlers(): void {
         const ws = requireWorkspace();
         const files = collectFiles(ws);
         const idSet = new Set<string>();
+        const scanLog: { filePath: string; matches: { uuid: string; line: number }[] }[] = [];
 
         for (const file of files) {
-            const uuids = scanFile(file);
-            for (const uuid of uuids) {
-                idSet.add(uuid.toLowerCase());
+            const matches = scanFile(file);
+            if (matches.length > 0) {
+                scanLog.push({ filePath: path.relative(ws, file), matches });
+                for (const m of matches) {
+                    idSet.add(m.uuid);
+                }
             }
         }
 
-        return { foundIds: [...idSet] };
+        return { foundIds: [...idSet], scannedFiles: files.length, scanLog };
     });
 }

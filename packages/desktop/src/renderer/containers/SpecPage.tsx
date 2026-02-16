@@ -2,94 +2,109 @@
  * Container component — VS Code-like layout.
  * Left: object tree | Detail | Implementations | Tests
  */
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, Tooltip, theme, Switch, Drawer } from 'antd';
 import { ExportOutlined, CopyOutlined, ScanOutlined } from '@ant-design/icons';
 import { ObjectTable } from '../components/SpecTable';
 import { ObjectDetailPanel } from '../components/SpecDetailPanel';
 import { MarkdownPreview } from '../components/MarkdownPreview';
 import { useObjects } from '../hooks/useSpecs';
-import type { RelatedFile, ObjectTreeNode, ObjectDetail, ObjectRule, GlobalRule } from '@specbook/shared';
+import type { ObjectTreeNode, ObjectDetail, ObjectRule, GlobalRule, ScanLogEntry } from '@specbook/shared';
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
 
-/** Clickable file item for impl/test panels. */
-const FileLink: React.FC<{ file: RelatedFile; color: string }> = ({ file, color }) => {
-    const basename = file.filePath.split('/').pop() || file.filePath;
-    return (
-        <Tooltip title={`${file.filePath}${file.lineRange ? ` L${file.lineRange.start}-${file.lineRange.end}` : ''}${file.description ? `\n${file.description}` : ''}`}>
-            <div
-                style={{
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    color,
-                    padding: '4px 12px',
-                    transition: 'background 0.15s',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--ant-color-fill-secondary)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                onClick={() => {
-                    window.api.openInEditor(file.filePath, file.lineRange?.start).catch((err: any) => {
-                        message.error(err?.message || 'Failed to open file');
-                    });
-                }}
-            >
-                📄 {basename}
-                {file.lineRange && <span style={{ opacity: 0.5, marginLeft: 4 }}>:{file.lineRange.start}</span>}
-                {file.description && (
-                    <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>— {file.description}</Text>
-                )}
-            </div>
-        </Tooltip>
-    );
-};
+/** Panel showing scan-based file matches for the selected object. */
+const ScanMatchPanel: React.FC<{
+    title: string;
+    borderColor: string;
+    scanLog: ScanLogEntry[];
+    selectedObjectId: string | null;
+    objects: ObjectTreeNode[];
+    type: 'impl' | 'test';
+    implRuleIds?: Set<string>;
+    testRuleIds?: Set<string>;
+    objectIds?: Set<string>;
+}> = React.memo(({ title, borderColor, scanLog, selectedObjectId, objects, type }) => {
+    // Find selected node
+    const findNode = (nodes: ObjectTreeNode[], id: string): ObjectTreeNode | null => {
+        for (const n of nodes) {
+            if (n.id === id) return n;
+            if (n.children) { const f = findNode(n.children, id); if (f) return f; }
+        }
+        return null;
+    };
+    const node = selectedObjectId ? findNode(objects, selectedObjectId) : null;
 
-/** A panel showing a list of files (impl or test), with optional summary. */
-const FileListPanel: React.FC<{ title: string; files: RelatedFile[]; color: string; borderColor: string; summary?: string }> = React.memo(({
-    title, files, color, borderColor, summary,
-}) => {
-    const header = (
-        <div style={{ padding: '8px 12px', borderBottom: `1px solid ${borderColor}` }}>
-            <Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {title} ({files.length})
-            </Text>
-        </div>
-    );
+    // Collect relevant IDs for the selected object
+    const relevantIds = useMemo(() => {
+        if (!node) return new Set<string>();
+        const ids = new Set<string>();
+        if (type === 'impl') {
+            ids.add(node.id.toLowerCase());
+            node.implRules?.forEach(r => ids.add(r.id.toLowerCase()));
+        } else {
+            node.testRules?.forEach(r => ids.add(r.id.toLowerCase()));
+        }
+        return ids;
+    }, [node, type]);
 
-    const fileList = files.length === 0 && !summary ? (
-        <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--ant-color-text-quaternary)', fontSize: 12 }}>
-            No {title.toLowerCase()} linked
-        </div>
-    ) : (
-        files.map((f, i) => <FileLink key={i} file={f} color={color} />)
-    );
+    // Filter scan entries
+    const matched = useMemo(() => {
+        if (relevantIds.size === 0) return [];
+        return scanLog
+            .map(entry => {
+                const hits = entry.matches.filter(m => relevantIds.has(m.uuid));
+                return hits.length > 0 ? { filePath: entry.filePath, matches: hits } : null;
+            })
+            .filter(Boolean) as { filePath: string; matches: { uuid: string; line: number }[] }[];
+    }, [scanLog, relevantIds]);
 
-    if (!summary) {
-        return (
-            <div style={{ height: '100%', borderLeft: `1px solid ${borderColor}`, overflow: 'auto' }}>
-                {header}
-                {fileList}
-            </div>
-        );
-    }
+    const icon = type === 'impl' ? '📄' : '🧪';
+    const color = type === 'impl' ? '#52c41a' : '#1677ff';
 
     return (
-        <div style={{ height: '100%', borderLeft: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column' }}>
-            {header}
-            <Splitter layout="vertical" style={{ flex: 1, minHeight: 0 }}>
-                <Splitter.Panel defaultSize="50%" style={{ overflow: 'auto' }}>
-                    <div style={{ padding: '8px 12px', fontSize: 12 }}>
-                        <MarkdownPreview content={summary} />
-                    </div>
-                </Splitter.Panel>
-                <Splitter.Panel style={{ overflow: 'auto', borderTop: `1px solid ${borderColor}` }}>
-                    {fileList}
-                </Splitter.Panel>
-            </Splitter>
+        <div style={{ height: '100%', borderLeft: `1px solid ${borderColor}`, overflow: 'auto' }}>
+            <div style={{ padding: '8px 12px', borderBottom: `1px solid ${borderColor}` }}>
+                <Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    {title} ({matched.length})
+                </Text>
+            </div>
+            {scanLog.length === 0 ? (
+                <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--ant-color-text-quaternary)', fontSize: 12 }}>
+                    Run Scan first
+                </div>
+            ) : !selectedObjectId ? (
+                <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--ant-color-text-quaternary)', fontSize: 12 }}>
+                    Select an object
+                </div>
+            ) : matched.length === 0 ? (
+                <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--ant-color-text-quaternary)', fontSize: 12 }}>
+                    No {title.toLowerCase()} found
+                </div>
+            ) : (
+                matched.map(entry => (
+                    <Tooltip key={entry.filePath} title={`${entry.filePath}\n${entry.matches.map(m => `L${m.line}: ${m.uuid}`).join('\n')}`}>
+                        <div
+                            style={{
+                                cursor: 'pointer', fontSize: 12, color,
+                                padding: '4px 12px', transition: 'background 0.15s',
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--ant-color-fill-secondary)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            onClick={() => {
+                                window.api.openInEditor(entry.filePath, entry.matches[0]?.line).catch((err: any) => {
+                                    message.error(err?.message || 'Failed to open file');
+                                });
+                            }}
+                        >
+                            {icon} {entry.filePath.split('/').pop()}
+                            <span style={{ opacity: 0.5, marginLeft: 4 }}>:{entry.matches[0]?.line}</span>
+                        </div>
+                    </Tooltip>
+                ))
+            )}
         </div>
     );
 });
@@ -98,6 +113,7 @@ interface ObjectPageProps {
     workspace: string | null;
 }
 
+// @specbook-object 019c4d29-46fb-748d-8dd3-e0cd47a3223e
 export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     const { token } = useToken();
     const {
@@ -106,11 +122,6 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     } = useObjects();
 
     const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
-
-    // Impl/test files for the selected object
-    const [implFiles, setImplFiles] = useState<RelatedFile[]>([]);
-    const [implSummary, setImplSummary] = useState<string | undefined>(undefined);
-    const [testFiles, setTestFiles] = useState<RelatedFile[]>([]);
 
     // Column visibility toggles
     const [showImpl, setShowImpl] = useState(true);
@@ -138,17 +149,58 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
     }, []);
+    // Collect all rule IDs from the object tree for scan categorisation
+    const { implRuleIds, testRuleIds, objectIds } = useMemo(() => {
+        const implIds = new Set<string>();
+        const testIds = new Set<string>();
+        const objIds = new Set<string>();
+        const walk = (nodes: ObjectTreeNode[]) => {
+            for (const n of nodes) {
+                objIds.add(n.id.toLowerCase());
+                n.implRules?.forEach(r => implIds.add(r.id.toLowerCase()));
+                n.testRules?.forEach(r => testIds.add(r.id.toLowerCase()));
+                if (n.children) walk(n.children);
+            }
+        };
+        walk(objects);
+        return { implRuleIds: implIds, testRuleIds: testIds, objectIds: objIds };
+    }, [objects]);
 
     // Source scan results
     const [foundIds, setFoundIds] = useState<Set<string> | undefined>(undefined);
     const [scanning, setScanning] = useState(false);
+    const [scanLog, setScanLog] = useState<ScanLogEntry[]>([]);
+    const [scanStats, setScanStats] = useState<{ scannedFiles: number; foundIds: number } | null>(null);
+    const [scanDrawerOpen, setScanDrawerOpen] = useState(false);
+    const [scanDrawerWidth, setScanDrawerWidth] = useState(() => Math.round(window.innerWidth * 0.4));
+    const scanDragging = useRef(false);
+
+    const onScanDragStart = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        scanDragging.current = true;
+        const onMove = (ev: MouseEvent) => {
+            if (!scanDragging.current) return;
+            const newWidth = Math.max(300, Math.min(window.innerWidth * 0.9, window.innerWidth - ev.clientX));
+            setScanDrawerWidth(newWidth);
+        };
+        const onUp = () => {
+            scanDragging.current = false;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    }, []);
 
     const handleScan = async () => {
         setScanning(true);
         try {
             const result = await window.scanApi.scanSource();
             setFoundIds(new Set(result.foundIds));
-            message.success(`Scan complete — ${result.foundIds.length} UUIDs found`);
+            setScanLog(result.scanLog);
+            setScanStats({ scannedFiles: result.scannedFiles, foundIds: result.foundIds.length });
+            setScanDrawerOpen(true);
+            message.success(`Scan complete — ${result.foundIds.length} UUIDs found in ${result.scannedFiles} files`);
         } catch (err: any) {
             message.error(err?.message || 'Scan failed');
         } finally {
@@ -164,31 +216,6 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
 
     useEffect(() => { if (workspace) loadObjects(); }, [workspace, loadObjects]);
 
-    // Load impl/test files when selection changes
-    useEffect(() => {
-        if (!selectedObjectId) {
-            setImplFiles([]);
-            setImplSummary(undefined);
-            setTestFiles([]);
-            return;
-        }
-        const load = async () => {
-            try {
-                const [implData, tests] = await Promise.all([
-                    window.api.loadImpls(selectedObjectId),
-                    window.api.loadTests(selectedObjectId),
-                ]);
-                setImplFiles(implData.files);
-                setImplSummary(implData.summary);
-                setTestFiles(tests);
-            } catch {
-                setImplFiles([]);
-                setImplSummary(undefined);
-                setTestFiles([]);
-            }
-        };
-        load();
-    }, [selectedObjectId]);
 
     const handleDelete = async (id: string) => {
         try {
@@ -201,17 +228,6 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     const handleOpen = (id: string) => setSelectedObjectId(id);
     const handleSaved = () => {
         loadObjects();
-        // Reload files after save (detail panel may have changed impls/tests)
-        if (selectedObjectId) {
-            Promise.all([
-                window.api.loadImpls(selectedObjectId),
-                window.api.loadTests(selectedObjectId),
-            ]).then(([implData, tests]) => {
-                setImplFiles(implData.files);
-                setImplSummary(implData.summary);
-                setTestFiles(tests);
-            }).catch(() => { });
-        }
     };
 
     const handleAddRoot = () => { setAddMode('root'); setAddParentId(null); setNewTitle(''); };
@@ -344,10 +360,10 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
 
                 // Action instruction based on status
                 if (hasScanned && !objectImplemented) {
-                    sections.push(`${indent}> **ACTION**: Implement this object feature. After implementation, add a traceability comment \`// @specbook-object ${node.id}\` at the class/function/module level.`);
+                    sections.push(`${indent}> **ACTION**: Implement this object feature. After implementation, add a traceability comment \`// @specbook-object ${node.id} — ${node.title}\` at the class/function/module level.`);
                     sections.push('');
                 } else if (hasScanned && objectImplemented) {
-                    sections.push(`${indent}> **ACTION**: This object is already implemented. Verify that the traceability comment \`// @specbook-object ${node.id}\` exists at the appropriate class/function/module level. If missing, add it.`);
+                    sections.push(`${indent}> **ACTION**: This object is already implemented. Verify that the traceability comment \`// @specbook-object ${node.id} — ${node.title}\` exists at the appropriate class/function/module level. If missing, add it.`);
                     sections.push('');
                 }
 
@@ -368,9 +384,9 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                         const ruleIcon = hasScanned ? (ruleImpl ? '✅' : '❌') : '';
                         sections.push(`${indent}- ${ruleIcon} (Rule ID: \`${rule.id}\`) ${rule.text}`);
                         if (hasScanned && !ruleImpl) {
-                            sections.push(`${indent}  - ⚠️ **Not yet applied**. Implement this rule and add \`// @specbook-rule ${rule.id}\` at the location where it is applied.`);
+                            sections.push(`${indent}  - ⚠️ **Not yet applied**. Implement this rule and add \`// @specbook-rule ${rule.id} — ${rule.text}\` at the location where it is applied.`);
                         } else if (hasScanned && ruleImpl) {
-                            sections.push(`${indent}  - ✓ Applied. Verify \`// @specbook-rule ${rule.id}\` is placed at the correct location.`);
+                            sections.push(`${indent}  - ✓ Applied. Verify \`// @specbook-rule ${rule.id} — ${rule.text}\` is placed at the correct location.`);
                         }
                     }
                     sections.push('');
@@ -386,9 +402,9 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                         const ruleIcon = hasScanned ? (ruleImpl ? '✅' : '❌') : '';
                         sections.push(`${indent}- ${ruleIcon} (Rule ID: \`${rule.id}\`) ${rule.text}`);
                         if (hasScanned && !ruleImpl) {
-                            sections.push(`${indent}  - ⚠️ **Test not yet implemented**. Write a test for this rule and add \`// @specbook-rule ${rule.id}\` in the test file.`);
+                            sections.push(`${indent}  - ⚠️ **Test not yet implemented**. Write a test for this rule and add \`// @specbook-rule ${rule.id} — ${rule.text}\` in the test file.`);
                         } else if (hasScanned && ruleImpl) {
-                            sections.push(`${indent}  - ✓ Test exists. Verify \`// @specbook-rule ${rule.id}\` is placed in the correct test file/location.`);
+                            sections.push(`${indent}  - ✓ Test exists. Verify \`// @specbook-rule ${rule.id} — ${rule.text}\` is placed in the correct test file/location.`);
                         }
                     }
                     sections.push('');
@@ -418,15 +434,15 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
             sections.push('');
             sections.push('1. At the class, function, or module level that implements an object, add:');
             sections.push('   ```');
-            sections.push('   // @specbook-object <object-id>');
+            sections.push('   // @specbook-object <object-id> — <object title/description>');
             sections.push('   ```');
             sections.push('2. At the code location where a specific rule is applied, add:');
             sections.push('   ```');
-            sections.push('   // @specbook-rule <rule-id>');
+            sections.push('   // @specbook-rule <rule-id> — <rule description>');
             sections.push('   ```');
             sections.push('3. For test files, use the same annotations so tests can be linked back to the spec.');
             sections.push('');
-            sections.push('These annotations enable automated scanning tools to verify that every object and rule has been implemented. **Do not omit them.**');
+            sections.push('The description after the `—` dash helps developers quickly understand what each annotation refers to without looking up the spec. **Do not omit them.**');
             sections.push('');
 
             // Show in drawer
@@ -491,22 +507,28 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                 </Splitter.Panel>
                 {showImpl && (
                     <Splitter.Panel defaultSize="20%">
-                        <FileListPanel
+                        <ScanMatchPanel
                             title="Implementations"
-                            files={implFiles}
-                            color="#52c41a"
                             borderColor={token.colorBorderSecondary}
-                            summary={implSummary}
+                            scanLog={scanLog}
+                            selectedObjectId={selectedObjectId}
+                            objects={objects}
+                            type="impl"
+                            implRuleIds={implRuleIds}
+                            objectIds={objectIds}
                         />
                     </Splitter.Panel>
                 )}
                 {showTests && (
                     <Splitter.Panel defaultSize="20%">
-                        <FileListPanel
+                        <ScanMatchPanel
                             title="Tests"
-                            files={testFiles}
-                            color="#1677ff"
                             borderColor={token.colorBorderSecondary}
+                            scanLog={scanLog}
+                            selectedObjectId={selectedObjectId}
+                            objects={objects}
+                            type="test"
+                            testRuleIds={testRuleIds}
                         />
                     </Splitter.Panel>
                 )}
@@ -551,6 +573,108 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                     }}
                 />
                 <MarkdownPreview content={promptText} />
+            </Drawer>
+
+            {/* Scan log drawer */}
+            <Drawer
+                title="Scan Log"
+                placement="right"
+                width={scanDrawerWidth}
+                open={scanDrawerOpen}
+                onClose={() => setScanDrawerOpen(false)}
+                destroyOnClose
+            >
+                {/* Drag handle on left edge */}
+                <div
+                    onMouseDown={onScanDragStart}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: 6,
+                        height: '100%',
+                        cursor: 'col-resize',
+                        zIndex: 10,
+                    }}
+                />
+                {scanStats && (
+                    <div style={{ marginBottom: 16 }}>
+                        <Space size={16}>
+                            <Text strong>Scanned: {scanStats.scannedFiles} files</Text>
+                            <Text strong>UUIDs: {scanStats.foundIds}</Text>
+                            <Text strong>Matched files: {scanLog.length}</Text>
+                        </Space>
+                    </div>
+                )}
+                {/* Impl / Test columns */}
+                <div style={{ display: 'flex', gap: 16 }}>
+                    {/* Implementations column */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>Implementations</Text>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {scanLog.map(entry => {
+                                const implMatches = entry.matches.filter(m => implRuleIds.has(m.uuid) || objectIds.has(m.uuid));
+                                if (implMatches.length === 0) return null;
+                                return (
+                                    <div key={`impl-${entry.filePath}`} style={{ padding: '6px 10px', background: token.colorBgTextHover, borderRadius: 6 }}>
+                                        <Text
+                                            strong
+                                            style={{ fontSize: 12, display: 'block', marginBottom: 4, wordBreak: 'break-all', cursor: 'pointer', color: token.colorPrimary }}
+                                            onClick={() => window.api.openInEditor(entry.filePath, implMatches[0]?.line)}
+                                        >
+                                            📄 {entry.filePath}
+                                        </Text>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                            {implMatches.map((m, i) => (
+                                                <Text
+                                                    key={i}
+                                                    code
+                                                    style={{ fontSize: 11, cursor: 'pointer' }}
+                                                    onClick={() => window.api.openInEditor(entry.filePath, m.line)}
+                                                >
+                                                    L{m.line}: {m.uuid.slice(0, 8)}…
+                                                </Text>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    {/* Tests column */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>Tests</Text>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {scanLog.map(entry => {
+                                const testMatches = entry.matches.filter(m => testRuleIds.has(m.uuid));
+                                if (testMatches.length === 0) return null;
+                                return (
+                                    <div key={`test-${entry.filePath}`} style={{ padding: '6px 10px', background: token.colorBgTextHover, borderRadius: 6 }}>
+                                        <Text
+                                            strong
+                                            style={{ fontSize: 12, display: 'block', marginBottom: 4, wordBreak: 'break-all', cursor: 'pointer', color: token.colorPrimary }}
+                                            onClick={() => window.api.openInEditor(entry.filePath, testMatches[0]?.line)}
+                                        >
+                                            🧪 {entry.filePath}
+                                        </Text>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                            {testMatches.map((m, i) => (
+                                                <Text
+                                                    key={i}
+                                                    code
+                                                    style={{ fontSize: 11, cursor: 'pointer' }}
+                                                    onClick={() => window.api.openInEditor(entry.filePath, m.line)}
+                                                >
+                                                    L{m.line}: {m.uuid.slice(0, 8)}…
+                                                </Text>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
             </Drawer>
         </div>
     );

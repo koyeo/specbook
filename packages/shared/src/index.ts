@@ -32,7 +32,7 @@ export type { GlobalTestCase, GlobalTest, GlobalTestIndex } from './spec/types';
 export { GLOBAL_TESTS_FILE } from './spec/types';
 
 // Source Scanner types
-export type { SourceScanResult } from './spec/types';
+export type { SourceScanResult, ScanLogEntry, ScanMatch } from './spec/types';
 
 // IPC contract
 export { IPC } from './spec/messages';
