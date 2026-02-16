@@ -256,3 +256,56 @@ export interface KnowledgeIndex {
 
 /** Knowledge file name. */
 export const KNOWLEDGE_FILE = 'knowledge.json';
+
+// ─── Global Rules Types ─────────────────────────────
+
+/** Category for a global rule. */
+export type GlobalRuleCategory = 'impl' | 'test';
+
+/** A single global rule entry. */
+export interface GlobalRule {
+    id: string;
+    name: string;
+    text: string;
+    category: GlobalRuleCategory;
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** Root global rules file structure (.spec/rules.json) */
+export interface GlobalRuleIndex {
+    version: string;
+    rules: GlobalRule[];
+}
+
+/** Global rules file name. */
+export const GLOBAL_RULES_FILE = 'rules.json';
+
+// ─── Global Tests Types ─────────────────────────────
+
+/** A single test case within a global test. */
+export interface GlobalTestCase {
+    id: string;
+    text: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** A single global test entry (suite) containing cases. */
+export interface GlobalTest {
+    id: string;
+    title: string;
+    description: string;
+    cases: GlobalTestCase[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** Root global tests file structure (.spec/tests.json) */
+export interface GlobalTestIndex {
+    version: string;
+    tests: GlobalTest[];
+}
+
+/** Global tests file name. */
+export const GLOBAL_TESTS_FILE = 'tests.json';

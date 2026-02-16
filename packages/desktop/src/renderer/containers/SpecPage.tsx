@@ -3,7 +3,7 @@
  * Left: object tree | Detail | Implementations | Tests
  */
 import React, { useEffect, useState } from 'react';
-import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, Tooltip, theme } from 'antd';
+import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, Tooltip, theme, Switch } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
 import { ObjectTable } from '../components/SpecTable';
 import { ObjectDetailPanel } from '../components/SpecDetailPanel';
@@ -111,6 +111,10 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     const [implFiles, setImplFiles] = useState<RelatedFile[]>([]);
     const [implSummary, setImplSummary] = useState<string | undefined>(undefined);
     const [testFiles, setTestFiles] = useState<RelatedFile[]>([]);
+
+    // Column visibility toggles
+    const [showImpl, setShowImpl] = useState(true);
+    const [showTests, setShowTests] = useState(true);
 
     // Add-new modal
     const [addMode, setAddMode] = useState<'root' | 'sibling' | 'child' | null>(null);
@@ -223,7 +227,15 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
             <div style={{ flexShrink: 0, marginBottom: 8 }}>
                 <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
                     <Title level={4} style={{ margin: 0 }}>Features</Title>
-                    <Space size={8}>
+                    <Space size={12}>
+                        <Space size={4}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>Implementations</Text>
+                            <Switch size="small" checked={showImpl} onChange={setShowImpl} />
+                        </Space>
+                        <Space size={4}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>Tests</Text>
+                            <Switch size="small" checked={showTests} onChange={setShowTests} />
+                        </Space>
                         <Button size="small" icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
                     </Space>
                 </Space>
@@ -232,7 +244,7 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
 
             {/* Splitter: tree | detail | impls | tests */}
             <Splitter style={{ flex: 1, minHeight: 0 }}>
-                <Splitter.Panel defaultSize="30%" min="200px" max="50%">
+                <Splitter.Panel defaultSize={showImpl || showTests ? '30%' : '50%'} min="200px" max="50%">
                     <div style={{ height: '100%', overflow: 'auto', paddingRight: 4 }}>
                         <ObjectTable
                             objects={objects} loading={loading}
@@ -242,7 +254,7 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                         />
                     </div>
                 </Splitter.Panel>
-                <Splitter.Panel defaultSize="30%">
+                <Splitter.Panel defaultSize={showImpl || showTests ? '30%' : '50%'}>
                     <div style={{
                         height: '100%',
                         borderLeft: `1px solid ${token.colorBorderSecondary}`,
@@ -251,23 +263,27 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                         <ObjectDetailPanel specId={selectedObjectId} specs={objects} onSaved={handleSaved} />
                     </div>
                 </Splitter.Panel>
-                <Splitter.Panel defaultSize="20%">
-                    <FileListPanel
-                        title="Implementations"
-                        files={implFiles}
-                        color="#52c41a"
-                        borderColor={token.colorBorderSecondary}
-                        summary={implSummary}
-                    />
-                </Splitter.Panel>
-                <Splitter.Panel defaultSize="20%">
-                    <FileListPanel
-                        title="Tests"
-                        files={testFiles}
-                        color="#1677ff"
-                        borderColor={token.colorBorderSecondary}
-                    />
-                </Splitter.Panel>
+                {showImpl && (
+                    <Splitter.Panel defaultSize="20%">
+                        <FileListPanel
+                            title="Implementations"
+                            files={implFiles}
+                            color="#52c41a"
+                            borderColor={token.colorBorderSecondary}
+                            summary={implSummary}
+                        />
+                    </Splitter.Panel>
+                )}
+                {showTests && (
+                    <Splitter.Panel defaultSize="20%">
+                        <FileListPanel
+                            title="Tests"
+                            files={testFiles}
+                            color="#1677ff"
+                            borderColor={token.colorBorderSecondary}
+                        />
+                    </Splitter.Panel>
+                )}
             </Splitter>
 
             {/* Add modal */}

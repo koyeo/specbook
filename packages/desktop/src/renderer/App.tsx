@@ -7,12 +7,14 @@ import {
     SunOutlined, MoonOutlined, SettingOutlined,
     AppstoreOutlined, BookOutlined,
     FolderOpenOutlined, BulbOutlined, DesktopOutlined,
-    RobotOutlined,
+    RobotOutlined, SafetyOutlined, ExperimentOutlined,
 } from '@ant-design/icons';
 import { ObjectPage } from './containers/SpecPage';
 import { GlossaryPage } from './containers/GlossaryPage';
 import { PlaygroundPage } from './containers/PlaygroundPage';
 import { KnowledgePage } from './containers/KnowledgePage';
+import { GlobalRulesPage } from './containers/GlobalRulesPage';
+import { GlobalTestsPage } from './containers/GlobalTestsPage';
 import { AiSettingsModal } from './components/AiSettingsModal';
 import type { ObjectTreeNode } from '@specbook/shared';
 
@@ -20,7 +22,7 @@ const { Text, Title } = Typography;
 const { Sider, Content } = Layout;
 
 type ThemeMode = 'system' | 'light' | 'dark';
-type PageKey = 'objects' | 'glossary' | 'knowledge';
+type PageKey = 'objects' | 'glossary' | 'knowledge' | 'rules' | 'tests';
 
 function getSystemDark(): boolean {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
@@ -97,6 +99,8 @@ const App: React.FC = () => {
 
     const menuItems = [
         { key: 'objects', icon: <AppstoreOutlined />, label: 'Features' },
+        { key: 'rules', icon: <SafetyOutlined />, label: 'Rules' },
+        { key: 'tests', icon: <ExperimentOutlined />, label: 'Tests' },
         { key: 'knowledge', icon: <BulbOutlined />, label: 'Knowledge' },
         { key: 'glossary', icon: <BookOutlined />, label: 'Glossary' },
     ];
@@ -109,6 +113,10 @@ const App: React.FC = () => {
                 return <GlossaryPage workspace={workspace} />;
             case 'knowledge':
                 return <KnowledgePage workspace={workspace} />;
+            case 'rules':
+                return <GlobalRulesPage workspace={workspace} />;
+            case 'tests':
+                return <GlobalTestsPage workspace={workspace} />;
             default:
                 return <ObjectPage workspace={workspace} />;
         }

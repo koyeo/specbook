@@ -1,4 +1,4 @@
-import type { ObjectAPI, AiAPI, GlossaryAPI, ChatAPI, KnowledgeAPI } from '@specbook/shared';
+import type { ObjectAPI, AiAPI, GlossaryAPI, ChatAPI, KnowledgeAPI, GlobalRulesAPI, GlobalTestsAPI } from '@specbook/shared';
 
 declare global {
     interface Window {
@@ -7,5 +7,7 @@ declare global {
         glossaryApi: GlossaryAPI;
         chatApi: ChatAPI;
         knowledgeApi: KnowledgeAPI;
+        globalRulesApi: GlobalRulesAPI;
+        globalTestsApi: GlobalTestsAPI;
     }
 }

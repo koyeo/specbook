@@ -7,6 +7,7 @@ import type {
     AiConfig, AnalysisResult, TokenUsage,
     GlossaryTerm, ChatSession, ChatSessionSummary, ChatMessage,
     KnowledgeEntry,
+    GlobalRule, GlobalRuleCategory, GlobalTest, GlobalTestCase,
 } from './types';
 
 /** IPC channel names. */
@@ -48,6 +49,16 @@ export const IPC = {
     KNOWLEDGE_ADD: 'knowledge:add',
     KNOWLEDGE_UPDATE: 'knowledge:update',
     KNOWLEDGE_DELETE: 'knowledge:delete',
+    // Global Rules channels
+    GLOBAL_RULES_LOAD: 'global-rules:load',
+    GLOBAL_RULES_ADD: 'global-rules:add',
+    GLOBAL_RULES_UPDATE: 'global-rules:update',
+    GLOBAL_RULES_DELETE: 'global-rules:delete',
+    // Global Tests channels
+    GLOBAL_TESTS_LOAD: 'global-tests:load',
+    GLOBAL_TESTS_ADD: 'global-tests:add',
+    GLOBAL_TESTS_UPDATE: 'global-tests:update',
+    GLOBAL_TESTS_DELETE: 'global-tests:delete',
 } as const;
 
 /** Add object payload. */
@@ -163,4 +174,53 @@ export interface KnowledgeAPI {
     addEntry(payload: AddKnowledgeEntryPayload): Promise<KnowledgeEntry>;
     updateEntry(payload: UpdateKnowledgeEntryPayload): Promise<KnowledgeEntry>;
     deleteEntry(id: string): Promise<void>;
+}
+
+// ─── Global Rules ───────────────────────────────────
+
+/** Add global rule payload. */
+export interface AddGlobalRulePayload {
+    name: string;
+    text: string;
+    category: GlobalRuleCategory;
+}
+
+/** Update global rule payload. */
+export interface UpdateGlobalRulePayload {
+    id: string;
+    name?: string;
+    text?: string;
+    category?: GlobalRuleCategory;
+}
+
+/** Global Rules API exposed to renderer. */
+export interface GlobalRulesAPI {
+    loadRules(): Promise<GlobalRule[]>;
+    addRule(payload: AddGlobalRulePayload): Promise<GlobalRule>;
+    updateRule(payload: UpdateGlobalRulePayload): Promise<GlobalRule>;
+    deleteRule(id: string): Promise<void>;
+}
+
+// ─── Global Tests ───────────────────────────────────
+
+/** Add global test payload. */
+export interface AddGlobalTestPayload {
+    title: string;
+    description?: string;
+}
+
+/** Update global test payload. */
+export interface UpdateGlobalTestPayload {
+    id: string;
+    title?: string;
+    description?: string;
+    cases?: GlobalTestCase[];
+}
+
+/** Global Tests API exposed to renderer. */
+export interface GlobalTestsAPI {
+    loadTests(): Promise<GlobalTest[]>;
+    addTest(payload: AddGlobalTestPayload): Promise<GlobalTest>;
+    updateTest(payload: UpdateGlobalTestPayload): Promise<GlobalTest>;
+    deleteTest(id: string): Promise<void>;
 }

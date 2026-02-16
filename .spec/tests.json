@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "tests": [
+    {
+      "id": "019c64fd-39fa-76d9-b1da-a86114d2db75",
+      "title": "test1",
+      "description": "",
+      "cases": [],
+      "createdAt": "2026-02-16T05:47:23.002Z",
+      "updatedAt": "2026-02-16T05:47:23.002Z"
+    },
+    {
+      "id": "019c650c-97d6-73da-ac9d-19b4711bf563",
+      "title": "一个测试",
+      "description": "测试那里呢",
+      "cases": [],
+      "createdAt": "2026-02-16T06:04:10.070Z",
+      "updatedAt": "2026-02-16T06:04:10.070Z"
+    }
+  ]
+}

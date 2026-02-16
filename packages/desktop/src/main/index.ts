@@ -8,6 +8,8 @@ import { registerAiHandlers } from './ipc/aiHandlers';
 import { registerGlossaryHandlers } from './ipc/glossaryHandlers';
 import { registerChatHandlers } from './ipc/chatHandlers';
 import { registerKnowledgeHandlers } from './ipc/knowledgeHandlers';
+import { registerGlobalRulesHandlers } from './ipc/globalRulesHandlers';
+import { registerGlobalTestsHandlers } from './ipc/globalTestsHandlers';
 
 function createWindow(): void {
     const win = new BrowserWindow({
@@ -36,6 +38,8 @@ app.whenReady().then(() => {
     registerGlossaryHandlers();
     registerChatHandlers();
     registerKnowledgeHandlers();
+    registerGlobalRulesHandlers();
+    registerGlobalTestsHandlers();
     createWindow();
 
     app.on('activate', () => {

@@ -23,6 +23,14 @@ export { PLAYGROUND_DIR } from './spec/types';
 export type { KnowledgeEntry, KnowledgeIndex } from './spec/types';
 export { KNOWLEDGE_PRESET_TAGS, KNOWLEDGE_FILE } from './spec/types';
 
+// Global Rules types
+export type { GlobalRule, GlobalRuleCategory, GlobalRuleIndex } from './spec/types';
+export { GLOBAL_RULES_FILE } from './spec/types';
+
+// Global Tests types
+export type { GlobalTestCase, GlobalTest, GlobalTestIndex } from './spec/types';
+export { GLOBAL_TESTS_FILE } from './spec/types';
+
 // IPC contract
 export { IPC } from './spec/messages';
 export type {
@@ -30,6 +38,8 @@ export type {
     AddGlossaryTermPayload, UpdateGlossaryTermPayload, GlossaryAPI,
     SendChatMessagePayload, ChatAPI,
     AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload, KnowledgeAPI,
+    AddGlobalRulePayload, UpdateGlobalRulePayload, GlobalRulesAPI,
+    AddGlobalTestPayload, UpdateGlobalTestPayload, GlobalTestsAPI,
 } from './spec/messages';
 
 // Validations

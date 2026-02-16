@@ -1,6 +1,6 @@
 /**
  * Preload script — contextBridge.
- * Exposes a typed ObjectAPI, AiAPI, GlossaryAPI, ChatAPI, and KnowledgeAPI to the renderer process.
+ * Exposes typed APIs to the renderer process.
  */
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '@specbook/shared';
@@ -10,6 +10,8 @@ import type {
     GlossaryAPI, AddGlossaryTermPayload, UpdateGlossaryTermPayload,
     ChatAPI, SendChatMessagePayload,
     KnowledgeAPI, AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload,
+    GlobalRulesAPI, AddGlobalRulePayload, UpdateGlobalRulePayload,
+    GlobalTestsAPI, AddGlobalTestPayload, UpdateGlobalTestPayload,
 } from '@specbook/shared';
 
 const api: ObjectAPI = {
@@ -60,8 +62,24 @@ const knowledgeApi: KnowledgeAPI = {
     deleteEntry: (id: string) => ipcRenderer.invoke(IPC.KNOWLEDGE_DELETE, id),
 };
 
+const globalRulesApi: GlobalRulesAPI = {
+    loadRules: () => ipcRenderer.invoke(IPC.GLOBAL_RULES_LOAD),
+    addRule: (payload: AddGlobalRulePayload) => ipcRenderer.invoke(IPC.GLOBAL_RULES_ADD, payload),
+    updateRule: (payload: UpdateGlobalRulePayload) => ipcRenderer.invoke(IPC.GLOBAL_RULES_UPDATE, payload),
+    deleteRule: (id: string) => ipcRenderer.invoke(IPC.GLOBAL_RULES_DELETE, id),
+};
+
+const globalTestsApi: GlobalTestsAPI = {
+    loadTests: () => ipcRenderer.invoke(IPC.GLOBAL_TESTS_LOAD),
+    addTest: (payload: AddGlobalTestPayload) => ipcRenderer.invoke(IPC.GLOBAL_TESTS_ADD, payload),
+    updateTest: (payload: UpdateGlobalTestPayload) => ipcRenderer.invoke(IPC.GLOBAL_TESTS_UPDATE, payload),
+    deleteTest: (id: string) => ipcRenderer.invoke(IPC.GLOBAL_TESTS_DELETE, id),
+};
+
 contextBridge.exposeInMainWorld('api', api);
 contextBridge.exposeInMainWorld('aiApi', aiApi);
 contextBridge.exposeInMainWorld('glossaryApi', glossaryApi);
 contextBridge.exposeInMainWorld('chatApi', chatApi);
 contextBridge.exposeInMainWorld('knowledgeApi', knowledgeApi);
+contextBridge.exposeInMainWorld('globalRulesApi', globalRulesApi);
+contextBridge.exposeInMainWorld('globalTestsApi', globalTestsApi);
