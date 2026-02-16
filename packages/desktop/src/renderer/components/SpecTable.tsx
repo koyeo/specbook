@@ -46,7 +46,7 @@ interface ObjectTableProps {
     foundIds?: Set<string>;
 }
 
-// @specbook-object 019c6222-9e8e-75a9-a57b-3df8d4d14ad8
+// @specbook-object 019c6222-9e8e-75a9-a57b-3df8d4d14ad8 — Display Search Items Entry
 function filterTree(nodes: ObjectTreeNode[], q: string): ObjectTreeNode[] {
     const r: ObjectTreeNode[] = [];
     for (const n of nodes) {
@@ -112,8 +112,8 @@ interface RowProps {
     foundIds?: Set<string>;
 }
 
-// @specbook-object 019c621d-dacf-742c-9d27-1301c292ba4f
-// @specbook-object 019c621b-ca38-7688-aa58-23a1bc62e2be
+// @specbook-object 019c621d-dacf-742c-9d27-1301c292ba4f — Display object items sorting handle
+// @specbook-object 019c621b-ca38-7688-aa58-23a1bc62e2be — Display object item with depth retracting
 const ObjectRow: React.FC<RowProps> = ({
     node, depth, guides, isLastChild, expanded, hasChildren, hoveredRow, selected, anySelected,
     hoverBg, selectedBg, guideColor,
@@ -318,8 +318,8 @@ const TreeRenderer: React.FC<TreeProps> = ({ nodes, depth, guides, expandedKeys,
 
 // ─── Main ────────────────────────────────────────────
 
-// @specbook-object 019c4d29-aa99-76df-be66-5ee69c3cb315
-// @specbook-rule b807ddba-0b77-4c2f-a664-7fcb6da9ef74
+// @specbook-object 019c4d29-aa99-76df-be66-5ee69c3cb315 — Objects Tree
+// @specbook-rule b807ddba-0b77-4c2f-a664-7fcb6da9ef74 — r11
 export const ObjectTable: React.FC<ObjectTableProps> = ({
     objects, loading, onDelete, onOpen, onAddSibling, onAddChild, onAddRoot, onBatchDelete, onBatchMove, onGeneratePrompt, foundIds,
 }) => {
@@ -430,7 +430,7 @@ export const ObjectTable: React.FC<ObjectTableProps> = ({
                         foundIds={foundIds}
                     />
                 )}
-                {/* @specbook-object 019c621d-8a13-72ce-b75e-8630bd6522ae */}
+                {/* @specbook-object 019c621d-8a13-72ce-b75e-8630bd6522ae — Display object item default adding entry */}
                 <div style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', paddingLeft: 36, cursor: 'pointer', color: token.colorTextQuaternary, fontSize: 13, transition: 'color 0.15s' }}
                     onClick={onAddRoot}
                     onMouseEnter={e => (e.currentTarget.style.color = token.colorPrimary)}

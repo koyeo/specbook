@@ -58,7 +58,7 @@ function collectDescendantIds(nodes: ObjectTreeNode[], id: string): Set<string> 
 
 const actionTypeOptions = ACTION_TYPES.map(t => ({ value: t, label: t }));
 
-// @specbook-object 019c4d29-f2ed-71df-9e61-2f24045670ed
+// @specbook-object 019c4d29-f2ed-71df-9e61-2f24045670ed — Display object item detail
 export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
     specId, specs, onSaved,
 }) => {
@@ -329,14 +329,14 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
 
     // ─── Preview mode ────────────────────────────────
 
-    // @specbook-object 019c623a-203d-77ea-8fa3-d37da43714ce
+    // @specbook-object 019c623a-203d-77ea-8fa3-d37da43714ce — Preview State
     if (mode === 'preview') {
         return (
             <>{contextHolder}
                 <div style={{ padding: '16px 20px', height: '100%', overflow: 'auto' }}>
                     {/* Header */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                        {/* @specbook-object 019c6231-5a20-7625-9823-3752131ab382 */}
+                        {/* @specbook-object 019c6231-5a20-7625-9823-3752131ab382 — Display object item title */}
                         <Title level={4} style={{ margin: 0, flex: 1 }}>
                             {detail?.title || 'Untitled'}
                         </Title>
@@ -349,7 +349,7 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                             >
                                 AI Analyze
                             </Button>
-                            {/* @specbook-object 019c623b-4c7c-7659-bc4e-3227f1c56cd8 */}
+                            {/* @specbook-object 019c623b-4c7c-7659-bc4e-3227f1c56cd8 — Display edit object item button */}
                             <Button
                                 size="small"
                                 icon={<EditOutlined />}
@@ -361,7 +361,7 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     </div>
 
                     {/* Meta info */}
-                    {/* @specbook-object 019c6238-17e2-722b-9ab3-c3205a54d69e */}
+                    {/* @specbook-object 019c6238-17e2-722b-9ab3-c3205a54d69e — Display object item parent */}
                     <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
                         {detail?.parentId && (
                             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -401,7 +401,7 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     )}
 
                     {/* Markdown body */}
-                    {/* @specbook-object 019c6238-969c-71cb-8e18-b7dbfdcec571 */}
+                    {/* @specbook-object 019c6238-969c-71cb-8e18-b7dbfdcec571 — Display object item content */}
                     <MarkdownPreview content={detail?.content || ''} />
 
                     {/* AI Analysis results */}
@@ -460,7 +460,7 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
 
     // ─── Edit mode ───────────────────────────────────
 
-    // @specbook-object 019c623d-5879-77bf-8438-741c6d69c330
+    // @specbook-object 019c623d-5879-77bf-8438-741c6d69c330 — Editing State
     return (
         <div style={{ padding: '16px 20px', height: '100%', overflow: 'auto' }}>
             {contextHolder}
@@ -468,7 +468,7 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <Title level={5} style={{ margin: 0 }}>Edit Object</Title>
                 <Space size={8}>
-                    {/* @specbook-object 019c625f-881a-72d7-9acd-cd236290faf1 */}
+                    {/* @specbook-object 019c625f-881a-72d7-9acd-cd236290faf1 — Display cancel handle */}
                     <Button
                         size="small"
                         icon={<EyeOutlined />}
@@ -476,7 +476,7 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     >
                         Cancel
                     </Button>
-                    {/* @specbook-object 019c625f-4fb1-76cf-aa9d-02e82c62ead0 */}
+                    {/* @specbook-object 019c625f-4fb1-76cf-aa9d-02e82c62ead0 — Display save handle */}
                     <Button
                         type="primary"
                         size="small"
@@ -492,14 +492,14 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Title */}
-                {/* @specbook-object 019c623d-9d64-701d-9348-f95d1fb67cf5 */}
+                {/* @specbook-object 019c623d-9d64-701d-9348-f95d1fb67cf5 — Display object item title input */}
                 <div>
                     <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Title</Text>
                     <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Object title" />
                 </div>
 
                 {/* Parent */}
-                {/* @specbook-object 019c623d-f5b4-71ff-9c98-3450e93c7f2e */}
+                {/* @specbook-object 019c623d-f5b4-71ff-9c98-3450e93c7f2e — Display object item parent select */}
                 <div>
                     <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Parent</Text>
                     <Select
@@ -559,7 +559,7 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                 </div>
 
                 {/* Content */}
-                {/* @specbook-object 019c623e-9d2e-7326-b23d-fac01937001c */}
+                {/* @specbook-object 019c623e-9d2e-7326-b23d-fac01937001c — Display object item content textarea */}
                 <div style={{ flex: 1 }}>
                     <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>Details (Markdown)</Text>
                     <TextArea

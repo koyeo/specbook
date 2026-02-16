@@ -113,7 +113,7 @@ interface ObjectPageProps {
     workspace: string | null;
 }
 
-// @specbook-object 019c4d29-46fb-748d-8dd3-e0cd47a3223e
+// @specbook-object 019c4d29-46fb-748d-8dd3-e0cd47a3223e — Features Management Page
 export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     const { token } = useToken();
     const {
