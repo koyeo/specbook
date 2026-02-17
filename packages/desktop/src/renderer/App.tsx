@@ -8,6 +8,7 @@ import {
     AppstoreOutlined, BookOutlined,
     FolderOpenOutlined, BulbOutlined, DesktopOutlined,
     RobotOutlined, SafetyOutlined, ExperimentOutlined,
+    TranslationOutlined,
 } from '@ant-design/icons';
 import { ObjectPage } from './containers/SpecPage';
 import { GlossaryPage } from './containers/GlossaryPage';
@@ -16,13 +17,14 @@ import { KnowledgePage } from './containers/KnowledgePage';
 import { GlobalRulesPage } from './containers/GlobalRulesPage';
 import { GlobalTestsPage } from './containers/GlobalTestsPage';
 import { AiSettingsModal } from './components/AiSettingsModal';
+import { PromptPage } from './containers/PromptPage';
 import type { ObjectTreeNode } from '@specbook/shared';
 
 const { Text, Title } = Typography;
 const { Sider, Content } = Layout;
 
 type ThemeMode = 'system' | 'light' | 'dark';
-type PageKey = 'objects' | 'glossary' | 'knowledge' | 'rules' | 'tests';
+type PageKey = 'prompt' | 'objects' | 'glossary' | 'knowledge' | 'rules' | 'tests';
 
 function getSystemDark(): boolean {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
@@ -36,7 +38,7 @@ const App: React.FC = () => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [workspace, setWorkspace] = useState<string | null>(null);
     const [objects, setObjects] = useState<ObjectTreeNode[]>([]);
-    const [currentPage, setCurrentPage] = useState<PageKey>('objects');
+    const [currentPage, setCurrentPage] = useState<PageKey>('prompt');
     const [siderCollapsed, setSiderCollapsed] = useState(false);
     const [copilotOpen, setCopilotOpen] = useState<boolean>(() => {
         return localStorage.getItem('specbook-copilot') !== 'false';
@@ -98,6 +100,7 @@ const App: React.FC = () => {
         : mode === 'light' ? <SunOutlined /> : <MoonOutlined />;
 
     const menuItems = [
+        { key: 'prompt', icon: <TranslationOutlined />, label: 'Prompt' },
         { key: 'objects', icon: <AppstoreOutlined />, label: 'Features' },
         { key: 'rules', icon: <SafetyOutlined />, label: 'Rules' },
         { key: 'tests', icon: <ExperimentOutlined />, label: 'Tests' },
@@ -107,6 +110,8 @@ const App: React.FC = () => {
 
     const renderPage = () => {
         switch (currentPage) {
+            case 'prompt':
+                return <PromptPage />;
             case 'objects':
                 return <ObjectPage workspace={workspace} />;
             case 'glossary':
@@ -118,7 +123,7 @@ const App: React.FC = () => {
             case 'tests':
                 return <GlobalTestsPage workspace={workspace} />;
             default:
-                return <ObjectPage workspace={workspace} />;
+                return <PromptPage />;
         }
     };
 

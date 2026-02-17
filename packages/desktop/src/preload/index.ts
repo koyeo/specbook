@@ -12,7 +12,8 @@ import type {
     KnowledgeAPI, AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload,
     GlobalRulesAPI, AddGlobalRulePayload, UpdateGlobalRulePayload,
     GlobalTestsAPI, AddGlobalTestPayload, UpdateGlobalTestPayload,
-    ScanAPI,
+    MappingAPI,
+    PromptAPI, SendPromptPayload,
 } from '@specbook/shared';
 
 const api: ObjectAPI = {
@@ -77,8 +78,18 @@ const globalTestsApi: GlobalTestsAPI = {
     deleteTest: (id: string) => ipcRenderer.invoke(IPC.GLOBAL_TESTS_DELETE, id),
 };
 
-const scanApi: ScanAPI = {
-    scanSource: () => ipcRenderer.invoke(IPC.SCAN_SOURCE),
+const mappingApi: MappingAPI = {
+    scanMapping: () => ipcRenderer.invoke(IPC.SCAN_MAPPING),
+    loadMapping: () => ipcRenderer.invoke(IPC.LOAD_MAPPING),
+};
+
+const promptApi: PromptAPI = {
+    listSessions: () => ipcRenderer.invoke(IPC.PROMPT_LIST_SESSIONS),
+    loadSession: (id: string) => ipcRenderer.invoke(IPC.PROMPT_LOAD_SESSION, id),
+    createSession: (title: string) => ipcRenderer.invoke(IPC.PROMPT_CREATE_SESSION, title),
+    deleteSession: (id: string) => ipcRenderer.invoke(IPC.PROMPT_DELETE_SESSION, id),
+    sendPrompt: (payload: SendPromptPayload) => ipcRenderer.invoke(IPC.PROMPT_SEND, payload),
+    generateFeatures: (sessionId: string) => ipcRenderer.invoke(IPC.PROMPT_GENERATE_FEATURES, sessionId),
 };
 
 contextBridge.exposeInMainWorld('api', api);
@@ -88,4 +99,5 @@ contextBridge.exposeInMainWorld('chatApi', chatApi);
 contextBridge.exposeInMainWorld('knowledgeApi', knowledgeApi);
 contextBridge.exposeInMainWorld('globalRulesApi', globalRulesApi);
 contextBridge.exposeInMainWorld('globalTestsApi', globalTestsApi);
-contextBridge.exposeInMainWorld('scanApi', scanApi);
+contextBridge.exposeInMainWorld('mappingApi', mappingApi);
+contextBridge.exposeInMainWorld('promptApi', promptApi);

@@ -8,7 +8,7 @@ import type {
     GlossaryTerm, ChatSession, ChatSessionSummary, ChatMessage,
     KnowledgeEntry,
     GlobalRule, GlobalRuleCategory, GlobalTest, GlobalTestCase,
-    SourceScanResult,
+    FeatureMappingIndex, PromptResult,
 } from './types';
 
 /** IPC channel names. */
@@ -60,8 +60,16 @@ export const IPC = {
     GLOBAL_TESTS_ADD: 'global-tests:add',
     GLOBAL_TESTS_UPDATE: 'global-tests:update',
     GLOBAL_TESTS_DELETE: 'global-tests:delete',
-    // Source scanner
-    SCAN_SOURCE: 'scan:source',
+    // Feature mapping scanner
+    SCAN_MAPPING: 'scan:mapping',
+    LOAD_MAPPING: 'scan:load-mapping',
+    // Prompt (correction & translation)
+    PROMPT_LIST_SESSIONS: 'prompt:list-sessions',
+    PROMPT_LOAD_SESSION: 'prompt:load-session',
+    PROMPT_CREATE_SESSION: 'prompt:create-session',
+    PROMPT_DELETE_SESSION: 'prompt:delete-session',
+    PROMPT_SEND: 'prompt:send',
+    PROMPT_GENERATE_FEATURES: 'prompt:generate-features',
 } as const;
 
 /** Add object payload. */
@@ -228,9 +236,28 @@ export interface GlobalTestsAPI {
     deleteTest(id: string): Promise<void>;
 }
 
-// ─── Source Scanner ─────────────────────────────────
+// ─── Feature Mapping Scanner ────────────────────────
 
-/** Scan API exposed to renderer. */
-export interface ScanAPI {
-    scanSource(): Promise<SourceScanResult>;
+/** Mapping API exposed to renderer. */
+export interface MappingAPI {
+    scanMapping(): Promise<FeatureMappingIndex>;
+    loadMapping(): Promise<FeatureMappingIndex | null>;
+}
+
+// ─── Prompt (Correction & Translation) ──────────────
+
+/** Send prompt message payload. */
+export interface SendPromptPayload {
+    sessionId: string;
+    text: string;
+}
+
+/** Prompt API exposed to renderer. */
+export interface PromptAPI {
+    listSessions(): Promise<ChatSessionSummary[]>;
+    loadSession(id: string): Promise<ChatSession | null>;
+    createSession(title: string): Promise<ChatSession>;
+    deleteSession(id: string): Promise<void>;
+    sendPrompt(payload: SendPromptPayload): Promise<string>;
+    generateFeatures(sessionId: string): Promise<string>;
 }

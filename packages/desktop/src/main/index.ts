@@ -11,6 +11,7 @@ import { registerKnowledgeHandlers } from './ipc/knowledgeHandlers';
 import { registerGlobalRulesHandlers } from './ipc/globalRulesHandlers';
 import { registerGlobalTestsHandlers } from './ipc/globalTestsHandlers';
 import { registerScanHandlers } from './ipc/scanHandlers';
+import { registerPromptHandlers } from './ipc/promptHandlers';
 
 function createWindow(): void {
     const win = new BrowserWindow({
@@ -42,6 +43,7 @@ app.whenReady().then(() => {
     registerGlobalRulesHandlers();
     registerGlobalTestsHandlers();
     registerScanHandlers();
+    registerPromptHandlers();
     createWindow();
 
     app.on('activate', () => {

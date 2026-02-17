@@ -310,26 +310,74 @@ export interface GlobalTestIndex {
 /** Global tests file name. */
 export const GLOBAL_TESTS_FILE = 'tests.json';
 
-// ─── Source Scanner Types ────────────────────────────
+// ─── Feature Mapping Types ──────────────────────────
 
-/** A single UUID match with its line number. */
-export interface ScanMatch {
-    uuid: string;
-    line: number;
+/** A single object's mapping to source code. */
+export interface FeatureMappingEntry {
+    objectId: string;
+    objectTitle: string;
+    status: 'implemented' | 'partial' | 'not_found' | 'unknown';
+    summary: string;
+    implFiles: RelatedFile[];
+    testFiles: RelatedFile[];
 }
 
-/** A single file's scan result for logging. */
-export interface ScanLogEntry {
-    filePath: string;
-    matches: ScanMatch[];
+/** Change type for a single mapping entry between scans. */
+export type MappingChangeType = 'added' | 'changed' | 'removed' | 'unchanged';
+
+/** A single entry in the scan changelog — what changed since last scan. */
+export interface MappingChangeEntry {
+    objectId: string;
+    objectTitle: string;
+    changeType: MappingChangeType;
+    /** Current status (undefined if removed). */
+    currentStatus?: FeatureMappingEntry['status'];
+    /** Previous status (undefined if added). */
+    previousStatus?: FeatureMappingEntry['status'];
+    /** Human-readable summary of what changed. */
+    changeSummary: string;
+    /** Files added since last scan. */
+    addedFiles: RelatedFile[];
+    /** Files removed since last scan. */
+    removedFiles: RelatedFile[];
 }
 
-/** Result of scanning workspace source files for known UUIDs. */
-export interface SourceScanResult {
-    /** All UUIDs found in source files (object IDs + rule IDs). */
-    foundIds: string[];
-    /** Total number of files scanned. */
-    scannedFiles: number;
-    /** Per-file scan results (only files with UUIDs). */
-    scanLog: ScanLogEntry[];
+/** Root mapping file structure (.spec/mapping.json) */
+export interface FeatureMappingIndex {
+    version: string;
+    scannedAt: string;
+    directoryTree?: string;
+    tokenUsage?: TokenUsage;
+    entries: FeatureMappingEntry[];
+    /** Changelog from comparing with previous scan. */
+    changelog: MappingChangeEntry[];
 }
+
+/** Mapping file name. */
+export const MAPPING_FILE = 'mapping.json';
+
+// ─── Prompt (Correction & Translation) Types ────────
+
+/** A single text correction made by the AI. */
+export interface Correction {
+    original: string;
+    replacement: string;
+    reason: string;
+}
+
+/** Result of text correction and translation. */
+export interface PromptResult {
+    /** The original input text. */
+    original: string;
+    /** Corrected version of the input text (same language). */
+    corrected: string;
+    /** English translation of the corrected text. Same as corrected if already English. */
+    translated: string;
+    /** List of corrections applied. */
+    corrections: Correction[];
+    /** Whether the input was already in English. */
+    isAlreadyEnglish: boolean;
+}
+
+/** Subdirectory for prompt sessions. */
+export const PROMPT_DIR = 'prompts';

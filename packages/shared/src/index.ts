@@ -31,8 +31,13 @@ export { GLOBAL_RULES_FILE } from './spec/types';
 export type { GlobalTestCase, GlobalTest, GlobalTestIndex } from './spec/types';
 export { GLOBAL_TESTS_FILE } from './spec/types';
 
-// Source Scanner types
-export type { SourceScanResult, ScanLogEntry, ScanMatch } from './spec/types';
+// Feature Mapping types
+export type { FeatureMappingEntry, MappingChangeType, MappingChangeEntry, FeatureMappingIndex } from './spec/types';
+export { MAPPING_FILE } from './spec/types';
+
+// Prompt (Correction & Translation) types
+export type { PromptResult, Correction } from './spec/types';
+export { PROMPT_DIR } from './spec/types';
 
 // IPC contract
 export { IPC } from './spec/messages';
@@ -43,7 +48,8 @@ export type {
     AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload, KnowledgeAPI,
     AddGlobalRulePayload, UpdateGlobalRulePayload, GlobalRulesAPI,
     AddGlobalTestPayload, UpdateGlobalTestPayload, GlobalTestsAPI,
-    ScanAPI,
+    MappingAPI,
+    PromptAPI, SendPromptPayload,
 } from './spec/messages';
 
 // Validations
