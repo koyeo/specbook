@@ -46,12 +46,13 @@
     {
       "id": "019c621b-ca38-7688-aa58-23a1bc62e2be",
       "title": "Display object item with depth retracting",
+      "description": "description 123",
       "parentId": "019c4d29-aa99-76df-be66-5ee69c3cb315",
       "completed": false,
       "isState": false,
       "contentHash": null,
       "createdAt": "2026-02-15T16:21:54.360Z",
-      "updatedAt": "2026-02-15T16:30:27.575Z"
+      "updatedAt": "2026-02-24T06:13:12.228Z"
     },
     {
       "id": "019c621d-8a13-72ce-b75e-8630bd6522ae",
@@ -69,20 +70,10 @@
           "keywords": "kk"
         }
       ],
-      "implRules": [
-        {
-          "id": "e8ce8deb-be56-47e6-99f5-13986b363a13",
-          "text": ""
-        }
-      ],
-      "testRules": [
-        {
-          "id": "f5494a90-0dd7-438d-b4a2-8247540fbefe",
-          "text": ""
-        }
-      ],
+      "implRules": [],
+      "testRules": [],
       "createdAt": "2026-02-15T16:23:49.011Z",
-      "updatedAt": "2026-02-23T06:52:59.175Z"
+      "updatedAt": "2026-02-24T03:45:58.705Z"
     },
     {
       "id": "019c621d-dacf-742c-9d27-1301c292ba4f",

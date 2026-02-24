@@ -3,15 +3,15 @@
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import {
-    Typography, Button, Space, Input, List, Tag, Empty,
-    Select, Splitter, theme, Popconfirm, message, Tooltip,
+    Typography, Button, Space, Input, List, Empty,
+    Splitter, theme, Popconfirm, message, Tooltip,
 } from 'antd';
 import {
     PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined,
     CheckOutlined, CloseOutlined,
 } from '@ant-design/icons';
 import { useGlobalRules } from '../hooks/useGlobalRules';
-import type { GlobalRule, GlobalRuleCategory } from '@specbook/shared';
+import type { GlobalRule } from '@specbook/shared';
 
 const { Title, Text, Paragraph } = Typography;
 const { useToken } = theme;
@@ -21,29 +21,20 @@ interface GlobalRulesPageProps {
     workspace: string | null;
 }
 
-type FilterCategory = 'all' | 'impl' | 'test';
 
-const CATEGORY_COLORS: Record<GlobalRuleCategory, string> = {
-    impl: 'blue',
-    test: 'green',
-};
-const CATEGORY_LABELS: Record<GlobalRuleCategory, string> = {
-    impl: 'Implementation',
-    test: 'Test',
-};
 
 export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) => {
     const { token } = useToken();
     const { rules, loading, loadRules, addRule, updateRule, deleteRule } = useGlobalRules();
     const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
-    const [filterCategory, setFilterCategory] = useState<FilterCategory>('all');
+
 
     // Inline edit state
     const [editing, setEditing] = useState(false);
     const [editName, setEditName] = useState('');
     const [editText, setEditText] = useState('');
-    const [editCategory, setEditCategory] = useState<GlobalRuleCategory>('impl');
+
     const [isAdding, setIsAdding] = useState(false);
 
     useEffect(() => {
@@ -52,9 +43,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
 
     const filteredRules = useMemo(() => {
         let result = rules;
-        if (filterCategory !== 'all') {
-            result = result.filter(r => r.category === filterCategory);
-        }
         if (search.trim()) {
             const q = search.toLowerCase();
             result = result.filter(r =>
@@ -63,7 +51,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
             );
         }
         return result;
-    }, [rules, search, filterCategory]);
+    }, [rules, search]);
 
     const selectedRule = useMemo(() => {
         return rules.find(r => r.id === selectedRuleId) ?? null;
@@ -75,7 +63,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
         setSelectedRuleId(null);
         setEditName('');
         setEditText('');
-        setEditCategory('impl');
+
     };
 
     const handleStartEdit = (rule: GlobalRule) => {
@@ -83,7 +71,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
         setEditing(true);
         setEditName(rule.name);
         setEditText(rule.text);
-        setEditCategory(rule.category);
+
     };
 
     const handleCancel = () => {
@@ -101,7 +89,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                 const newRule = await addRule({
                     name: editName.trim(),
                     text: editText.trim(),
-                    category: editCategory,
                 });
                 setSelectedRuleId(newRule.id);
                 message.success('Rule added');
@@ -110,7 +97,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                     id: selectedRule.id,
                     name: editName.trim(),
                     text: editText.trim(),
-                    category: editCategory,
                 });
                 message.success('Rule updated');
             }
@@ -161,17 +147,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                                 allowClear
                                 size="small"
                             />
-                            <Select
-                                size="small"
-                                value={filterCategory}
-                                onChange={setFilterCategory}
-                                style={{ width: '100%' }}
-                                options={[
-                                    { value: 'all', label: 'All Categories' },
-                                    { value: 'impl', label: '🔧 Implementation' },
-                                    { value: 'test', label: '🧪 Test' },
-                                ]}
-                            />
                         </Space>
                         <div style={{ flex: 1, overflow: 'auto' }}>
                             {filteredRules.length === 0 ? (
@@ -204,12 +179,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                                             <div style={{ width: '100%' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                     <Text strong style={{ fontSize: 13 }}>{rule.name}</Text>
-                                                    <Tag
-                                                        color={CATEGORY_COLORS[rule.category]}
-                                                        style={{ fontSize: 11, marginLeft: 8, marginRight: 0, flexShrink: 0 }}
-                                                    >
-                                                        {CATEGORY_LABELS[rule.category]}
-                                                    </Tag>
                                                 </div>
                                                 <Text type="secondary" style={{ fontSize: 11 }} ellipsis>{rule.text}</Text>
                                             </div>
@@ -248,18 +217,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                                             placeholder="Rule name"
                                         />
                                     </div>
-                                    <div>
-                                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Category</Text>
-                                        <Select
-                                            value={editCategory}
-                                            onChange={setEditCategory}
-                                            style={{ width: '100%' }}
-                                            options={[
-                                                { value: 'impl', label: '🔧 Implementation' },
-                                                { value: 'test', label: '🧪 Test' },
-                                            ]}
-                                        />
-                                    </div>
+
                                     <div>
                                         <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Rule Text</Text>
                                         <TextArea
@@ -277,12 +235,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                                     <div>
                                         <Title level={4} style={{ margin: 0 }}>{selectedRule.name}</Title>
-                                        <Tag
-                                            color={CATEGORY_COLORS[selectedRule.category]}
-                                            style={{ fontSize: 12, marginTop: 6 }}
-                                        >
-                                            {CATEGORY_LABELS[selectedRule.category]}
-                                        </Tag>
                                     </div>
                                     <Space>
                                         <Tooltip title="Edit">

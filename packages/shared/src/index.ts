@@ -24,7 +24,7 @@ export type { KnowledgeEntry, KnowledgeIndex } from './spec/types';
 export { KNOWLEDGE_PRESET_TAGS, KNOWLEDGE_FILE } from './spec/types';
 
 // Global Rules types
-export type { GlobalRule, GlobalRuleCategory, GlobalRuleIndex } from './spec/types';
+export type { GlobalRule, GlobalRuleIndex } from './spec/types';
 export { GLOBAL_RULES_FILE } from './spec/types';
 
 // Global Tests types

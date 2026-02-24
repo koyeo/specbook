@@ -27,7 +27,6 @@ export function registerGlobalRulesHandlers(): void {
             id: generateId(),
             name: payload.name.trim(),
             text: payload.text.trim(),
-            category: payload.category,
             createdAt: now,
             updatedAt: now,
         };
@@ -45,7 +44,6 @@ export function registerGlobalRulesHandlers(): void {
             ...existing,
             name: payload.name?.trim() ?? existing.name,
             text: payload.text?.trim() ?? existing.text,
-            category: payload.category ?? existing.category,
             updatedAt: new Date().toISOString(),
         };
         globalRulesStore.updateRule(ws, updated);

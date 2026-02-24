@@ -42,6 +42,7 @@ export interface ObjectRule {
 export interface ObjectIndexEntry {
     id: string;
     title: string;
+    description?: string;
     parentId: string | null;
     completed: boolean;
     isState: boolean;
@@ -273,15 +274,11 @@ export const KNOWLEDGE_FILE = 'knowledge.json';
 
 // ─── Global Rules Types ─────────────────────────────
 
-/** Category for a global rule. */
-export type GlobalRuleCategory = 'impl' | 'test';
-
 /** A single global rule entry. */
 export interface GlobalRule {
     id: string;
     name: string;
     text: string;
-    category: GlobalRuleCategory;
     createdAt: string;
     updatedAt: string;
 }

@@ -34,16 +34,9 @@ function specFilePath(workspace: string, id: string): string {
 }
 
 function ensureDirs(workspace: string): void {
-    const dirs = [
-        specDir(workspace),
-        specsSubdir(workspace),
-        path.join(specDir(workspace), IMPLS_SUBDIR),
-        path.join(specDir(workspace), TESTS_SUBDIR),
-    ];
-    for (const dir of dirs) {
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
+    const dir = specDir(workspace);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
     }
 }
 
@@ -209,7 +202,8 @@ export function readObjectDetail(workspace: string, id: string): ObjectDetail | 
     const entry = index.specs.find(s => s.id === id);
     if (!entry) return null;
 
-    const content = readContent(workspace, id);
+    // Read content from index entry; fall back to .md file for backward compatibility
+    const content = entry.description ?? readContent(workspace, id);
     const hasActions = readActions(workspace, id).length > 0;
     const hasImpls = readImpls(workspace, entry.id).files.length > 0;
     const hasTests = readTests(workspace, id).length > 0;
@@ -240,6 +234,7 @@ function buildIndexEntry(workspace: string, detail: ObjectDetail): ObjectIndexEn
     return {
         id: detail.id,
         title: detail.title,
+        description: detail.content || undefined,
         parentId: detail.parentId,
         completed: detail.completed,
         isState: detail.isState ?? false,
@@ -286,7 +281,7 @@ function buildTree(flatObjects: ObjectSummary[]): ObjectTreeNode[] {
 export function loadAllObjects(workspace: string): ObjectTreeNode[] {
     const index = readIndex(workspace);
     const flatObjects: ObjectSummary[] = index.specs.map(entry => {
-        const hasContent = computeContentHash(specFilePath(workspace, entry.id)) !== null;
+        const hasContent = !!(entry.description?.trim());
         const hasActions = readActions(workspace, entry.id).length > 0;
         const hasImpls = readImpls(workspace, entry.id).files.length > 0;
         const hasTests = readTests(workspace, entry.id).length > 0;
@@ -307,18 +302,12 @@ export function loadAllObjects(workspace: string): ObjectTreeNode[] {
 }
 
 export function addObject(workspace: string, detail: ObjectDetail): void {
-    // Write .md file only if there's content
-    writeContent(workspace, detail.id, detail.content);
-
     const index = readIndex(workspace);
     index.specs.push(buildIndexEntry(workspace, detail));
     writeIndex(workspace, index);
 }
 
 export function updateObject(workspace: string, detail: ObjectDetail): void {
-    // Write or remove .md file based on content
-    writeContent(workspace, detail.id, detail.content);
-
     const index = readIndex(workspace);
     const idx = index.specs.findIndex(s => s.id === detail.id);
     if (idx >= 0) {
@@ -346,7 +335,6 @@ export function deleteObject(workspace: string, id: string): void {
     writeIndex(workspace, index);
 
     for (const delId of idsToDelete) {
-        deleteObjectFile(workspace, delId);
         deleteActionsFile(workspace, delId);
         deleteImplFile(workspace, delId);
         deleteTestFile(workspace, delId);
@@ -374,10 +362,6 @@ export function moveObject(workspace: string, id: string, newParentId: string | 
     if (!entry) throw new Error(`Object ${id} not found.`);
     entry.parentId = newParentId;
     entry.updatedAt = new Date().toISOString();
-
-    // Recompute hash (content unchanged, but let's be consistent)
-    const filePath = specFilePath(workspace, id);
-    entry.contentHash = computeContentHash(filePath);
 
     writeIndex(workspace, index);
 }
