@@ -17,6 +17,13 @@ TAG="v$VERSION"
 echo "🚀 Specbook Release: $TAG"
 echo "────────────────────────────"
 
+# 2. Ensure clean working tree
+if ! git -C "$ROOT_DIR" diff --quiet || ! git -C "$ROOT_DIR" diff --cached --quiet; then
+    echo "❌ Working tree is dirty. Please commit or stash your changes before releasing."
+    exit 1
+fi
+echo "✅ Working tree is clean"
+
 # 2. Check if gh CLI is available
 if ! command -v gh &> /dev/null; then
     echo "❌ GitHub CLI (gh) not found. Install with: brew install gh"
