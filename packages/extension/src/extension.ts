@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { SpecPanel } from './panels/SpecPanel';
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('SpecBook extension activated');
+    console.log('Specbook extension activated');
 
     // Register open panel command
     const disposable = vscode.commands.registerCommand('specbook.openPanel', () => {
@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.StatusBarAlignment.Left,
         100,
     );
-    statusBarItem.text = '$(notebook) SpecBook';
+    statusBarItem.text = '$(notebook) Specbook';
     statusBarItem.tooltip = 'Open Spec Editor (⌘⇧B)';
     statusBarItem.command = 'specbook.openPanel';
     statusBarItem.show();

@@ -3,8 +3,9 @@
  * Uses simple YAML serialization (no external deps).
  */
 import * as vscode from 'vscode';
-import { SPEC_DIR, SPEC_FILENAME } from '@specbook/shared';
-import type { SpecItem, SpecFile } from '@specbook/shared';
+import { SPEC_DIR } from '@specbook/shared';
+import { SPEC_FILENAME } from '../legacyTypes';
+import type { SpecItem, SpecFile } from '../legacyTypes';
 
 /**
  * Minimal YAML serializer for SpecFile.

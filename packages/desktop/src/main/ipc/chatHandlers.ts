@@ -15,7 +15,7 @@ function requireWorkspace(): string {
     return ws;
 }
 
-const SYSTEM_PROMPT = `You are a requirements analyst and domain expert assistant integrated into SpecBook, a specification management tool.
+const SYSTEM_PROMPT = `You are a requirements analyst and domain expert assistant integrated into Specbook, a specification management tool.
 
 Your responsibilities:
 1. Help users explore and refine their requirements, ideas, and features through conversation.

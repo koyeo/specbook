@@ -19,7 +19,7 @@ function createWindow(): void {
         height: 800,
         minWidth: 800,
         minHeight: 600,
-        title: 'SpecBook',
+        title: 'Specbook',
         icon: path.join(__dirname, '../../../shared/images/logo.icns'),
         webPreferences: {
             preload: path.join(__dirname, '../preload/index.js'),

@@ -66,7 +66,7 @@ export class SpecSidebarProvider implements vscode.WebviewViewProvider {
   </style>
 </head>
 <body>
-  <h2>📝 SpecBook</h2>
+  <h2>📝 Specbook</h2>
   <p>Create and manage your project specs. Specs are saved as YAML files in the <code>.specbook/</code> directory.</p>
   <button id="open-btn">Open Spec Editor</button>
   <div class="shortcut"><kbd>⌘</kbd> + <kbd>⇧</kbd> + <kbd>B</kbd></div>

@@ -12,7 +12,7 @@ export function getSpecPanelHtml(nonce: string, cspSource: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'none'; style-src ${cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
-  <title>SpecBook</title>
+  <title>Specbook</title>
   <style nonce="${nonce}">
     :root {
       --bg: var(--vscode-editor-background);
@@ -146,7 +146,7 @@ export function getSpecPanelHtml(nonce: string, cspSource: string): string {
 </head>
 <body>
   <div class="header">
-    <h1>📝 SpecBook</h1>
+    <h1>📝 Specbook</h1>
   </div>
 
   <!-- Input bar -->

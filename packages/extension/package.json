@@ -1,8 +1,8 @@
 {
     "name": "specbook",
     "publisher": "specbook",
-    "displayName": "SpecBook",
-    "description": "SpecBook VS Code Extension",
+    "displayName": "Specbook",
+    "description": "Specbook VS Code Extension",
     "version": "0.1.0",
     "private": true,
     "engines": {
@@ -19,7 +19,7 @@
         "commands": [
             {
                 "command": "specbook.openPanel",
-                "title": "SpecBook: Open Panel",
+                "title": "Specbook: Open Panel",
                 "icon": "$(notebook)"
             }
         ],

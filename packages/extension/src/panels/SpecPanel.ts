@@ -5,14 +5,16 @@
  */
 import * as vscode from 'vscode';
 import {
-    validateDescription,
     generateId,
 } from '@specbook/shared';
+import {
+    validateDescription,
+} from '../legacyTypes';
 import type {
     SpecItem,
     WebviewToExtensionMessage,
     ExtensionToWebviewMessage,
-} from '@specbook/shared';
+} from '../legacyTypes';
 import { loadSpecItems, saveSpecItems } from '../infrastructure/specFileSystem';
 import { getSpecPanelHtml } from './webview/specPanelHtml';
 
@@ -46,7 +48,7 @@ export class SpecPanel {
 
         const panel = vscode.window.createWebviewPanel(
             SpecPanel.viewType,
-            'SpecBook',
+            'Specbook',
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
