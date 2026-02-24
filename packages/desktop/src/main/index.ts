@@ -14,6 +14,8 @@ import { registerScanHandlers } from './ipc/scanHandlers';
 import { registerPromptHandlers } from './ipc/promptHandlers';
 
 function createWindow(): void {
+    const isDev = !!process.env['ELECTRON_RENDERER_URL'];
+
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -24,6 +26,7 @@ function createWindow(): void {
         webPreferences: {
             preload: path.join(__dirname, '../preload/index.js'),
             sandbox: false,
+            devTools: isDev,
         },
     });
 

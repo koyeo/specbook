@@ -28,6 +28,7 @@ mac:
 dmg:
   title: "${productName} ${version}"
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  writeUpdateInfo: false
 
 extraMetadata:
   main: ./out/main/index.js

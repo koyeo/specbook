@@ -1,12 +1,21 @@
 /**
  * Mermaid diagram renderer for code blocks.
- * Initializes mermaid and renders SVG from diagram source.
+ * Mermaid is loaded dynamically to avoid ~4MB bundle cost at startup.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import mermaid from 'mermaid';
 import { theme } from 'antd';
 
 const { useToken } = theme;
+
+// Dynamic import — mermaid is loaded only when first needed
+let mermaidInstance: any = null;
+async function getMermaid() {
+    if (!mermaidInstance) {
+        const mod = await import('mermaid');
+        mermaidInstance = mod.default;
+    }
+    return mermaidInstance;
+}
 
 let mermaidInitialized = false;
 let idCounter = 0;
@@ -24,7 +33,8 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code }) => {
 
     useEffect(() => {
         const render = async () => {
-            if (!mermaidInitialized || mermaid.mermaidAPI) {
+            const mermaid = await getMermaid();
+            if (!mermaidInitialized) {
                 mermaid.initialize({
                     startOnLoad: false,
                     theme: isDark ? 'dark' : 'default',

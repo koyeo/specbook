@@ -140,7 +140,7 @@ const App: React.FC = () => {
                 },
             }}
         >
-            <Layout style={{ minHeight: '100vh', background: 'var(--sb-bg)' }}>
+            <Layout style={{ height: '100vh', overflow: 'hidden', background: 'var(--sb-bg)' }}>
                 <AiSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
                 {!workspace ? (
@@ -222,6 +222,8 @@ const App: React.FC = () => {
                             transition: 'margin-left 0.2s',
                             display: 'flex',
                             flexDirection: 'column',
+                            height: '100vh',
+                            overflow: 'hidden',
                         }}>
                             {/* Unified header bar (workspace + actions) */}
                             <div className="app-header-bar">
@@ -264,7 +266,7 @@ const App: React.FC = () => {
                                 {copilotOpen ? (
                                     <Splitter>
                                         <Splitter.Panel defaultSize="60%" min="30%">
-                                            <div style={{ height: '100%', padding: '0 24px 20px', overflow: 'auto' }}>
+                                            <div style={{ height: '100%', overflow: 'auto' }}>
                                                 {renderPage()}
                                             </div>
                                         </Splitter.Panel>
@@ -293,7 +295,7 @@ const App: React.FC = () => {
                                         </Splitter.Panel>
                                     </Splitter>
                                 ) : (
-                                    <div style={{ height: '100%', padding: '0 24px 20px', overflow: 'auto' }}>
+                                    <div style={{ height: '100%', overflow: 'auto' }}>
                                         {renderPage()}
                                     </div>
                                 )}

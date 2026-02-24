@@ -1,6 +1,6 @@
 {
     "name": "@specbook/desktop",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "private": true,
     "description": "Specbook — Desktop specification management tool",
     "author": "Specbook Team",
@@ -10,7 +10,7 @@
         "build": "electron-vite build",
         "preview": "electron-vite preview",
         "pack": "electron-builder --dir",
-        "dist": "electron-builder",
+        "dist": "pnpm clean && pnpm build && electron-builder",
         "clean": "rm -rf out dist"
     },
     "dependencies": {

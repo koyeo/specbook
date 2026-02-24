@@ -33,9 +33,17 @@ export default defineConfig({
         root: resolve(__dirname, 'src/renderer'),
         build: {
             outDir: resolve(__dirname, 'out/renderer'),
+            minify: 'esbuild',
+            chunkSizeWarningLimit: 1000,
             rollupOptions: {
                 input: {
                     index: resolve(__dirname, 'src/renderer/index.html'),
+                },
+                output: {
+                    manualChunks: {
+                        'antd-vendor': ['antd', '@ant-design/icons'],
+                        'react-vendor': ['react', 'react-dom'],
+                    },
                 },
             },
         },
