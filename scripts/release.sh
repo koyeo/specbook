@@ -24,6 +24,18 @@ if ! git -C "$ROOT_DIR" diff --quiet || ! git -C "$ROOT_DIR" diff --cached --qui
 fi
 echo "✅ Working tree is clean"
 
+# 2b. Check if local commits are pushed to remote
+git -C "$ROOT_DIR" fetch --quiet
+LOCAL_SHA=$(git -C "$ROOT_DIR" rev-parse HEAD)
+REMOTE_SHA=$(git -C "$ROOT_DIR" rev-parse @{u} 2>/dev/null || echo "")
+if [[ "$LOCAL_SHA" != "$REMOTE_SHA" ]]; then
+    echo "❌ Local branch is not in sync with remote. Please push your commits first."
+    echo "   Local:  $LOCAL_SHA"
+    echo "   Remote: $REMOTE_SHA"
+    exit 1
+fi
+echo "✅ Local commits pushed to remote"
+
 # 2. Check if gh CLI is available
 if ! command -v gh &> /dev/null; then
     echo "❌ GitHub CLI (gh) not found. Install with: brew install gh"
