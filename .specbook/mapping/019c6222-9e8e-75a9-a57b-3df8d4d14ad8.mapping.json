@@ -1,0 +1,15 @@
+{
+  "objectId": "019c6222-9e8e-75a9-a57b-3df8d4d14ad8",
+  "objectTitle": "Display Search Items Entry",
+  "scannedAt": "2026-02-17T09:58:46.246Z",
+  "status": "unknown",
+  "summary": "Max agent turns reached without producing a report.",
+  "implFiles": [],
+  "testFiles": [],
+  "tokenUsage": {
+    "inputTokens": 134014,
+    "outputTokens": 1347,
+    "model": "claude-sonnet-4-20250514",
+    "timestamp": "2026-02-17T09:58:46.248Z"
+  }
+}

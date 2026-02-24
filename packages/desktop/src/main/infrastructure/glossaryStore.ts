@@ -1,6 +1,6 @@
 /**
  * Infrastructure layer — Glossary storage with JSON file.
- * Storage: .spec/glossary.json (all term data)
+ * Storage: .specbook/glossary.json (all term data)
  */
 import * as fs from 'fs';
 import * as path from 'path';

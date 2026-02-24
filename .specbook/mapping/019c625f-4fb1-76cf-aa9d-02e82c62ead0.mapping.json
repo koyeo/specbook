@@ -1,0 +1,15 @@
+{
+  "objectId": "019c625f-4fb1-76cf-aa9d-02e82c62ead0",
+  "objectTitle": "Display save handle",
+  "scannedAt": "2026-02-17T09:54:57.976Z",
+  "status": "unknown",
+  "summary": "Max agent turns reached without producing a report.",
+  "implFiles": [],
+  "testFiles": [],
+  "tokenUsage": {
+    "inputTokens": 125157,
+    "outputTokens": 1341,
+    "model": "claude-sonnet-4-20250514",
+    "timestamp": "2026-02-17T09:54:57.976Z"
+  }
+}

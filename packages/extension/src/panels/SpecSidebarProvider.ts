@@ -5,24 +5,24 @@
 import * as vscode from 'vscode';
 
 export class SpecSidebarProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'specbook.welcome';
+  public static readonly viewType = 'specbook.welcome';
 
-    constructor(private readonly extensionUri: vscode.Uri) { }
+  constructor(private readonly extensionUri: vscode.Uri) { }
 
-    resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        _context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken,
-    ): void {
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [this.extensionUri],
-        };
+  resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    _context: vscode.WebviewViewResolveContext,
+    _token: vscode.CancellationToken,
+  ): void {
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.extensionUri],
+    };
 
-        const nonce = getNonce();
-        const cspSource = webviewView.webview.cspSource;
+    const nonce = getNonce();
+    const cspSource = webviewView.webview.cspSource;
 
-        webviewView.webview.html = /*html*/ `<!DOCTYPE html>
+    webviewView.webview.html = /*html*/ `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -67,7 +67,7 @@ export class SpecSidebarProvider implements vscode.WebviewViewProvider {
 </head>
 <body>
   <h2>📝 SpecBook</h2>
-  <p>Create and manage your project specs. Specs are saved as YAML files in the <code>.spec/</code> directory.</p>
+  <p>Create and manage your project specs. Specs are saved as YAML files in the <code>.specbook/</code> directory.</p>
   <button id="open-btn">Open Spec Editor</button>
   <div class="shortcut"><kbd>⌘</kbd> + <kbd>⇧</kbd> + <kbd>B</kbd></div>
 
@@ -80,19 +80,19 @@ export class SpecSidebarProvider implements vscode.WebviewViewProvider {
 </body>
 </html>`;
 
-        webviewView.webview.onDidReceiveMessage((msg) => {
-            if (msg.type === 'openPanel') {
-                vscode.commands.executeCommand('specbook.openPanel');
-            }
-        });
-    }
+    webviewView.webview.onDidReceiveMessage((msg) => {
+      if (msg.type === 'openPanel') {
+        vscode.commands.executeCommand('specbook.openPanel');
+      }
+    });
+  }
 }
 
 function getNonce(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let nonce = '';
-    for (let i = 0; i < 32; i++) {
-        nonce += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return nonce;
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let nonce = '';
+  for (let i = 0; i < 32; i++) {
+    nonce += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return nonce;
 }

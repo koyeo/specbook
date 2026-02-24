@@ -22,10 +22,20 @@ export interface ObjectAction {
     stateChange: string;
 }
 
+/** An implementation location — where logic is implemented in the project. */
+export interface ImplementationLocation {
+    id: string;
+    filePath: string;
+    line?: number;
+    column?: number;
+    keywords?: string;
+}
+
 /** A single object rule — describes a constraint or requirement. */
 export interface ObjectRule {
     id: string;
     text: string;
+    locationId?: string;
 }
 
 /** Index entry — stored in specs.json */
@@ -36,7 +46,9 @@ export interface ObjectIndexEntry {
     completed: boolean;
     isState: boolean;
     contentHash: string | null;
+    implLocations?: ImplementationLocation[];
     implRules?: ObjectRule[];
+    testLocations?: ImplementationLocation[];
     testRules?: ObjectRule[];
     createdAt: string;
     updatedAt: string;
@@ -53,7 +65,9 @@ export interface ObjectSummary {
     hasTests: boolean;
     isState: boolean;
     completed: boolean;
+    implLocations?: ImplementationLocation[];
     implRules?: ObjectRule[];
+    testLocations?: ImplementationLocation[];
     testRules?: ObjectRule[];
     createdAt: string;
 }
@@ -69,14 +83,14 @@ export interface ObjectTreeNode extends ObjectSummary {
     children?: ObjectTreeNode[];
 }
 
-/** Root index file structure (.spec/specs.json) */
+/** Root index file structure (.specbook/specs.json) */
 export interface ObjectIndex {
     version: string;
     specs: ObjectIndexEntry[];
 }
 
 /** Directory name for spec storage. */
-export const SPEC_DIR = '.spec';
+export const SPEC_DIR = '.specbook';
 
 /** Index file name. */
 export const SPEC_INDEX_FILE = 'specs.json';
@@ -188,7 +202,7 @@ export interface GlossaryTerm {
     updatedAt: string;
 }
 
-/** Root glossary file structure (.spec/glossary.json) */
+/** Root glossary file structure (.specbook/glossary.json) */
 export interface GlossaryIndex {
     version: string;
     terms: GlossaryTerm[];
@@ -248,7 +262,7 @@ export interface KnowledgeEntry {
     updatedAt: string;
 }
 
-/** Root knowledge file structure (.spec/knowledge.json) */
+/** Root knowledge file structure (.specbook/knowledge.json) */
 export interface KnowledgeIndex {
     version: string;
     entries: KnowledgeEntry[];
@@ -272,7 +286,7 @@ export interface GlobalRule {
     updatedAt: string;
 }
 
-/** Root global rules file structure (.spec/rules.json) */
+/** Root global rules file structure (.specbook/rules.json) */
 export interface GlobalRuleIndex {
     version: string;
     rules: GlobalRule[];
@@ -301,7 +315,7 @@ export interface GlobalTest {
     updatedAt: string;
 }
 
-/** Root global tests file structure (.spec/tests.json) */
+/** Root global tests file structure (.specbook/tests.json) */
 export interface GlobalTestIndex {
     version: string;
     tests: GlobalTest[];
@@ -342,7 +356,29 @@ export interface MappingChangeEntry {
     removedFiles: RelatedFile[];
 }
 
-/** Root mapping file structure (.spec/mapping.json) */
+/** Per-object mapping result stored as {uuid}.mapping.json */
+export interface ObjectMappingResult {
+    objectId: string;
+    objectTitle: string;
+    scannedAt: string;
+    status: 'implemented' | 'partial' | 'not_found' | 'unknown';
+    summary: string;
+    implFiles: RelatedFile[];
+    testFiles: RelatedFile[];
+    tokenUsage?: TokenUsage;
+}
+
+/** Scan progress event emitted during DFS bottom-up scan. */
+export interface ScanProgressEvent {
+    objectId: string;
+    objectTitle: string;
+    status: 'scanning' | 'done' | 'error';
+    current: number;
+    total: number;
+    error?: string;
+}
+
+/** Root mapping file structure (.specbook/mapping.json) */
 export interface FeatureMappingIndex {
     version: string;
     scannedAt: string;
@@ -355,6 +391,9 @@ export interface FeatureMappingIndex {
 
 /** Mapping file name. */
 export const MAPPING_FILE = 'mapping.json';
+
+/** Mapping directory under .specbook for per-object files. */
+export const MAPPING_DIR = 'mapping';
 
 // ─── Prompt (Correction & Translation) Types ────────
 

@@ -1,6 +1,6 @@
 /**
  * Infrastructure layer — Global Tests storage with JSON file.
- * Storage: .spec/tests.json
+ * Storage: .specbook/tests.json
  */
 import * as fs from 'fs';
 import * as path from 'path';

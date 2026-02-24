@@ -1,0 +1,15 @@
+{
+  "objectId": "019c623d-f5b4-71ff-9c98-3450e93c7f2e",
+  "objectTitle": "Display object item parent select",
+  "scannedAt": "2026-02-17T09:53:27.263Z",
+  "status": "unknown",
+  "summary": "Max agent turns reached without producing a report.",
+  "implFiles": [],
+  "testFiles": [],
+  "tokenUsage": {
+    "inputTokens": 110265,
+    "outputTokens": 1492,
+    "model": "claude-sonnet-4-20250514",
+    "timestamp": "2026-02-17T09:53:27.263Z"
+  }
+}

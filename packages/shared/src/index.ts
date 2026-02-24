@@ -5,7 +5,7 @@
  */
 
 // Object domain types
-export type { ObjectSummary, ObjectDetail, ObjectIndex, ObjectIndexEntry, ObjectTreeNode, ObjectAction, ActionType, ObjectRule } from './spec/types';
+export type { ObjectSummary, ObjectDetail, ObjectIndex, ObjectIndexEntry, ObjectTreeNode, ObjectAction, ActionType, ObjectRule, ImplementationLocation } from './spec/types';
 export { ACTION_TYPES, SPEC_DIR, SPEC_INDEX_FILE, SPECS_SUBDIR, SPEC_FILE_EXT, SPEC_ACTION_FILE_EXT, ACTION_ENTRY_COLOR, IMPLS_SUBDIR, TESTS_SUBDIR, MAPPING_FILE_EXT } from './spec/types';
 
 // AI types
@@ -32,8 +32,8 @@ export type { GlobalTestCase, GlobalTest, GlobalTestIndex } from './spec/types';
 export { GLOBAL_TESTS_FILE } from './spec/types';
 
 // Feature Mapping types
-export type { FeatureMappingEntry, MappingChangeType, MappingChangeEntry, FeatureMappingIndex } from './spec/types';
-export { MAPPING_FILE } from './spec/types';
+export type { FeatureMappingEntry, MappingChangeType, MappingChangeEntry, FeatureMappingIndex, ObjectMappingResult, ScanProgressEvent } from './spec/types';
+export { MAPPING_FILE, MAPPING_DIR } from './spec/types';
 
 // Prompt (Correction & Translation) types
 export type { PromptResult, Correction } from './spec/types';

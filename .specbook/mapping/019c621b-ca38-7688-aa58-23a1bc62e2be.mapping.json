@@ -1,0 +1,15 @@
+{
+  "objectId": "019c621b-ca38-7688-aa58-23a1bc62e2be",
+  "objectTitle": "Display object item with depth retracting",
+  "scannedAt": "2026-02-17T09:56:31.859Z",
+  "status": "unknown",
+  "summary": "Max agent turns reached without producing a report.",
+  "implFiles": [],
+  "testFiles": [],
+  "tokenUsage": {
+    "inputTokens": 119379,
+    "outputTokens": 1469,
+    "model": "claude-sonnet-4-20250514",
+    "timestamp": "2026-02-17T09:56:31.860Z"
+  }
+}

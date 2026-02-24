@@ -1,0 +1,404 @@
+{
+  "version": "2.0.0",
+  "scannedAt": "2026-02-17T10:03:13.269Z",
+  "tokenUsage": {
+    "inputTokens": 2400612,
+    "outputTokens": 28039,
+    "model": "claude-sonnet-4-20250514",
+    "timestamp": "2026-02-17T10:03:13.269Z"
+  },
+  "entries": [
+    {
+      "objectId": "019c6231-5a20-7625-9823-3752131ab382",
+      "objectTitle": "Display object item title",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c6238-17e2-722b-9ab3-c3205a54d69e",
+      "objectTitle": "Display object item parent",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c6238-969c-71cb-8e18-b7dbfdcec571",
+      "objectTitle": "Display object item content",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c623b-4c7c-7659-bc4e-3227f1c56cd8",
+      "objectTitle": "Display edit object item button",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c623d-9d64-701d-9348-f95d1fb67cf5",
+      "objectTitle": "Display object item title input",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c623d-f5b4-71ff-9c98-3450e93c7f2e",
+      "objectTitle": "Display object item parent select",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c623e-9d2e-7326-b23d-fac01937001c",
+      "objectTitle": "Display object item content textarea",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c625f-4fb1-76cf-aa9d-02e82c62ead0",
+      "objectTitle": "Display save handle",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c625f-881a-72d7-9acd-cd236290faf1",
+      "objectTitle": "Display cancel handle",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c621b-ca38-7688-aa58-23a1bc62e2be",
+      "objectTitle": "Display object item with depth retracting",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c621d-8a13-72ce-b75e-8630bd6522ae",
+      "objectTitle": "Display object item default adding entry",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c621d-dacf-742c-9d27-1301c292ba4f",
+      "objectTitle": "Display object items sorting handle",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c6222-9e8e-75a9-a57b-3df8d4d14ad8",
+      "objectTitle": "Display Search Items Entry",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c623a-203d-77ea-8fa3-d37da43714ce",
+      "objectTitle": "Preview State",
+      "status": "implemented",
+      "summary": "# Preview State Implementation Analysis\n\nThe **Preview State** feature is fully implemented in the Features Management Page as part of a dual-mode object detail panel system. This feature provides a read-only preview mode for displaying object details including title, parent relationships, implementation/test rules, and markdown content.\n\n## Key Implementation Details\n\n### Core Implementation\nThe Preview State is implemented in `SpecDetailPanel.tsx` as a mode-based component with two states:\n- **Preview Mode** (`mode === 'preview'`): Read-only display of object details\n- **Edit Mode** (`mode === 'edit'`): Editable form interface\n\n### Preview State Features\n1. **Object Title Display** - Shows the object title with fallback to \"Untitled\"\n2. **Parent Relationship Display** - Shows parent object information when available  \n3. **Implementation Rules Preview** - Lists numbered implementation rules\n4. **Test Rules Preview** - Lists numbered test rules\n5. **Markdown Content Rendering** - Full markdown preview with GFM support, Mermaid diagrams, and styled components\n6. **Action Buttons** - AI Analyze and Edit buttons for transitioning to other modes\n7. **AI Analysis Results** - Displays analysis results with file mappings and status indicators\n\n### Markdown Preview Component\nThe `MarkdownPreview` component provides rich markdown rendering with:\n- GitHub Flavored Markdown (GFM) support via `remark-gfm`\n- Mermaid diagram rendering\n- Custom styled components (code blocks, tables, blockquotes, links, etc.)\n- Ant Design theme integration\n- Responsive design with proper overflow handling\n\n### State Management\n- Uses React useState hooks for mode management (`preview` | `edit`)\n- Automatic mode switching to preview when loading new objects\n- Confirmation dialog when discarding unsaved changes in edit mode\n- Loading states and error handling\n\n### Integration Points\n- Used within the `ObjectPage` (Features Management Page) container\n- Receives object tree data and selection state from parent\n- Communicates changes via `onSaved` callback\n- Integrates with AI analysis and file mapping systems\n\n## Technical Architecture\n\nThe component follows a clean separation of concerns:\n- **Presentation Layer**: React functional component with hooks\n- **State Management**: Local component state with props for communication\n- **Styling**: Ant Design components with theme integration\n- **Content Rendering**: Dedicated MarkdownPreview component\n- **Data Layer**: API calls through window.api interface\n\nThe Preview State is clearly annotated in the code with the exact object ID (`@specbook-object 019c623a-203d-77ea-8fa3-d37da43714ce`) at line 332, indicating it's part of a larger feature specification system.",
+      "implFiles": [
+        {
+          "filePath": "packages/desktop/src/renderer/components/SpecDetailPanel.tsx",
+          "description": "Main implementation of Preview State mode in ObjectDetailPanel component",
+          "lineRange": {
+            "start": 332,
+            "end": 458
+          },
+          "type": "impl"
+        },
+        {
+          "filePath": "packages/desktop/src/renderer/components/MarkdownPreview.tsx",
+          "description": "Markdown preview component used for rendering object content in preview state",
+          "lineRange": {
+            "start": 1,
+            "end": 187
+          },
+          "type": "impl"
+        },
+        {
+          "filePath": "packages/desktop/src/renderer/containers/SpecPage.tsx",
+          "description": "Container component that integrates ObjectDetailPanel with preview state into the Features Management Page",
+          "lineRange": {
+            "start": 24,
+            "end": 50
+          },
+          "type": "impl"
+        }
+      ],
+      "testFiles": [
+        {
+          "filePath": "packages/desktop/src/renderer/components/SpecTable.test.tsx",
+          "description": "Test file for related component (SpecTable), but no specific tests found for Preview State feature",
+          "lineRange": {
+            "start": 1,
+            "end": 10
+          },
+          "type": "test"
+        }
+      ]
+    },
+    {
+      "objectId": "019c623d-5879-77bf-8438-741c6d69c330",
+      "objectTitle": "Editing State",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c4d29-aa99-76df-be66-5ee69c3cb315",
+      "objectTitle": "Objects Tree",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c4d29-f2ed-71df-9e61-2f24045670ed",
+      "objectTitle": "Display object item detail",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    },
+    {
+      "objectId": "019c4d29-46fb-748d-8dd3-e0cd47a3223e",
+      "objectTitle": "Features Management Page",
+      "status": "unknown",
+      "summary": "Max agent turns reached without producing a report.",
+      "implFiles": [],
+      "testFiles": []
+    }
+  ],
+  "changelog": [
+    {
+      "objectId": "019c6231-5a20-7625-9823-3752131ab382",
+      "objectTitle": "Display object item title",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display object item title — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c6238-17e2-722b-9ab3-c3205a54d69e",
+      "objectTitle": "Display object item parent",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display object item parent — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c6238-969c-71cb-8e18-b7dbfdcec571",
+      "objectTitle": "Display object item content",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display object item content — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c623b-4c7c-7659-bc4e-3227f1c56cd8",
+      "objectTitle": "Display edit object item button",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display edit object item button — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c623d-9d64-701d-9348-f95d1fb67cf5",
+      "objectTitle": "Display object item title input",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display object item title input — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c623d-f5b4-71ff-9c98-3450e93c7f2e",
+      "objectTitle": "Display object item parent select",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display object item parent select — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c623e-9d2e-7326-b23d-fac01937001c",
+      "objectTitle": "Display object item content textarea",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display object item content textarea — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c625f-4fb1-76cf-aa9d-02e82c62ead0",
+      "objectTitle": "Display save handle",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display save handle — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c625f-881a-72d7-9acd-cd236290faf1",
+      "objectTitle": "Display cancel handle",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display cancel handle — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c621b-ca38-7688-aa58-23a1bc62e2be",
+      "objectTitle": "Display object item with depth retracting",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display object item with depth retracting — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c621d-8a13-72ce-b75e-8630bd6522ae",
+      "objectTitle": "Display object item default adding entry",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display object item default adding entry — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c621d-dacf-742c-9d27-1301c292ba4f",
+      "objectTitle": "Display object items sorting handle",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display object items sorting handle — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c6222-9e8e-75a9-a57b-3df8d4d14ad8",
+      "objectTitle": "Display Search Items Entry",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display Search Items Entry — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c623a-203d-77ea-8fa3-d37da43714ce",
+      "objectTitle": "Preview State",
+      "changeType": "added",
+      "currentStatus": "implemented",
+      "changeSummary": "New: Preview State — implemented",
+      "addedFiles": [
+        {
+          "filePath": "packages/desktop/src/renderer/components/SpecDetailPanel.tsx",
+          "description": "Main implementation of Preview State mode in ObjectDetailPanel component",
+          "lineRange": {
+            "start": 332,
+            "end": 458
+          },
+          "type": "impl"
+        },
+        {
+          "filePath": "packages/desktop/src/renderer/components/MarkdownPreview.tsx",
+          "description": "Markdown preview component used for rendering object content in preview state",
+          "lineRange": {
+            "start": 1,
+            "end": 187
+          },
+          "type": "impl"
+        },
+        {
+          "filePath": "packages/desktop/src/renderer/containers/SpecPage.tsx",
+          "description": "Container component that integrates ObjectDetailPanel with preview state into the Features Management Page",
+          "lineRange": {
+            "start": 24,
+            "end": 50
+          },
+          "type": "impl"
+        },
+        {
+          "filePath": "packages/desktop/src/renderer/components/SpecTable.test.tsx",
+          "description": "Test file for related component (SpecTable), but no specific tests found for Preview State feature",
+          "lineRange": {
+            "start": 1,
+            "end": 10
+          },
+          "type": "test"
+        }
+      ],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c623d-5879-77bf-8438-741c6d69c330",
+      "objectTitle": "Editing State",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Editing State — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c4d29-aa99-76df-be66-5ee69c3cb315",
+      "objectTitle": "Objects Tree",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Objects Tree — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c4d29-f2ed-71df-9e61-2f24045670ed",
+      "objectTitle": "Display object item detail",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Display object item detail — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "019c4d29-46fb-748d-8dd3-e0cd47a3223e",
+      "objectTitle": "Features Management Page",
+      "changeType": "added",
+      "currentStatus": "unknown",
+      "changeSummary": "New: Features Management Page — unknown",
+      "addedFiles": [],
+      "removedFiles": []
+    },
+    {
+      "objectId": "Parse Error",
+      "objectTitle": "Parse Error",
+      "changeType": "removed",
+      "previousStatus": "unknown",
+      "changeSummary": "Removed: Parse Error",
+      "addedFiles": [],
+      "removedFiles": []
+    }
+  ]
+}

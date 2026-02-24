@@ -1,7 +1,7 @@
 /**
  * Infrastructure layer — Object storage with JSON index + Markdown files.
- * Index: .spec/specs.json (all metadata)
- * Content: .spec/specs/{id}.md (pure body text, created on-demand)
+ * Index: .specbook/specs.json (all metadata)
+ * Content: .specbook/specs/{id}.md (pure body text, created on-demand)
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -223,7 +223,9 @@ export function readObjectDetail(workspace: string, id: string): ObjectDetail | 
         hasTests,
         isState: entry.isState ?? false,
         completed: entry.completed,
+        implLocations: entry.implLocations,
         implRules: entry.implRules,
+        testLocations: entry.testLocations,
         testRules: entry.testRules,
         content,
         createdAt: entry.createdAt,
@@ -242,7 +244,9 @@ function buildIndexEntry(workspace: string, detail: ObjectDetail): ObjectIndexEn
         completed: detail.completed,
         isState: detail.isState ?? false,
         contentHash: computeContentHash(filePath),
+        implLocations: detail.implLocations,
         implRules: detail.implRules,
+        testLocations: detail.testLocations,
         testRules: detail.testRules,
         createdAt: detail.createdAt,
         updatedAt: detail.updatedAt,

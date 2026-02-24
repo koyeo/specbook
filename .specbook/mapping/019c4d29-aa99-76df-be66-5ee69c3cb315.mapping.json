@@ -1,0 +1,15 @@
+{
+  "objectId": "019c4d29-aa99-76df-be66-5ee69c3cb315",
+  "objectTitle": "Objects Tree",
+  "scannedAt": "2026-02-17T10:01:26.654Z",
+  "status": "unknown",
+  "summary": "Max agent turns reached without producing a report.",
+  "implFiles": [],
+  "testFiles": [],
+  "tokenUsage": {
+    "inputTokens": 129291,
+    "outputTokens": 1465,
+    "model": "claude-sonnet-4-20250514",
+    "timestamp": "2026-02-17T10:01:26.654Z"
+  }
+}

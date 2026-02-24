@@ -1,6 +1,6 @@
 /**
  * Knowledge store — file-based persistence for project knowledge entries.
- * Stores in {workspace}/.spec/knowledge.json
+ * Stores in {workspace}/.specbook/knowledge.json
  */
 import * as fs from 'fs';
 import * as path from 'path';

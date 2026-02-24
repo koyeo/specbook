@@ -1,0 +1,15 @@
+{
+  "objectId": "019c621d-8a13-72ce-b75e-8630bd6522ae",
+  "objectTitle": "Display object item default adding entry",
+  "scannedAt": "2026-02-17T09:57:17.009Z",
+  "status": "unknown",
+  "summary": "Max agent turns reached without producing a report.",
+  "implFiles": [],
+  "testFiles": [],
+  "tokenUsage": {
+    "inputTokens": 98447,
+    "outputTokens": 1664,
+    "model": "claude-sonnet-4-20250514",
+    "timestamp": "2026-02-17T09:57:17.009Z"
+  }
+}

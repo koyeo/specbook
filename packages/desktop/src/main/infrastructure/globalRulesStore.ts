@@ -1,6 +1,6 @@
 /**
  * Infrastructure layer — Global Rules storage with JSON file.
- * Storage: .spec/rules.json
+ * Storage: .specbook/rules.json
  */
 import * as fs from 'fs';
 import * as path from 'path';

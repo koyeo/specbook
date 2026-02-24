@@ -8,7 +8,7 @@ import type {
     GlossaryTerm, ChatSession, ChatSessionSummary, ChatMessage,
     KnowledgeEntry,
     GlobalRule, GlobalRuleCategory, GlobalTest, GlobalTestCase,
-    FeatureMappingIndex, PromptResult,
+    FeatureMappingIndex, ObjectMappingResult, ScanProgressEvent, PromptResult,
 } from './types';
 
 /** IPC channel names. */
@@ -63,6 +63,8 @@ export const IPC = {
     // Feature mapping scanner
     SCAN_MAPPING: 'scan:mapping',
     LOAD_MAPPING: 'scan:load-mapping',
+    SCAN_PROGRESS: 'scan:progress',
+    SCAN_SINGLE: 'scan:single-object',
     // Prompt (correction & translation)
     PROMPT_LIST_SESSIONS: 'prompt:list-sessions',
     PROMPT_LOAD_SESSION: 'prompt:load-session',
@@ -86,7 +88,9 @@ export interface UpdateObjectPayload {
     content?: string;
     completed?: boolean;
     isState?: boolean;
+    implLocations?: import('./types').ImplementationLocation[];
     implRules?: import('./types').ObjectRule[];
+    testLocations?: import('./types').ImplementationLocation[];
     testRules?: import('./types').ObjectRule[];
 }
 
@@ -242,6 +246,8 @@ export interface GlobalTestsAPI {
 export interface MappingAPI {
     scanMapping(): Promise<FeatureMappingIndex>;
     loadMapping(): Promise<FeatureMappingIndex | null>;
+    scanSingleObject(objectId: string): Promise<ObjectMappingResult>;
+    onScanProgress(callback: (event: ScanProgressEvent) => void): () => void;
 }
 
 // ─── Prompt (Correction & Translation) ──────────────

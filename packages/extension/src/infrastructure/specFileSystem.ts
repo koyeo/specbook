@@ -113,7 +113,7 @@ function getSpecFileUri(workspaceUri: vscode.Uri): vscode.Uri {
     return vscode.Uri.joinPath(workspaceUri, SPEC_DIR, SPEC_FILENAME);
 }
 
-/** Load all spec items from .spec/spec.yaml. */
+/** Load all spec items from .specbook/spec.yaml. */
 export async function loadSpecItems(workspaceUri: vscode.Uri): Promise<SpecItem[]> {
     const fileUri = getSpecFileUri(workspaceUri);
     try {
@@ -126,7 +126,7 @@ export async function loadSpecItems(workspaceUri: vscode.Uri): Promise<SpecItem[
     }
 }
 
-/** Save all spec items to .spec/spec.yaml. */
+/** Save all spec items to .specbook/spec.yaml. */
 export async function saveSpecItems(
     workspaceUri: vscode.Uri,
     items: SpecItem[],

@@ -12,7 +12,7 @@ import type {
     KnowledgeAPI, AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload,
     GlobalRulesAPI, AddGlobalRulePayload, UpdateGlobalRulePayload,
     GlobalTestsAPI, AddGlobalTestPayload, UpdateGlobalTestPayload,
-    MappingAPI,
+    MappingAPI, ScanProgressEvent,
     PromptAPI, SendPromptPayload,
 } from '@specbook/shared';
 
@@ -81,6 +81,12 @@ const globalTestsApi: GlobalTestsAPI = {
 const mappingApi: MappingAPI = {
     scanMapping: () => ipcRenderer.invoke(IPC.SCAN_MAPPING),
     loadMapping: () => ipcRenderer.invoke(IPC.LOAD_MAPPING),
+    scanSingleObject: (objectId: string) => ipcRenderer.invoke(IPC.SCAN_SINGLE, objectId),
+    onScanProgress: (callback: (event: ScanProgressEvent) => void) => {
+        const handler = (_event: any, data: ScanProgressEvent) => callback(data);
+        ipcRenderer.on(IPC.SCAN_PROGRESS, handler);
+        return () => { ipcRenderer.removeListener(IPC.SCAN_PROGRESS, handler); };
+    },
 };
 
 const promptApi: PromptAPI = {

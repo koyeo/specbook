@@ -1,6 +1,6 @@
 /**
  * Infrastructure layer — Chat session storage.
- * Storage: .spec/playground/{id}.json (per-session files)
+ * Storage: .specbook/playground/{id}.json (per-session files)
  */
 import * as fs from 'fs';
 import * as path from 'path';

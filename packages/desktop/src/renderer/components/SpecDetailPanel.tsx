@@ -6,7 +6,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag, Switch, Tooltip, Collapse, Alert } from 'antd';
 import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined, RobotOutlined, CloudUploadOutlined } from '@ant-design/icons';
-import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType, ObjectMapping, AnalysisResult, RelatedFile, ObjectRule } from '@specbook/shared';
+import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType, ObjectMapping, AnalysisResult, RelatedFile, ObjectRule, ImplementationLocation } from '@specbook/shared';
+import { RuleLocationEditor } from './RuleLocationEditor';
 
 /** Action types — local copy to avoid CJS/ESM mismatch with @specbook/shared */
 const ACTION_TYPES: readonly ActionType[] = [
@@ -69,7 +70,9 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
     const [title, setTitle] = useState('');
     const [parentId, setParentId] = useState<string | null>(null);
     const [content, setContent] = useState('');
+    const [implLocations, setImplLocations] = useState<ImplementationLocation[]>([]);
     const [implRules, setImplRules] = useState<ObjectRule[]>([]);
+    const [testLocations, setTestLocations] = useState<ImplementationLocation[]>([]);
     const [testRules, setTestRules] = useState<ObjectRule[]>([]);
 
     const [loading, setLoading] = useState(false);
@@ -97,55 +100,35 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     setTitle(d?.title || '');
                     setParentId(d?.parentId || null);
                     setContent(d?.content || '');
+                    setImplLocations(d?.implLocations || []);
                     setImplRules(d?.implRules || []);
+                    setTestLocations(d?.testLocations || []);
                     setTestRules(d?.testRules || []);
                 })
                 .catch((err) => { message.error('Failed to load spec detail'); console.error(err); })
                 .finally(() => setLoading(false));
         } else {
-            setDetail(null); setTitle(''); setParentId(null); setContent(''); setImplRules([]); setTestRules([]);
+            setDetail(null); setTitle(''); setParentId(null); setContent(''); setImplLocations([]); setImplRules([]); setTestLocations([]); setTestRules([]);
             setMode('preview');
         }
     }, [specId]);
 
+    const implLocationsChanged = JSON.stringify(implLocations) !== JSON.stringify(detail?.implLocations || []);
     const implRulesChanged = JSON.stringify(implRules) !== JSON.stringify(detail?.implRules || []);
+    const testLocationsChanged = JSON.stringify(testLocations) !== JSON.stringify(detail?.testLocations || []);
     const testRulesChanged = JSON.stringify(testRules) !== JSON.stringify(detail?.testRules || []);
 
     const hasChanges = detail ? (
         title !== (detail.title || '') ||
         parentId !== (detail.parentId || null) ||
         content !== (detail.content || '') ||
+        implLocationsChanged ||
         implRulesChanged ||
+        testLocationsChanged ||
         testRulesChanged
     ) : false;
 
-    // ─── Implementation Rules ─────────────────────────
 
-    const addImplRule = () => {
-        setImplRules(prev => [...prev, { id: crypto.randomUUID(), text: '' }]);
-    };
-
-    const updateImplRule = (id: string, text: string) => {
-        setImplRules(prev => prev.map(r => r.id === id ? { ...r, text } : r));
-    };
-
-    const removeImplRule = (id: string) => {
-        setImplRules(prev => prev.filter(r => r.id !== id));
-    };
-
-    // ─── Test Rules ────────────────────────────────
-
-    const addTestRule = () => {
-        setTestRules(prev => [...prev, { id: crypto.randomUUID(), text: '' }]);
-    };
-
-    const updateTestRule = (id: string, text: string) => {
-        setTestRules(prev => prev.map(r => r.id === id ? { ...r, text } : r));
-    };
-
-    const removeTestRule = (id: string) => {
-        setTestRules(prev => prev.filter(r => r.id !== id));
-    };
 
 
 
@@ -259,7 +242,9 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     setTitle(detail?.title || '');
                     setParentId(detail?.parentId || null);
                     setContent(detail?.content || '');
+                    setImplLocations(detail?.implLocations || []);
                     setImplRules(detail?.implRules || []);
+                    setTestLocations(detail?.testLocations || []);
                     setTestRules(detail?.testRules || []);
                     setMode('preview');
                 },
@@ -276,10 +261,12 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
             const payload: UpdateObjectPayload = { id: specId };
             if (title !== detail.title) payload.title = title;
             if (content !== detail.content) payload.content = content;
+            if (implLocationsChanged) payload.implLocations = implLocations;
             if (implRulesChanged) payload.implRules = implRules;
+            if (testLocationsChanged) payload.testLocations = testLocations;
             if (testRulesChanged) payload.testRules = testRules;
 
-            if (payload.title !== undefined || payload.content !== undefined || payload.implRules !== undefined || payload.testRules !== undefined) {
+            if (payload.title !== undefined || payload.content !== undefined || payload.implLocations !== undefined || payload.implRules !== undefined || payload.testLocations !== undefined || payload.testRules !== undefined) {
                 await window.api.updateObject(payload);
             }
 
@@ -293,7 +280,9 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
             setTitle(updated?.title || '');
             setParentId(updated?.parentId || null);
             setContent(updated?.content || '');
+            setImplLocations(updated?.implLocations || []);
             setImplRules(updated?.implRules || []);
+            setTestLocations(updated?.testLocations || []);
             setTestRules(updated?.testRules || []);
             setMode('preview');
             onSaved();
@@ -370,34 +359,28 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                         )}
                     </div>
 
-                    {/* Implementation Rules preview */}
-                    {(detail?.implRules?.length ?? 0) > 0 && (
-                        <div style={{ marginBottom: 16 }}>
-                            <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 6 }}>Implementation Rules</Text>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                {detail!.implRules!.map((r: ObjectRule, i: number) => (
-                                    <div key={r.id} style={{ display: 'flex', gap: 6, alignItems: 'baseline', fontSize: 13 }}>
-                                        <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>{i + 1}.</Text>
-                                        <Text>{r.text}</Text>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                    {/* Implementation Rules & Locations */}
+                    {((detail?.implRules?.length ?? 0) > 0 || (detail?.implLocations?.length ?? 0) > 0) && (
+                        <RuleLocationEditor
+                            title="Implementation"
+                            rules={detail?.implRules || []}
+                            locations={detail?.implLocations || []}
+                            onRulesChange={() => { }}
+                            onLocationsChange={() => { }}
+                            editable={false}
+                        />
                     )}
 
-                    {/* Test Rules preview */}
-                    {(detail?.testRules?.length ?? 0) > 0 && (
-                        <div style={{ marginBottom: 16 }}>
-                            <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 6 }}>Test Rules</Text>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                {detail!.testRules!.map((r: ObjectRule, i: number) => (
-                                    <div key={r.id} style={{ display: 'flex', gap: 6, alignItems: 'baseline', fontSize: 13 }}>
-                                        <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>{i + 1}.</Text>
-                                        <Text>{r.text}</Text>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                    {/* Test Rules & Locations */}
+                    {((detail?.testRules?.length ?? 0) > 0 || (detail?.testLocations?.length ?? 0) > 0) && (
+                        <RuleLocationEditor
+                            title="Test"
+                            rules={detail?.testRules || []}
+                            locations={detail?.testLocations || []}
+                            onRulesChange={() => { }}
+                            onLocationsChange={() => { }}
+                            editable={false}
+                        />
                     )}
 
                     {/* Markdown body */}
@@ -516,47 +499,25 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     />
                 </div>
 
-                {/* Implementation Rules editor */}
-                <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>Implementation Rules</Text>
-                        <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={addImplRule}>Add Rule</Button>
-                    </div>
-                    {implRules.length === 0 ? (
-                        <Text type="secondary" style={{ fontSize: 12, fontStyle: 'italic' }}>No implementation rules defined.</Text>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {implRules.map((r, i) => (
-                                <div key={r.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                    <Text type="secondary" style={{ fontSize: 12, flexShrink: 0, width: 20, textAlign: 'right' }}>{i + 1}.</Text>
-                                    <Input value={r.text} onChange={(e) => updateImplRule(r.id, e.target.value)} placeholder="Describe an implementation rule..." size="small" style={{ flex: 1 }} />
-                                    <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => removeImplRule(r.id)} style={{ flexShrink: 0 }} />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                {/* Implementation Rules & Locations */}
+                <RuleLocationEditor
+                    title="Implementation"
+                    rules={implRules}
+                    locations={implLocations}
+                    onRulesChange={setImplRules}
+                    onLocationsChange={setImplLocations}
+                    editable={true}
+                />
 
-                {/* Test Rules editor */}
-                <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>Test Rules</Text>
-                        <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={addTestRule}>Add Rule</Button>
-                    </div>
-                    {testRules.length === 0 ? (
-                        <Text type="secondary" style={{ fontSize: 12, fontStyle: 'italic' }}>No test rules defined.</Text>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {testRules.map((r, i) => (
-                                <div key={r.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                    <Text type="secondary" style={{ fontSize: 12, flexShrink: 0, width: 20, textAlign: 'right' }}>{i + 1}.</Text>
-                                    <Input value={r.text} onChange={(e) => updateTestRule(r.id, e.target.value)} placeholder="Describe a test rule..." size="small" style={{ flex: 1 }} />
-                                    <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => removeTestRule(r.id)} style={{ flexShrink: 0 }} />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                {/* Test Rules & Locations */}
+                <RuleLocationEditor
+                    title="Test"
+                    rules={testRules}
+                    locations={testLocations}
+                    onRulesChange={setTestRules}
+                    onLocationsChange={setTestLocations}
+                    editable={true}
+                />
 
                 {/* Content */}
                 {/* @specbook-object 019c623e-9d2e-7326-b23d-fac01937001c — Display object item content textarea */}

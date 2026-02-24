@@ -1,6 +1,6 @@
 /**
  * Infrastructure layer — Prompt session storage.
- * Storage: .spec/prompts/{id}.json (per-session files)
+ * Storage: .specbook/prompts/{id}.json (per-session files)
  * Reuses ChatSession/ChatMessage types from shared.
  */
 import * as fs from 'fs';

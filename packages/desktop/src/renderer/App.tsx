@@ -8,7 +8,7 @@ import {
     AppstoreOutlined, BookOutlined,
     FolderOpenOutlined, BulbOutlined, DesktopOutlined,
     RobotOutlined, SafetyOutlined, ExperimentOutlined,
-    TranslationOutlined,
+    TranslationOutlined, FileTextOutlined,
 } from '@ant-design/icons';
 import { ObjectPage } from './containers/SpecPage';
 import { GlossaryPage } from './containers/GlossaryPage';
@@ -18,13 +18,14 @@ import { GlobalRulesPage } from './containers/GlobalRulesPage';
 import { GlobalTestsPage } from './containers/GlobalTestsPage';
 import { AiSettingsModal } from './components/AiSettingsModal';
 import { PromptPage } from './containers/PromptPage';
+import { MappingPage } from './containers/MappingPage';
 import type { ObjectTreeNode } from '@specbook/shared';
 
 const { Text, Title } = Typography;
 const { Sider, Content } = Layout;
 
 type ThemeMode = 'system' | 'light' | 'dark';
-type PageKey = 'prompt' | 'objects' | 'glossary' | 'knowledge' | 'rules' | 'tests';
+type PageKey = 'prompt' | 'objects' | 'mapping' | 'glossary' | 'knowledge' | 'rules' | 'tests';
 
 function getSystemDark(): boolean {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
@@ -102,6 +103,7 @@ const App: React.FC = () => {
     const menuItems = [
         { key: 'prompt', icon: <TranslationOutlined />, label: 'Prompt' },
         { key: 'objects', icon: <AppstoreOutlined />, label: 'Features' },
+        { key: 'mapping', icon: <FileTextOutlined />, label: 'Mapping' },
         { key: 'rules', icon: <SafetyOutlined />, label: 'Rules' },
         { key: 'tests', icon: <ExperimentOutlined />, label: 'Tests' },
         { key: 'knowledge', icon: <BulbOutlined />, label: 'Knowledge' },
@@ -114,6 +116,8 @@ const App: React.FC = () => {
                 return <PromptPage />;
             case 'objects':
                 return <ObjectPage workspace={workspace} />;
+            case 'mapping':
+                return <MappingPage workspace={workspace} />;
             case 'glossary':
                 return <GlossaryPage workspace={workspace} />;
             case 'knowledge':
