@@ -56,7 +56,6 @@ else
     echo "📦 Building shared + ai + desktop..."
     pnpm --filter @specbook/shared run build
     pnpm --filter @specbook/ai run build
-    pnpm --filter @specbook/desktop run build
 
     echo ""
     echo "🔨 Packaging macOS app..."
