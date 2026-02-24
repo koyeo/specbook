@@ -1,13 +1,16 @@
 /**
  * KnowledgePage — project knowledge base entries with preset tags.
- * Left: entry list with tag filter | Right: content editor
+ * Left: entry list with tag filter | Right: content viewer OR inline editor
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import {
     Typography, Button, Space, Input, List, Tag, Empty,
-    Modal, Form, Splitter, theme, Popconfirm, message, Tooltip,
+    Form, Splitter, theme, Popconfirm, message, Tooltip,
 } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined } from '@ant-design/icons';
+import {
+    PlusOutlined, DeleteOutlined, EditOutlined,
+    SearchOutlined, CloseOutlined, SaveOutlined,
+} from '@ant-design/icons';
 import { useKnowledge } from '../hooks/useKnowledge';
 import { MarkdownPreview } from '../components/MarkdownPreview';
 import type { KnowledgeEntry } from '@specbook/shared';
@@ -43,11 +46,14 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({ workspace }) => {
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [filterTag, setFilterTag] = useState<string | null>(null);
-    const [modalOpen, setModalOpen] = useState(false);
+
+    // Inline editing state (replaces modal)
+    const [editing, setEditing] = useState(false);
     const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
     const [form] = Form.useForm();
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [customTag, setCustomTag] = useState('');
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (workspace) loadEntries();
@@ -85,7 +91,7 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({ workspace }) => {
         form.resetFields();
         setSelectedTags([]);
         setCustomTag('');
-        setModalOpen(true);
+        setEditing(true);
     };
 
     const handleEdit = (entry: KnowledgeEntry) => {
@@ -96,7 +102,15 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({ workspace }) => {
         });
         setSelectedTags([...entry.tags]);
         setCustomTag('');
-        setModalOpen(true);
+        setEditing(true);
+    };
+
+    const handleCancelEdit = () => {
+        setEditing(false);
+        setEditingEntry(null);
+        form.resetFields();
+        setSelectedTags([]);
+        setCustomTag('');
     };
 
     const handleDelete = async (id: string) => {
@@ -123,8 +137,9 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({ workspace }) => {
         setCustomTag('');
     };
 
-    const handleModalOk = async () => {
+    const handleSave = async () => {
         try {
+            setSaving(true);
             const values = await form.validateFields();
             if (editingEntry) {
                 await updateEntry({
@@ -143,14 +158,165 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({ workspace }) => {
                 setSelectedEntryId(newEntry.id);
                 message.success('Entry added');
             }
-            setModalOpen(false);
+            setEditing(false);
+            setEditingEntry(null);
         } catch (err: any) {
             if (err?.errorFields) return;
             message.error(err?.message || 'Failed to save');
+        } finally {
+            setSaving(false);
         }
     };
 
     if (!workspace) return null;
+
+    /** Render the inline edit form (for both add & edit) */
+    const renderEditForm = () => (
+        <div style={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '16px 20px',
+            borderLeft: `1px solid ${token.colorBorderSecondary}`,
+        }}>
+            {/* Header with Save / Cancel */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 16,
+                flexShrink: 0,
+            }}>
+                <Title level={5} style={{ margin: 0 }}>
+                    {editingEntry ? 'Edit Entry' : 'New Entry'}
+                </Title>
+                <Space>
+                    <Button
+                        size="small"
+                        icon={<SaveOutlined />}
+                        type="primary"
+                        onClick={handleSave}
+                        loading={saving}
+                    >
+                        {editingEntry ? 'Save' : 'Add'}
+                    </Button>
+                    <Button
+                        size="small"
+                        icon={<CloseOutlined />}
+                        onClick={handleCancelEdit}
+                    >
+                        Cancel
+                    </Button>
+                </Space>
+            </div>
+
+            {/* Scrollable form body */}
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+                <Form form={form} layout="vertical">
+                    <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required' }]}>
+                        <Input placeholder="e.g. Authentication Flow" />
+                    </Form.Item>
+
+                    <Form.Item label="Tags">
+                        {/* Preset tag chips */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                            {PRESET_TAGS.map(tag => (
+                                <Tag
+                                    key={tag}
+                                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                                    color={selectedTags.includes(tag) ? (TAG_COLORS[tag] || 'processing') : undefined}
+                                    onClick={() => toggleTag(tag)}
+                                >
+                                    {selectedTags.includes(tag) ? '✓ ' : ''}{tag}
+                                </Tag>
+                            ))}
+                        </div>
+                        {/* Custom tag input */}
+                        <Input
+                            size="small"
+                            placeholder="Add custom tag and press Enter"
+                            value={customTag}
+                            onChange={e => setCustomTag(e.target.value)}
+                            onPressEnter={addCustomTag}
+                            style={{ width: 240 }}
+                        />
+                        {/* Show selected custom tags (non-preset) */}
+                        {selectedTags.filter(t => !PRESET_TAGS.includes(t)).length > 0 && (
+                            <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                {selectedTags.filter(t => !PRESET_TAGS.includes(t)).map(tag => (
+                                    <Tag
+                                        key={tag}
+                                        closable
+                                        onClose={() => setSelectedTags(prev => prev.filter(t => t !== tag))}
+                                        style={{ fontSize: 11 }}
+                                    >
+                                        {tag}
+                                    </Tag>
+                                ))}
+                            </div>
+                        )}
+                    </Form.Item>
+
+                    <Form.Item name="content" label="Content (Markdown)">
+                        <TextArea
+                            rows={16}
+                            placeholder="Describe the concept, flow, or architecture..."
+                            style={{ fontFamily: 'monospace', resize: 'vertical' }}
+                        />
+                    </Form.Item>
+                </Form>
+            </div>
+        </div>
+    );
+
+    /** Render the detail / preview panel */
+    const renderDetailView = () => (
+        <div style={{
+            height: '100%',
+            borderLeft: `1px solid ${token.colorBorderSecondary}`,
+            overflow: 'auto',
+            padding: '16px 20px',
+        }}>
+            {selectedEntry ? (
+                <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                        <div>
+                            <Title level={4} style={{ margin: 0 }}>{selectedEntry.title}</Title>
+                            {selectedEntry.tags.length > 0 && (
+                                <Space size={4} style={{ marginTop: 4 }} wrap>
+                                    {selectedEntry.tags.map((tag: string) => (
+                                        <Tag key={tag} color={TAG_COLORS[tag] || 'default'} style={{ fontSize: 11 }}>{tag}</Tag>
+                                    ))}
+                                </Space>
+                            )}
+                        </div>
+                        <Space>
+                            <Tooltip title="Edit">
+                                <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(selectedEntry)} />
+                            </Tooltip>
+                            <Popconfirm title="Delete this entry?" onConfirm={() => handleDelete(selectedEntry.id)}>
+                                <Button size="small" danger icon={<DeleteOutlined />} />
+                            </Popconfirm>
+                        </Space>
+                    </div>
+
+                    <div style={{ marginBottom: 12 }}>
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                            Created: {new Date(selectedEntry.createdAt).toLocaleString()} · Updated: {new Date(selectedEntry.updatedAt).toLocaleString()}
+                        </Text>
+                    </div>
+
+                    {selectedEntry.content ? (
+                        <MarkdownPreview content={selectedEntry.content} />
+                    ) : (
+                        <Paragraph type="secondary" italic>No content</Paragraph>
+                    )}
+                </div>
+            ) : (
+                <Empty description="Select an entry to view" style={{ marginTop: 60 }} />
+            )}
+        </div>
+    );
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -208,7 +374,11 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({ workspace }) => {
                                     renderItem={(entry: KnowledgeEntry) => (
                                         <List.Item
                                             key={entry.id}
-                                            onClick={() => setSelectedEntryId(entry.id)}
+                                            onClick={() => {
+                                                setSelectedEntryId(entry.id);
+                                                // Exit editing when selecting a different entry
+                                                if (editing) handleCancelEdit();
+                                            }}
                                             style={{
                                                 cursor: 'pointer',
                                                 padding: '8px 12px',
@@ -241,116 +411,11 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({ workspace }) => {
                     </div>
                 </Splitter.Panel>
 
-                {/* Right: detail view */}
+                {/* Right: detail view OR inline editor */}
                 <Splitter.Panel>
-                    <div style={{
-                        height: '100%',
-                        borderLeft: `1px solid ${token.colorBorderSecondary}`,
-                        overflow: 'auto',
-                        padding: '16px 20px',
-                    }}>
-                        {selectedEntry ? (
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                                    <div>
-                                        <Title level={4} style={{ margin: 0 }}>{selectedEntry.title}</Title>
-                                        {selectedEntry.tags.length > 0 && (
-                                            <Space size={4} style={{ marginTop: 4 }} wrap>
-                                                {selectedEntry.tags.map((tag: string) => (
-                                                    <Tag key={tag} color={TAG_COLORS[tag] || 'default'} style={{ fontSize: 11 }}>{tag}</Tag>
-                                                ))}
-                                            </Space>
-                                        )}
-                                    </div>
-                                    <Space>
-                                        <Tooltip title="Edit">
-                                            <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(selectedEntry)} />
-                                        </Tooltip>
-                                        <Popconfirm title="Delete this entry?" onConfirm={() => handleDelete(selectedEntry.id)}>
-                                            <Button size="small" danger icon={<DeleteOutlined />} />
-                                        </Popconfirm>
-                                    </Space>
-                                </div>
-
-                                {selectedEntry.content ? (
-                                    <MarkdownPreview content={selectedEntry.content} />
-                                ) : (
-                                    <Paragraph type="secondary" italic>No content</Paragraph>
-                                )}
-
-                                <div style={{ marginTop: 16 }}>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>
-                                        Created: {new Date(selectedEntry.createdAt).toLocaleString()} · Updated: {new Date(selectedEntry.updatedAt).toLocaleString()}
-                                    </Text>
-                                </div>
-                            </div>
-                        ) : (
-                            <Empty description="Select an entry to view" style={{ marginTop: 60 }} />
-                        )}
-                    </div>
+                    {editing ? renderEditForm() : renderDetailView()}
                 </Splitter.Panel>
             </Splitter>
-
-            {/* Add/Edit modal */}
-            <Modal
-                title={editingEntry ? 'Edit Entry' : 'Add Entry'}
-                open={modalOpen}
-                onOk={handleModalOk}
-                onCancel={() => setModalOpen(false)}
-                okText={editingEntry ? 'Save' : 'Add'}
-                destroyOnClose
-                width={640}
-            >
-                <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-                    <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required' }]}>
-                        <Input placeholder="e.g. Authentication Flow" />
-                    </Form.Item>
-
-                    <Form.Item label="Tags">
-                        {/* Preset tag chips */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                            {PRESET_TAGS.map(tag => (
-                                <Tag
-                                    key={tag}
-                                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                                    color={selectedTags.includes(tag) ? (TAG_COLORS[tag] || 'processing') : undefined}
-                                    onClick={() => toggleTag(tag)}
-                                >
-                                    {selectedTags.includes(tag) ? '✓ ' : ''}{tag}
-                                </Tag>
-                            ))}
-                        </div>
-                        {/* Custom tag input */}
-                        <Input
-                            size="small"
-                            placeholder="Add custom tag and press Enter"
-                            value={customTag}
-                            onChange={e => setCustomTag(e.target.value)}
-                            onPressEnter={addCustomTag}
-                            style={{ width: 240 }}
-                        />
-                        {/* Show selected custom tags (non-preset) */}
-                        {selectedTags.filter(t => !PRESET_TAGS.includes(t)).length > 0 && (
-                            <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                {selectedTags.filter(t => !PRESET_TAGS.includes(t)).map(tag => (
-                                    <Tag
-                                        key={tag}
-                                        closable
-                                        onClose={() => setSelectedTags(prev => prev.filter(t => t !== tag))}
-                                        style={{ fontSize: 11 }}
-                                    >
-                                        {tag}
-                                    </Tag>
-                                ))}
-                            </div>
-                        )}
-                    </Form.Item>
-
-                    <Form.Item name="content" label="Content (Markdown)">
-                        <TextArea rows={10} placeholder="Describe the concept, flow, or architecture..." style={{ fontFamily: 'monospace' }} />
-                    </Form.Item>
-                </Form>
-            </Modal>
         </div>
     );
 };
