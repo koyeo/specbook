@@ -5,15 +5,9 @@ import { ipcMain } from 'electron';
 import { IPC, generateId } from '@specbook/shared';
 import type { SendChatMessagePayload, ChatMessage, ChatSession } from '@specbook/shared';
 import * as chatStore from '../infrastructure/chatStore';
-import { getWorkspace } from './specHandlers';
+import { requireWorkspaceForSender } from '../windowManager';
 import { getAiConfig, appendTokenUsage } from '../infrastructure/appConfig';
 import { callChat, scanProjectTree, scanKeyFiles } from '@specbook/ai';
-
-function requireWorkspace(): string {
-    const ws = getWorkspace();
-    if (!ws) throw new Error('No workspace selected. Please open a folder first.');
-    return ws;
-}
 
 const SYSTEM_PROMPT = `You are a requirements analyst and domain expert assistant integrated into Specbook, a specification management tool.
 
@@ -27,18 +21,18 @@ Your responsibilities:
 Respond in the same language the user uses. Be concise but thorough.`;
 
 export function registerChatHandlers(): void {
-    ipcMain.handle(IPC.CHAT_LIST_SESSIONS, () => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.CHAT_LIST_SESSIONS, (event) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return chatStore.listSessions(ws);
     });
 
-    ipcMain.handle(IPC.CHAT_LOAD_SESSION, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.CHAT_LOAD_SESSION, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return chatStore.loadSession(ws, id);
     });
 
-    ipcMain.handle(IPC.CHAT_CREATE_SESSION, (_event, title: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.CHAT_CREATE_SESSION, (event, title: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const now = new Date().toISOString();
         const session: ChatSession = {
             id: generateId(),
@@ -51,13 +45,13 @@ export function registerChatHandlers(): void {
         return session;
     });
 
-    ipcMain.handle(IPC.CHAT_DELETE_SESSION, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.CHAT_DELETE_SESSION, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         chatStore.deleteSession(ws, id);
     });
 
-    ipcMain.handle(IPC.CHAT_SEND_MESSAGE, async (_event, payload: SendChatMessagePayload) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.CHAT_SEND_MESSAGE, async (event, payload: SendChatMessagePayload) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const config = getAiConfig();
         if (!config || !config.apiKey) {
             throw new Error('AI is not configured. Please set your API Key in Settings.');

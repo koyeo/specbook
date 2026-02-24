@@ -59,8 +59,12 @@ const App: React.FC = () => {
     useEffect(() => {
         if (workspace) {
             window.api.loadObjects().then(o => setObjects(o)).catch(() => setObjects([]));
+            // Update window title to show workspace folder name
+            const basename = workspace.split('/').pop() || workspace;
+            document.title = basename;
         } else {
             setObjects([]);
+            document.title = 'Specbook';
         }
     }, [workspace]);
 

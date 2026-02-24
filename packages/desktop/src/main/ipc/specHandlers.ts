@@ -15,30 +15,17 @@ import type {
     ObjectDetail,
 } from '@specbook/shared';
 import * as objectStore from '../infrastructure/specStore';
-import { getLastWorkspace, saveLastWorkspace } from '../infrastructure/appConfig';
-
-let currentWorkspace: string | null = null;
-
-export function getWorkspace(): string | null {
-    return currentWorkspace;
-}
-
-export function setWorkspace(workspace: string): void {
-    currentWorkspace = workspace;
-    saveLastWorkspace(workspace);
-}
-
-function requireWorkspace(): string {
-    if (!currentWorkspace) {
-        throw new Error('No workspace selected. Please open a folder first.');
-    }
-    return currentWorkspace;
-}
+import {
+    getWorkspaceForSender,
+    setWorkspaceForSender,
+    requireWorkspaceForSender,
+} from '../windowManager';
+import { getLastWorkspace } from '../infrastructure/appConfig';
 
 export function registerIpcHandlers(): void {
     // ─── Workspace ──────────────────────────────────
 
-    ipcMain.handle(IPC.SELECT_WORKSPACE, async () => {
+    ipcMain.handle(IPC.SELECT_WORKSPACE, async (event) => {
         const result = await dialog.showOpenDialog({
             properties: ['openDirectory'],
             title: 'Select Workspace Folder',
@@ -46,28 +33,24 @@ export function registerIpcHandlers(): void {
         if (result.canceled || result.filePaths.length === 0) {
             return null;
         }
-        currentWorkspace = result.filePaths[0];
-        saveLastWorkspace(currentWorkspace);
-        return currentWorkspace;
+        const workspace = result.filePaths[0];
+        setWorkspaceForSender(event.sender.id, workspace);
+        return workspace;
     });
 
-    ipcMain.handle(IPC.GET_WORKSPACE, () => {
-        // Auto-restore last workspace if none set
-        if (!currentWorkspace) {
-            currentWorkspace = getLastWorkspace();
-        }
-        return currentWorkspace;
+    ipcMain.handle(IPC.GET_WORKSPACE, (event) => {
+        return getWorkspaceForSender(event.sender.id);
     });
 
     // ─── Objects CRUD ───────────────────────────────
 
-    ipcMain.handle(IPC.LOAD_OBJECTS, () => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.LOAD_OBJECTS, (event) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return objectStore.loadAllObjects(ws);
     });
 
-    ipcMain.handle(IPC.ADD_OBJECT, (_event, payload: AddObjectPayload) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.ADD_OBJECT, (event, payload: AddObjectPayload) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
 
         // Domain: validate
         const validation = validateTitle(payload.title);
@@ -100,8 +83,8 @@ export function registerIpcHandlers(): void {
         return detail;
     });
 
-    ipcMain.handle(IPC.UPDATE_OBJECT, (_event, payload: UpdateObjectPayload) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.UPDATE_OBJECT, (event, payload: UpdateObjectPayload) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
 
         const existing = objectStore.readObjectDetail(ws, payload.id);
         if (!existing) {
@@ -128,60 +111,60 @@ export function registerIpcHandlers(): void {
         return updated;
     });
 
-    ipcMain.handle(IPC.DELETE_OBJECT, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.DELETE_OBJECT, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         objectStore.deleteObject(ws, id);
         objectStore.deleteActionsFile(ws, id);
     });
 
-    ipcMain.handle(IPC.GET_OBJECT, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.GET_OBJECT, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return objectStore.readObjectDetail(ws, id);
     });
 
-    ipcMain.handle(IPC.MOVE_OBJECT, (_event, payload: MoveObjectPayload) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.MOVE_OBJECT, (event, payload: MoveObjectPayload) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         objectStore.moveObject(ws, payload.id, payload.newParentId);
     });
 
     // ─── Actions ─────────────────────────────────────
 
-    ipcMain.handle(IPC.LOAD_ACTIONS, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.LOAD_ACTIONS, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return objectStore.readActions(ws, id);
     });
 
-    ipcMain.handle(IPC.SAVE_ACTIONS, (_event, id: string, actions: import('@specbook/shared').ObjectAction[]) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.SAVE_ACTIONS, (event, id: string, actions: import('@specbook/shared').ObjectAction[]) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         objectStore.writeActions(ws, id, actions);
     });
 
     // ─── Impl/Test Mappings ─────────────────────────
 
-    ipcMain.handle(IPC.LOAD_IMPLS, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.LOAD_IMPLS, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return objectStore.readImpls(ws, id);
     });
 
-    ipcMain.handle(IPC.SAVE_IMPLS, (_event, id: string, files: import('@specbook/shared').RelatedFile[], summary?: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.SAVE_IMPLS, (event, id: string, files: import('@specbook/shared').RelatedFile[], summary?: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         objectStore.writeImpls(ws, id, files, summary);
     });
 
-    ipcMain.handle(IPC.LOAD_TESTS, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.LOAD_TESTS, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return objectStore.readTests(ws, id);
     });
 
-    ipcMain.handle(IPC.SAVE_TESTS, (_event, id: string, files: import('@specbook/shared').RelatedFile[]) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.SAVE_TESTS, (event, id: string, files: import('@specbook/shared').RelatedFile[]) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         objectStore.writeTests(ws, id, files);
     });
 
     // ─── Open in Editor ─────────────────────────────
 
-    ipcMain.handle(IPC.OPEN_IN_EDITOR, async (_event, filePath: string, line?: number) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.OPEN_IN_EDITOR, async (event, filePath: string, line?: number) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const path = await import('path');
         const { exec } = await import('child_process');
 
@@ -205,8 +188,8 @@ export function registerIpcHandlers(): void {
         });
     });
 
-    ipcMain.handle(IPC.EXPORT_MARKDOWN, async () => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.EXPORT_MARKDOWN, async (event) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const tree = objectStore.loadAllObjects(ws);
 
         // Build numbered outline from tree

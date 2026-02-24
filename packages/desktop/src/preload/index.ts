@@ -14,6 +14,7 @@ import type {
     GlobalTestsAPI, AddGlobalTestPayload, UpdateGlobalTestPayload,
     MappingAPI, ScanProgressEvent,
     PromptAPI, SendPromptPayload,
+    WindowAPI,
 } from '@specbook/shared';
 
 const api: ObjectAPI = {
@@ -98,6 +99,10 @@ const promptApi: PromptAPI = {
     generateFeatures: (sessionId: string) => ipcRenderer.invoke(IPC.PROMPT_GENERATE_FEATURES, sessionId),
 };
 
+const windowApi: WindowAPI = {
+    newWindow: () => ipcRenderer.invoke(IPC.NEW_WINDOW),
+};
+
 contextBridge.exposeInMainWorld('api', api);
 contextBridge.exposeInMainWorld('aiApi', aiApi);
 contextBridge.exposeInMainWorld('glossaryApi', glossaryApi);
@@ -107,3 +112,4 @@ contextBridge.exposeInMainWorld('globalRulesApi', globalRulesApi);
 contextBridge.exposeInMainWorld('globalTestsApi', globalTestsApi);
 contextBridge.exposeInMainWorld('mappingApi', mappingApi);
 contextBridge.exposeInMainWorld('promptApi', promptApi);
+contextBridge.exposeInMainWorld('windowApi', windowApi);

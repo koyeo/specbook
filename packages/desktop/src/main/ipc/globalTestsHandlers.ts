@@ -6,22 +6,16 @@ import { IPC, generateId } from '@specbook/shared';
 import type { AddGlobalTestPayload, UpdateGlobalTestPayload } from '@specbook/shared';
 import type { GlobalTest } from '@specbook/shared';
 import * as globalTestsStore from '../infrastructure/globalTestsStore';
-import { getWorkspace } from './specHandlers';
-
-function requireWorkspace(): string {
-    const ws = getWorkspace();
-    if (!ws) throw new Error('No workspace selected. Please open a folder first.');
-    return ws;
-}
+import { requireWorkspaceForSender } from '../windowManager';
 
 export function registerGlobalTestsHandlers(): void {
-    ipcMain.handle(IPC.GLOBAL_TESTS_LOAD, () => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.GLOBAL_TESTS_LOAD, (event) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return globalTestsStore.loadAllTests(ws);
     });
 
-    ipcMain.handle(IPC.GLOBAL_TESTS_ADD, (_event, payload: AddGlobalTestPayload) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.GLOBAL_TESTS_ADD, (event, payload: AddGlobalTestPayload) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const now = new Date().toISOString();
         const test: GlobalTest = {
             id: generateId(),
@@ -36,8 +30,8 @@ export function registerGlobalTestsHandlers(): void {
         return test;
     });
 
-    ipcMain.handle(IPC.GLOBAL_TESTS_UPDATE, (_event, payload: UpdateGlobalTestPayload) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.GLOBAL_TESTS_UPDATE, (event, payload: UpdateGlobalTestPayload) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const tests = globalTestsStore.loadAllTests(ws);
         const existing = tests.find(t => t.id === payload.id);
         if (!existing) throw new Error(`Test ${payload.id} not found.`);
@@ -54,8 +48,8 @@ export function registerGlobalTestsHandlers(): void {
         return updated;
     });
 
-    ipcMain.handle(IPC.GLOBAL_TESTS_DELETE, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.GLOBAL_TESTS_DELETE, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         globalTestsStore.deleteTest(ws, id);
     });
 }

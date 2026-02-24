@@ -9,13 +9,14 @@ import { ipcMain, BrowserWindow } from 'electron';
 import { IPC } from '@specbook/shared';
 import type { FeatureMappingIndex, FeatureMappingEntry, MappingChangeEntry, ObjectMappingResult, ScanProgressEvent, ObjectTreeNode } from '@specbook/shared';
 import { scanObjectTreeDFS, scanSingleObject } from '@specbook/ai';
-import { getAiConfig, getLastWorkspace } from '../infrastructure/appConfig';
+import { getAiConfig } from '../infrastructure/appConfig';
 import { loadAllObjects, readObjectDetail } from '../infrastructure/specStore';
 import {
     readMappingIndex, writeMappingIndex,
     readAllObjectMappings, writeObjectMapping,
     mappingResultsToEntries,
 } from '../infrastructure/mappingStore';
+import { requireWorkspaceForSender } from '../windowManager';
 
 declare const console: { log(...args: any[]): void; error(...args: any[]): void };
 
@@ -98,21 +99,13 @@ function computeChangelog(
     return changelog;
 }
 
-// ─── Helper: get workspace ───────────────────────────
-
-function getWorkspace(): string {
-    const ws = getLastWorkspace();
-    if (!ws) throw new Error('No workspace selected');
-    return ws;
-}
-
 // ─── IPC Handlers ────────────────────────────────────
 
 export function registerScanHandlers(): void {
 
     /** Full DFS scan of the entire object tree. */
-    ipcMain.handle(IPC.SCAN_MAPPING, async (): Promise<FeatureMappingIndex> => {
-        const ws = getWorkspace();
+    ipcMain.handle(IPC.SCAN_MAPPING, async (event): Promise<FeatureMappingIndex> => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const config = getAiConfig();
         if (!config) throw new Error('AI not configured. Open Settings to set API key.');
 
@@ -121,10 +114,11 @@ export function registerScanHandlers(): void {
 
         const previousIndex = readMappingIndex(ws);
 
-        // Emit progress to all renderer windows
-        const emitProgress = (event: ScanProgressEvent) => {
-            for (const win of BrowserWindow.getAllWindows()) {
-                win.webContents.send(IPC.SCAN_PROGRESS, event);
+        // Emit progress only to the calling window
+        const callingWindow = BrowserWindow.getAllWindows().find(w => w.webContents.id === event.sender.id);
+        const emitProgress = (progressEvent: ScanProgressEvent) => {
+            if (callingWindow && !callingWindow.isDestroyed()) {
+                callingWindow.webContents.send(IPC.SCAN_PROGRESS, progressEvent);
             }
         };
 
@@ -175,8 +169,8 @@ export function registerScanHandlers(): void {
     });
 
     /** Load existing mapping index (aggregated from per-object files). */
-    ipcMain.handle(IPC.LOAD_MAPPING, async (): Promise<FeatureMappingIndex | null> => {
-        const ws = getWorkspace();
+    ipcMain.handle(IPC.LOAD_MAPPING, async (event): Promise<FeatureMappingIndex | null> => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         // Try loading aggregated index first
         const index = readMappingIndex(ws);
         if (index) return index;
@@ -195,8 +189,8 @@ export function registerScanHandlers(): void {
     });
 
     /** Scan a single object by ID. */
-    ipcMain.handle(IPC.SCAN_SINGLE, async (_event, objectId: string): Promise<ObjectMappingResult> => {
-        const ws = getWorkspace();
+    ipcMain.handle(IPC.SCAN_SINGLE, async (event, objectId: string): Promise<ObjectMappingResult> => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const config = getAiConfig();
         if (!config) throw new Error('AI not configured.');
 

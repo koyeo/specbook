@@ -72,6 +72,8 @@ export const IPC = {
     PROMPT_DELETE_SESSION: 'prompt:delete-session',
     PROMPT_SEND: 'prompt:send',
     PROMPT_GENERATE_FEATURES: 'prompt:generate-features',
+    // Window management
+    NEW_WINDOW: 'window:new',
 } as const;
 
 /** Add object payload. */
@@ -263,4 +265,9 @@ export interface PromptAPI {
     deleteSession(id: string): Promise<void>;
     sendPrompt(payload: SendPromptPayload): Promise<string>;
     generateFeatures(sessionId: string): Promise<string>;
+}
+
+/** Window management API exposed to renderer. */
+export interface WindowAPI {
+    newWindow(): Promise<void>;
 }

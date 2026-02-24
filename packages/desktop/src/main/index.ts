@@ -1,8 +1,10 @@
 /**
  * Electron main process entry point.
  */
-import { app, BrowserWindow } from 'electron';
-import * as path from 'path';
+import { app, BrowserWindow, ipcMain } from 'electron';
+import { IPC } from '@specbook/shared';
+import { createWindow, setupApplicationMenu, setupDockMenu } from './windowManager';
+import { getLastWorkspace } from './infrastructure/appConfig';
 import { registerIpcHandlers } from './ipc/specHandlers';
 import { registerAiHandlers } from './ipc/aiHandlers';
 import { registerGlossaryHandlers } from './ipc/glossaryHandlers';
@@ -13,32 +15,12 @@ import { registerGlobalTestsHandlers } from './ipc/globalTestsHandlers';
 import { registerScanHandlers } from './ipc/scanHandlers';
 import { registerPromptHandlers } from './ipc/promptHandlers';
 
-function createWindow(): void {
-    const isDev = !!process.env['ELECTRON_RENDERER_URL'];
-
-    const win = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        minWidth: 800,
-        minHeight: 600,
-        title: 'Specbook',
-        icon: path.join(__dirname, '../../../shared/images/logo.icns'),
-        webPreferences: {
-            preload: path.join(__dirname, '../preload/index.js'),
-            sandbox: false,
-            devTools: isDev,
-        },
-    });
-
-    // electron-vite: dev server or bundled file
-    if (process.env['ELECTRON_RENDERER_URL']) {
-        win.loadURL(process.env['ELECTRON_RENDERER_URL']);
-    } else {
-        win.loadFile(path.join(__dirname, '../renderer/index.html'));
-    }
-}
-
 app.whenReady().then(() => {
+    // Set up native menu (with New Window commands)
+    setupApplicationMenu();
+    setupDockMenu();
+
+    // Register all IPC handlers (once, globally)
     registerIpcHandlers();
     registerAiHandlers();
     registerGlossaryHandlers();
@@ -48,7 +30,15 @@ app.whenReady().then(() => {
     registerGlobalTestsHandlers();
     registerScanHandlers();
     registerPromptHandlers();
-    createWindow();
+
+    // Handle "new window" request from renderer
+    ipcMain.handle(IPC.NEW_WINDOW, () => {
+        createWindow();
+    });
+
+    // Create initial window, restoring last workspace if available
+    const lastWs = getLastWorkspace();
+    createWindow(lastWs ?? undefined);
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
@@ -62,4 +52,3 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 });
-

@@ -50,6 +50,7 @@ export type {
     AddGlobalTestPayload, UpdateGlobalTestPayload, GlobalTestsAPI,
     MappingAPI,
     PromptAPI, SendPromptPayload,
+    WindowAPI,
 } from './spec/messages';
 
 // Validations

@@ -5,15 +5,9 @@ import { ipcMain } from 'electron';
 import { IPC, generateId } from '@specbook/shared';
 import type { SendPromptPayload, ChatSession, ChatMessage } from '@specbook/shared';
 import * as promptStore from '../infrastructure/promptStore';
-import { getWorkspace } from './specHandlers';
+import { requireWorkspaceForSender } from '../windowManager';
 import { getAiConfig, appendTokenUsage } from '../infrastructure/appConfig';
 import { callChat } from '@specbook/ai';
-
-function requireWorkspace(): string {
-    const ws = getWorkspace();
-    if (!ws) throw new Error('No workspace selected. Please open a folder first.');
-    return ws;
-}
 
 const DISCUSSION_SYSTEM = `You are a senior requirements analyst and product manager.
 
@@ -66,18 +60,18 @@ Example:
 
 export function registerPromptHandlers(): void {
     // ─── Session CRUD ───────────────────────────────
-    ipcMain.handle(IPC.PROMPT_LIST_SESSIONS, () => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.PROMPT_LIST_SESSIONS, (event) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return promptStore.listSessions(ws);
     });
 
-    ipcMain.handle(IPC.PROMPT_LOAD_SESSION, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.PROMPT_LOAD_SESSION, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return promptStore.loadSession(ws, id);
     });
 
-    ipcMain.handle(IPC.PROMPT_CREATE_SESSION, (_event, title: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.PROMPT_CREATE_SESSION, (event, title: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const now = new Date().toISOString();
         const session: ChatSession = {
             id: generateId(),
@@ -90,14 +84,14 @@ export function registerPromptHandlers(): void {
         return session;
     });
 
-    ipcMain.handle(IPC.PROMPT_DELETE_SESSION, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.PROMPT_DELETE_SESSION, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         promptStore.deleteSession(ws, id);
     });
 
     // ─── Send prompt (multi-turn discussion) ────────
-    ipcMain.handle(IPC.PROMPT_SEND, async (_event, payload: SendPromptPayload): Promise<string> => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.PROMPT_SEND, async (event, payload: SendPromptPayload): Promise<string> => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const config = getAiConfig();
         if (!config || !config.apiKey) {
             throw new Error('AI is not configured. Please set your API Key in Settings.');
@@ -136,8 +130,8 @@ export function registerPromptHandlers(): void {
     });
 
     // ─── Generate Objects from conversation ─────────
-    ipcMain.handle(IPC.PROMPT_GENERATE_FEATURES, async (_event, sessionId: string): Promise<string> => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.PROMPT_GENERATE_FEATURES, async (event, sessionId: string): Promise<string> => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const config = getAiConfig();
         if (!config || !config.apiKey) {
             throw new Error('AI is not configured. Please set your API Key in Settings.');

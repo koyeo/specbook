@@ -9,19 +9,13 @@ import type {
     AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload, KnowledgeEntry,
 } from '@specbook/shared';
 import * as knowledgeStore from '../infrastructure/knowledgeStore';
-import { getWorkspace } from './specHandlers';
-
-function requireWorkspace(): string {
-    const ws = getWorkspace();
-    if (!ws) throw new Error('No workspace selected. Please open a folder first.');
-    return ws;
-}
+import { requireWorkspaceForSender } from '../windowManager';
 
 export function registerKnowledgeHandlers(): void {
     // Load all entries
-    ipcMain.handle(IPC.KNOWLEDGE_LOAD, () => {
+    ipcMain.handle(IPC.KNOWLEDGE_LOAD, (event) => {
         try {
-            const ws = requireWorkspace();
+            const ws = requireWorkspaceForSender(event.sender.id);
             return knowledgeStore.loadEntries(ws);
         } catch {
             return [];
@@ -29,8 +23,8 @@ export function registerKnowledgeHandlers(): void {
     });
 
     // Add entry
-    ipcMain.handle(IPC.KNOWLEDGE_ADD, (_event, payload: AddKnowledgeEntryPayload) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.KNOWLEDGE_ADD, (event, payload: AddKnowledgeEntryPayload) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const now = new Date().toISOString();
         const entry: KnowledgeEntry = {
             id: generateId(),
@@ -45,8 +39,8 @@ export function registerKnowledgeHandlers(): void {
     });
 
     // Update entry
-    ipcMain.handle(IPC.KNOWLEDGE_UPDATE, (_event, payload: UpdateKnowledgeEntryPayload) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.KNOWLEDGE_UPDATE, (event, payload: UpdateKnowledgeEntryPayload) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return knowledgeStore.updateEntry(ws, payload.id, {
             title: payload.title,
             content: payload.content,
@@ -55,8 +49,8 @@ export function registerKnowledgeHandlers(): void {
     });
 
     // Delete entry
-    ipcMain.handle(IPC.KNOWLEDGE_DELETE, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.KNOWLEDGE_DELETE, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         knowledgeStore.deleteEntry(ws, id);
     });
 }

@@ -6,22 +6,16 @@ import { IPC, generateId } from '@specbook/shared';
 import type { AddGlossaryTermPayload, UpdateGlossaryTermPayload } from '@specbook/shared';
 import type { GlossaryTerm } from '@specbook/shared';
 import * as glossaryStore from '../infrastructure/glossaryStore';
-import { getWorkspace } from './specHandlers';
-
-function requireWorkspace(): string {
-    const ws = getWorkspace();
-    if (!ws) throw new Error('No workspace selected. Please open a folder first.');
-    return ws;
-}
+import { requireWorkspaceForSender } from '../windowManager';
 
 export function registerGlossaryHandlers(): void {
-    ipcMain.handle(IPC.GLOSSARY_LOAD, () => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.GLOSSARY_LOAD, (event) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         return glossaryStore.loadAllTerms(ws);
     });
 
-    ipcMain.handle(IPC.GLOSSARY_ADD, (_event, payload: AddGlossaryTermPayload) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.GLOSSARY_ADD, (event, payload: AddGlossaryTermPayload) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const now = new Date().toISOString();
         const term: GlossaryTerm = {
             id: generateId(),
@@ -36,8 +30,8 @@ export function registerGlossaryHandlers(): void {
         return term;
     });
 
-    ipcMain.handle(IPC.GLOSSARY_UPDATE, (_event, payload: UpdateGlossaryTermPayload) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.GLOSSARY_UPDATE, (event, payload: UpdateGlossaryTermPayload) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         const terms = glossaryStore.loadAllTerms(ws);
         const existing = terms.find(t => t.id === payload.id);
         if (!existing) throw new Error(`Term ${payload.id} not found.`);
@@ -54,8 +48,8 @@ export function registerGlossaryHandlers(): void {
         return updated;
     });
 
-    ipcMain.handle(IPC.GLOSSARY_DELETE, (_event, id: string) => {
-        const ws = requireWorkspace();
+    ipcMain.handle(IPC.GLOSSARY_DELETE, (event, id: string) => {
+        const ws = requireWorkspaceForSender(event.sender.id);
         glossaryStore.deleteTerm(ws, id);
     });
 }

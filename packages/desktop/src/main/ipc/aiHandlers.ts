@@ -6,7 +6,7 @@ import { IPC } from '@specbook/shared';
 import type { AiConfig, ObjectTreeNode } from '@specbook/shared';
 import { analyzeObjectTree } from '@specbook/ai';
 import { getAiConfig, saveAiConfig, appendTokenUsage, readTokenUsage } from '../infrastructure/appConfig';
-import { getWorkspace } from './specHandlers';
+import { getWorkspaceForSender } from '../windowManager';
 
 export function registerAiHandlers(): void {
     ipcMain.handle(IPC.AI_GET_CONFIG, () => {
@@ -17,13 +17,13 @@ export function registerAiHandlers(): void {
         saveAiConfig(config);
     });
 
-    ipcMain.handle(IPC.AI_ANALYZE, async (_event, objectTree: ObjectTreeNode[]) => {
+    ipcMain.handle(IPC.AI_ANALYZE, async (event, objectTree: ObjectTreeNode[]) => {
         const config = getAiConfig();
         if (!config || !config.apiKey) {
             throw new Error('AI is not configured. Please set your API Key in Settings.');
         }
 
-        const workspace = getWorkspace();
+        const workspace = getWorkspaceForSender(event.sender.id);
         const result = await analyzeObjectTree(objectTree, config, workspace ?? undefined);
 
         // Persist token usage

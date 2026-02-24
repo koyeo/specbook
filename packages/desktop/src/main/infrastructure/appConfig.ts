@@ -12,6 +12,7 @@ const TOKEN_USAGE_FILE = path.join(CONFIG_DIR, 'token-usage.json');
 
 interface AppConfig {
     lastWorkspace?: string;
+    recentWorkspaces?: string[];
     aiConfig?: AiConfig;
 }
 
@@ -47,6 +48,23 @@ export function saveLastWorkspace(workspace: string): void {
     const config = readConfig();
     config.lastWorkspace = workspace;
     writeConfig(config);
+}
+
+/** Add workspace to recent list (deduped, max 10). */
+export function addRecentWorkspace(workspace: string): void {
+    const config = readConfig();
+    const recent = config.recentWorkspaces ?? [];
+    const filtered = recent.filter(w => w !== workspace);
+    filtered.unshift(workspace);
+    config.recentWorkspaces = filtered.slice(0, 10);
+    config.lastWorkspace = workspace;
+    writeConfig(config);
+}
+
+/** Get list of recent workspaces. */
+export function getRecentWorkspaces(): string[] {
+    const config = readConfig();
+    return (config.recentWorkspaces ?? []).filter(w => fs.existsSync(w));
 }
 
 // ─── AI Config ──────────────────────────────────────
