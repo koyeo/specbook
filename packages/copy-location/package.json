@@ -1,0 +1,48 @@
+{
+    "name": "copy-location",
+    "publisher": "specbook",
+    "displayName": "Copy Location",
+    "description": "Right-click to copy file path:line:column and selected text",
+    "version": "0.1.0",
+    "private": true,
+    "engines": {
+        "vscode": "^1.96.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "copyLocation.copy",
+                "title": "Copy Location"
+            }
+        ],
+        "menus": {
+            "editor/context": [
+                {
+                    "command": "copyLocation.copy",
+                    "when": "editorHasSelection",
+                    "group": "9_cutcopypaste@99"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "build": "npm run check-types && node esbuild.js",
+        "check-types": "tsc --noEmit",
+        "clean": "rm -rf dist *.tsbuildinfo",
+        "dev": "node esbuild.js --watch",
+        "package": "vsce package"
+    },
+    "devDependencies": {
+        "@types/node": "^20.19.33",
+        "@types/vscode": "^1.96.0",
+        "esbuild": "^0.27.3",
+        "typescript": "^5.7.3"
+    }
+}
