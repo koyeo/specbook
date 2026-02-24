@@ -277,7 +277,6 @@ export const KNOWLEDGE_FILE = 'knowledge.json';
 /** A single global rule entry. */
 export interface GlobalRule {
     id: string;
-    name: string;
     text: string;
     createdAt: string;
     updatedAt: string;
@@ -294,20 +293,13 @@ export const GLOBAL_RULES_FILE = 'rules.json';
 
 // ─── Global Tests Types ─────────────────────────────
 
-/** A single test case within a global test. */
-export interface GlobalTestCase {
-    id: string;
-    text: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
-/** A single global test entry (suite) containing cases. */
+/** A single global test entry (suite) containing rules and locations. */
 export interface GlobalTest {
     id: string;
     title: string;
     description: string;
-    cases: GlobalTestCase[];
+    rules: ObjectRule[];
+    locations: ImplementationLocation[];
     createdAt: string;
     updatedAt: string;
 }

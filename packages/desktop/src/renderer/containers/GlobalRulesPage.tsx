@@ -32,7 +32,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
 
     // Inline edit state
     const [editing, setEditing] = useState(false);
-    const [editName, setEditName] = useState('');
     const [editText, setEditText] = useState('');
 
     const [isAdding, setIsAdding] = useState(false);
@@ -46,7 +45,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
         if (search.trim()) {
             const q = search.toLowerCase();
             result = result.filter(r =>
-                r.name.toLowerCase().includes(q) ||
                 r.text.toLowerCase().includes(q)
             );
         }
@@ -61,7 +59,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
         setIsAdding(true);
         setEditing(true);
         setSelectedRuleId(null);
-        setEditName('');
         setEditText('');
 
     };
@@ -69,7 +66,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
     const handleStartEdit = (rule: GlobalRule) => {
         setIsAdding(false);
         setEditing(true);
-        setEditName(rule.name);
         setEditText(rule.text);
 
     };
@@ -80,14 +76,13 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
     };
 
     const handleSave = async () => {
-        if (!editName.trim() || !editText.trim()) {
-            message.warning('Name and text are required');
+        if (!editText.trim()) {
+            message.warning('Rule text is required');
             return;
         }
         try {
             if (isAdding) {
                 const newRule = await addRule({
-                    name: editName.trim(),
                     text: editText.trim(),
                 });
                 setSelectedRuleId(newRule.id);
@@ -95,7 +90,6 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
             } else if (selectedRule) {
                 await updateRule({
                     id: selectedRule.id,
-                    name: editName.trim(),
                     text: editText.trim(),
                 });
                 message.success('Rule updated');
@@ -125,11 +119,11 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
     const showEditForm = editing && (isAdding || selectedRule);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Top bar */}
             <div style={{ flexShrink: 0, marginBottom: 8 }}>
                 <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
-                    <Title level={4} style={{ margin: 0 }}>📏 Global Rules</Title>
+                    <Title level={4} style={{ margin: 0 }}>📏 Rules</Title>
                     <Button size="small" icon={<PlusOutlined />} type="primary" onClick={handleStartAdd}>Add Rule</Button>
                 </Space>
             </div>
@@ -177,10 +171,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                                             }}
                                         >
                                             <div style={{ width: '100%' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <Text strong style={{ fontSize: 13 }}>{rule.name}</Text>
-                                                </div>
-                                                <Text type="secondary" style={{ fontSize: 11 }} ellipsis>{rule.text}</Text>
+                                                <Text style={{ fontSize: 13 }} ellipsis>{rule.text}</Text>
                                             </div>
                                         </List.Item>
                                     )}
@@ -210,16 +201,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                                 </div>
                                 <Space direction="vertical" size={12} style={{ width: '100%' }}>
                                     <div>
-                                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Name</Text>
-                                        <Input
-                                            value={editName}
-                                            onChange={e => setEditName(e.target.value)}
-                                            placeholder="Rule name"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Rule Text</Text>
+                                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Rule Content</Text>
                                         <TextArea
                                             value={editText}
                                             onChange={e => setEditText(e.target.value)}
@@ -233,9 +215,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                             /* ─── View mode ─── */
                             <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                                    <div>
-                                        <Title level={4} style={{ margin: 0 }}>{selectedRule.name}</Title>
-                                    </div>
+                                    <div style={{ flex: 1 }} />
                                     <Space>
                                         <Tooltip title="Edit">
                                             <Button size="small" icon={<EditOutlined />} onClick={() => handleStartEdit(selectedRule)} />

@@ -168,12 +168,11 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
             sections.push('');
 
             // Global rules
-            const implGlobalRules = globalRules.filter(r => r.category === 'impl');
-            if (implGlobalRules.length > 0) {
-                sections.push('## Global Implementation Rules');
+            if (globalRules.length > 0) {
+                sections.push('## Global Rules');
                 sections.push('');
-                for (const gr of implGlobalRules) {
-                    sections.push(`- **${gr.name}** (ID: \`${gr.id}\`): ${gr.text}`);
+                for (const gr of globalRules) {
+                    sections.push(`- (ID: \`${gr.id}\`): ${gr.text}`);
                 }
                 sections.push('');
             }
@@ -250,7 +249,7 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     if (!workspace) return null;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Top bar */}
             <div style={{ flexShrink: 0, marginBottom: 8 }}>
                 <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">

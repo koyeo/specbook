@@ -7,7 +7,7 @@ import type {
     AiConfig, AnalysisResult, TokenUsage,
     GlossaryTerm, ChatSession, ChatSessionSummary, ChatMessage,
     KnowledgeEntry,
-    GlobalRule, GlobalTest, GlobalTestCase,
+    GlobalRule, GlobalTest,
     FeatureMappingIndex, ObjectMappingResult, ScanProgressEvent, PromptResult,
 } from './types';
 
@@ -195,14 +195,12 @@ export interface KnowledgeAPI {
 
 /** Add global rule payload. */
 export interface AddGlobalRulePayload {
-    name: string;
     text: string;
 }
 
 /** Update global rule payload. */
 export interface UpdateGlobalRulePayload {
     id: string;
-    name?: string;
     text?: string;
 }
 
@@ -227,7 +225,8 @@ export interface UpdateGlobalTestPayload {
     id: string;
     title?: string;
     description?: string;
-    cases?: GlobalTestCase[];
+    rules?: import('./types').ObjectRule[];
+    locations?: import('./types').ImplementationLocation[];
 }
 
 /** Global Tests API exposed to renderer. */

@@ -28,7 +28,7 @@ export type { GlobalRule, GlobalRuleIndex } from './spec/types';
 export { GLOBAL_RULES_FILE } from './spec/types';
 
 // Global Tests types
-export type { GlobalTestCase, GlobalTest, GlobalTestIndex } from './spec/types';
+export type { GlobalTest, GlobalTestIndex } from './spec/types';
 export { GLOBAL_TESTS_FILE } from './spec/types';
 
 // Feature Mapping types

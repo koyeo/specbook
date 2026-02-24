@@ -1,5 +1,6 @@
 /**
- * GlobalTestsPage — test list on left, inline edit/view detail with cases on right.
+ * GlobalTestsPage — test list on left, detail with RuleLocationEditor on right.
+ * Edit mode includes title, description, AND rules/locations editing.
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import {
@@ -11,7 +12,8 @@ import {
     CheckOutlined, CloseOutlined,
 } from '@ant-design/icons';
 import { useGlobalTests } from '../hooks/useGlobalTests';
-import type { GlobalTest, GlobalTestCase } from '@specbook/shared';
+import { RuleLocationEditor } from '../components/RuleLocationEditor';
+import type { GlobalTest, ObjectRule, ImplementationLocation } from '@specbook/shared';
 
 const { Title, Text, Paragraph } = Typography;
 const { useToken } = theme;
@@ -32,11 +34,8 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
     const [isAddingTest, setIsAddingTest] = useState(false);
     const [editTitle, setEditTitle] = useState('');
     const [editDescription, setEditDescription] = useState('');
-
-    // Case inline edit state
-    const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
-    const [isAddingCase, setIsAddingCase] = useState(false);
-    const [editCaseText, setEditCaseText] = useState('');
+    const [editRules, setEditRules] = useState<ObjectRule[]>([]);
+    const [editLocations, setEditLocations] = useState<ImplementationLocation[]>([]);
 
     useEffect(() => {
         if (workspace) loadTests();
@@ -47,8 +46,7 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
         const q = search.toLowerCase();
         return tests.filter(t =>
             t.title.toLowerCase().includes(q) ||
-            t.description.toLowerCase().includes(q) ||
-            t.cases.some(c => c.text.toLowerCase().includes(q))
+            t.description.toLowerCase().includes(q)
         );
     }, [tests, search]);
 
@@ -64,9 +62,8 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
         setSelectedTestId(null);
         setEditTitle('');
         setEditDescription('');
-        // Reset case editing
-        setEditingCaseId(null);
-        setIsAddingCase(false);
+        setEditRules([]);
+        setEditLocations([]);
     };
 
     const handleStartEditTest = (test: GlobalTest) => {
@@ -74,9 +71,8 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
         setEditingTest(true);
         setEditTitle(test.title);
         setEditDescription(test.description);
-        // Reset case editing
-        setEditingCaseId(null);
-        setIsAddingCase(false);
+        setEditRules(test.rules ?? []);
+        setEditLocations(test.locations ?? []);
     };
 
     const handleCancelTest = () => {
@@ -95,6 +91,14 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                     title: editTitle.trim(),
                     description: editDescription.trim(),
                 });
+                // Save rules/locations immediately after creating
+                if (editRules.length > 0 || editLocations.length > 0) {
+                    await updateTest({
+                        id: newTest.id,
+                        rules: editRules,
+                        locations: editLocations,
+                    });
+                }
                 setSelectedTestId(newTest.id);
                 message.success('Test added');
             } else if (selectedTest) {
@@ -102,6 +106,8 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                     id: selectedTest.id,
                     title: editTitle.trim(),
                     description: editDescription.trim(),
+                    rules: editRules,
+                    locations: editLocations,
                 });
                 message.success('Test updated');
             }
@@ -125,75 +131,23 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
         }
     };
 
-    // ─── Case CRUD ────────────────────────────────────
+    // ─── View-mode Rules & Locations change handlers (auto-save) ──────────
 
-    const handleStartAddCase = () => {
-        setIsAddingCase(true);
-        setEditingCaseId(null);
-        setEditCaseText('');
-    };
-
-    const handleStartEditCase = (testCase: GlobalTestCase) => {
-        setEditingCaseId(testCase.id);
-        setIsAddingCase(false);
-        setEditCaseText(testCase.text);
-    };
-
-    const handleCancelCase = () => {
-        setEditingCaseId(null);
-        setIsAddingCase(false);
-        setEditCaseText('');
-    };
-
-    const handleSaveCase = async () => {
-        if (!selectedTest || !editCaseText.trim()) {
-            message.warning('Case text is required');
-            return;
-        }
-        try {
-            const now = new Date().toISOString();
-            let updatedCases: GlobalTestCase[];
-
-            if (isAddingCase) {
-                const newCase: GlobalTestCase = {
-                    id: crypto.randomUUID(),
-                    text: editCaseText.trim(),
-                    createdAt: now,
-                    updatedAt: now,
-                };
-                updatedCases = [...selectedTest.cases, newCase];
-            } else if (editingCaseId) {
-                updatedCases = selectedTest.cases.map(c =>
-                    c.id === editingCaseId
-                        ? { ...c, text: editCaseText.trim(), updatedAt: now }
-                        : c
-                );
-            } else {
-                return;
-            }
-
-            await updateTest({ id: selectedTest.id, cases: updatedCases });
-            setEditingCaseId(null);
-            setIsAddingCase(false);
-            setEditCaseText('');
-            message.success(isAddingCase ? 'Case added' : 'Case updated');
-        } catch (err: any) {
-            message.error(err?.message || 'Failed to save case');
-        }
-    };
-
-    const handleDeleteCase = async (caseId: string) => {
+    const handleRulesChange = async (rules: ObjectRule[]) => {
         if (!selectedTest) return;
         try {
-            const updatedCases = selectedTest.cases.filter(c => c.id !== caseId);
-            await updateTest({ id: selectedTest.id, cases: updatedCases });
-            if (editingCaseId === caseId) {
-                setEditingCaseId(null);
-                setEditCaseText('');
-            }
-            message.success('Case deleted');
+            await updateTest({ id: selectedTest.id, rules });
         } catch (err: any) {
-            message.error(err?.message || 'Failed to delete case');
+            message.error(err?.message || 'Failed to save rules');
+        }
+    };
+
+    const handleLocationsChange = async (locations: ImplementationLocation[]) => {
+        if (!selectedTest) return;
+        try {
+            await updateTest({ id: selectedTest.id, locations });
+        } catch (err: any) {
+            message.error(err?.message || 'Failed to save locations');
         }
     };
 
@@ -202,11 +156,11 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
     const showTestEditForm = editingTest && (isAddingTest || selectedTest);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Top bar */}
             <div style={{ flexShrink: 0, marginBottom: 8 }}>
                 <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
-                    <Title level={4} style={{ margin: 0 }}>🧪 Global Tests</Title>
+                    <Title level={4} style={{ margin: 0 }}>🧪 Tests</Title>
                     <Button size="small" icon={<PlusOutlined />} type="primary" onClick={handleStartAddTest}>Add Test</Button>
                 </Space>
             </div>
@@ -239,8 +193,6 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                                                 setSelectedTestId(test.id);
                                                 setEditingTest(false);
                                                 setIsAddingTest(false);
-                                                setEditingCaseId(null);
-                                                setIsAddingCase(false);
                                             }}
                                             style={{
                                                 cursor: 'pointer',
@@ -258,7 +210,9 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                                                 <Text strong style={{ fontSize: 13 }}>{test.title}</Text>
                                                 <div>
                                                     <Text type="secondary" style={{ fontSize: 11 }}>
-                                                        {test.cases.length} case{test.cases.length !== 1 ? 's' : ''}
+                                                        {test.rules?.length ?? 0} rule{(test.rules?.length ?? 0) !== 1 ? 's' : ''}
+                                                        {' · '}
+                                                        {test.locations?.length ?? 0} location{(test.locations?.length ?? 0) !== 1 ? 's' : ''}
                                                     </Text>
                                                 </div>
                                             </div>
@@ -279,7 +233,7 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                         padding: '16px 20px',
                     }}>
                         {showTestEditForm ? (
-                            /* ─── Test edit / add mode ─── */
+                            /* ─── Test edit / add mode with RuleLocationEditor ─── */
                             <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                                     <Text strong style={{ fontSize: 14 }}>{isAddingTest ? 'New Test' : 'Edit Test'}</Text>
@@ -297,19 +251,34 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                                             placeholder="e.g. User Registration Flow"
                                         />
                                     </div>
-                                    <div>
-                                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Description</Text>
-                                        <TextArea
-                                            value={editDescription}
-                                            onChange={e => setEditDescription(e.target.value)}
-                                            rows={3}
-                                            placeholder="Describe this test suite..."
-                                        />
-                                    </div>
                                 </Space>
+
+                                <Divider style={{ margin: '16px 0' }} />
+
+                                {/* Rules & Locations editor */}
+                                <RuleLocationEditor
+                                    title=""
+                                    rules={editRules}
+                                    locations={editLocations}
+                                    onRulesChange={setEditRules}
+                                    onLocationsChange={setEditLocations}
+                                    editable={true}
+                                />
+
+                                <Divider style={{ margin: '16px 0' }} />
+
+                                <div>
+                                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Description</Text>
+                                    <TextArea
+                                        value={editDescription}
+                                        onChange={e => setEditDescription(e.target.value)}
+                                        rows={3}
+                                        placeholder="Describe this test suite..."
+                                    />
+                                </div>
                             </div>
                         ) : selectedTest ? (
-                            /* ─── Test view mode with cases ─── */
+                            /* ─── Test view mode with RuleLocationEditor ─── */
                             <div>
                                 {/* Test header */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
@@ -318,17 +287,11 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                                         <Tooltip title="Edit Test">
                                             <Button size="small" icon={<EditOutlined />} onClick={() => handleStartEditTest(selectedTest)} />
                                         </Tooltip>
-                                        <Popconfirm title="Delete this test and all its cases?" onConfirm={() => handleDeleteTest(selectedTest.id)}>
+                                        <Popconfirm title="Delete this test?" onConfirm={() => handleDeleteTest(selectedTest.id)}>
                                             <Button size="small" danger icon={<DeleteOutlined />} />
                                         </Popconfirm>
                                     </Space>
                                 </div>
-
-                                {selectedTest.description && (
-                                    <Paragraph type="secondary" style={{ whiteSpace: 'pre-wrap', marginBottom: 12 }}>
-                                        {selectedTest.description}
-                                    </Paragraph>
-                                )}
 
                                 <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 12 }}>
                                     Created: {new Date(selectedTest.createdAt).toLocaleString()} · Updated: {new Date(selectedTest.updatedAt).toLocaleString()}
@@ -336,97 +299,23 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
 
                                 <Divider style={{ margin: '12px 0' }} />
 
-                                {/* Cases section */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                    <Text strong style={{ fontSize: 13 }}>
-                                        Test Cases ({selectedTest.cases.length})
-                                    </Text>
-                                    <Button size="small" icon={<PlusOutlined />} onClick={handleStartAddCase}>Add Case</Button>
-                                </div>
+                                {/* Rules & Locations preview — read-only */}
+                                <RuleLocationEditor
+                                    title=""
+                                    rules={selectedTest.rules ?? []}
+                                    locations={selectedTest.locations ?? []}
+                                    onRulesChange={() => { }}
+                                    onLocationsChange={() => { }}
+                                    editable={false}
+                                />
 
-                                {/* Add case inline form */}
-                                {isAddingCase && (
-                                    <div style={{
-                                        padding: '10px 12px',
-                                        borderRadius: 6,
-                                        background: token.colorFillQuaternary,
-                                        marginBottom: 8,
-                                    }}>
-                                        <TextArea
-                                            value={editCaseText}
-                                            onChange={e => setEditCaseText(e.target.value)}
-                                            rows={3}
-                                            placeholder="Describe what this test case verifies..."
-                                            style={{ marginBottom: 8 }}
-                                        />
-                                        <Space>
-                                            <Button size="small" type="primary" icon={<CheckOutlined />} onClick={handleSaveCase}>Save</Button>
-                                            <Button size="small" icon={<CloseOutlined />} onClick={handleCancelCase}>Cancel</Button>
-                                        </Space>
-                                    </div>
-                                )}
-
-                                {selectedTest.cases.length === 0 && !isAddingCase ? (
-                                    <Empty description="No cases yet" style={{ marginTop: 24 }} />
-                                ) : (
-                                    <List
-                                        dataSource={selectedTest.cases}
-                                        size="small"
-                                        renderItem={(testCase, index) => (
-                                            <List.Item
-                                                key={testCase.id}
-                                                style={{
-                                                    padding: '8px 12px',
-                                                    borderRadius: 6,
-                                                    marginBottom: 4,
-                                                    background: token.colorFillQuaternary,
-                                                    border: 'none',
-                                                    display: 'block',
-                                                }}
-                                            >
-                                                {editingCaseId === testCase.id ? (
-                                                    /* Case edit mode */
-                                                    <div>
-                                                        <TextArea
-                                                            value={editCaseText}
-                                                            onChange={e => setEditCaseText(e.target.value)}
-                                                            rows={3}
-                                                            style={{ marginBottom: 8 }}
-                                                        />
-                                                        <Space>
-                                                            <Button size="small" type="primary" icon={<CheckOutlined />} onClick={handleSaveCase}>Save</Button>
-                                                            <Button size="small" icon={<CloseOutlined />} onClick={handleCancelCase}>Cancel</Button>
-                                                        </Space>
-                                                    </div>
-                                                ) : (
-                                                    /* Case view mode */
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flex: 1 }}>
-                                                            <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>
-                                                                #{index + 1}
-                                                            </Text>
-                                                            <Text style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>
-                                                                {testCase.text}
-                                                            </Text>
-                                                        </div>
-                                                        <Space size={0} style={{ flexShrink: 0, marginLeft: 8 }}>
-                                                            <Tooltip title="Edit">
-                                                                <Button
-                                                                    type="text"
-                                                                    size="small"
-                                                                    icon={<EditOutlined />}
-                                                                    onClick={() => handleStartEditCase(testCase)}
-                                                                />
-                                                            </Tooltip>
-                                                            <Popconfirm title="Delete this case?" onConfirm={() => handleDeleteCase(testCase.id)}>
-                                                                <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-                                                            </Popconfirm>
-                                                        </Space>
-                                                    </div>
-                                                )}
-                                            </List.Item>
-                                        )}
-                                    />
+                                {selectedTest.description && (
+                                    <>
+                                        <Divider style={{ margin: '12px 0' }} />
+                                        <Paragraph type="secondary" style={{ whiteSpace: 'pre-wrap', marginBottom: 12 }}>
+                                            {selectedTest.description}
+                                        </Paragraph>
+                                    </>
                                 )}
                             </div>
                         ) : (

@@ -1,4 +1,38 @@
 {
   "version": "1.0",
-  "tests": []
+  "tests": [
+    {
+      "id": "019c8e90-6268-7483-865e-fafbbc938166",
+      "title": "test 1",
+      "description": "some description",
+      "rules": [
+        {
+          "id": "e0ea031b-3daf-45f8-b82b-447e5639841c",
+          "text": "1",
+          "locationId": "ad854940-0186-48c4-b2c0-bc67112473e2"
+        }
+      ],
+      "locations": [
+        {
+          "id": "f1ca0677-517f-4244-b0e2-03a5df286fcc",
+          "filePath": "3"
+        },
+        {
+          "id": "ad854940-0186-48c4-b2c0-bc67112473e2",
+          "filePath": "2"
+        }
+      ],
+      "createdAt": "2026-02-24T07:32:32.999Z",
+      "updatedAt": "2026-02-24T07:34:05.132Z"
+    },
+    {
+      "id": "019c8e94-19ce-74fe-a876-87a688533b4e",
+      "title": "test2",
+      "description": "",
+      "rules": [],
+      "locations": [],
+      "createdAt": "2026-02-24T07:36:36.558Z",
+      "updatedAt": "2026-02-24T07:36:36.558Z"
+    }
+  ]
 }

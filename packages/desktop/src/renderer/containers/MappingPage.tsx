@@ -225,7 +225,7 @@ export const MappingPage: React.FC<MappingPageProps> = ({ workspace }) => {
     if (!workspace) return null;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Header */}
             <div style={{ flexShrink: 0, marginBottom: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

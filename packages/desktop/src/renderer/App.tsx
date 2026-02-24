@@ -104,8 +104,8 @@ const App: React.FC = () => {
 
         { key: 'objects', icon: <AppstoreOutlined />, label: 'Specifications' },
 
-        { key: 'rules', icon: <SafetyOutlined />, label: 'Global Rules' },
-        { key: 'tests', icon: <ExperimentOutlined />, label: 'Global Tests' },
+        { key: 'rules', icon: <SafetyOutlined />, label: 'Rules' },
+        { key: 'tests', icon: <ExperimentOutlined />, label: 'Tests' },
         { key: 'knowledge', icon: <BulbOutlined />, label: 'Knowledge' },
         { key: 'glossary', icon: <BookOutlined />, label: 'Glossary' },
     ];
