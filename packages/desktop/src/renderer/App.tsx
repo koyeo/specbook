@@ -102,7 +102,7 @@ const App: React.FC = () => {
 
     const menuItems = [
         { key: 'prompt', icon: <TranslationOutlined />, label: 'Prompt' },
-        { key: 'objects', icon: <AppstoreOutlined />, label: 'Features' },
+        { key: 'objects', icon: <AppstoreOutlined />, label: 'Specifications' },
         { key: 'mapping', icon: <FileTextOutlined />, label: 'Mapping' },
         { key: 'rules', icon: <SafetyOutlined />, label: 'Rules' },
         { key: 'tests', icon: <ExperimentOutlined />, label: 'Tests' },
