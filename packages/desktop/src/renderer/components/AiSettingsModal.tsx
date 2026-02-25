@@ -53,7 +53,7 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ open, onClose 
             confirmLoading={loading}
             okText="Save"
             width={520}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form form={form} layout="vertical" initialValues={config}>
                 <Form.Item

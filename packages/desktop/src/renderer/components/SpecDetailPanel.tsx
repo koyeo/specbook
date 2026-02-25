@@ -4,7 +4,7 @@
  * Edit: title / parent / content / actions form, Save with confirmation.
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag, Switch, Tooltip, Collapse, Alert } from 'antd';
+import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag, Switch, Tooltip, Collapse, Alert, Popconfirm } from 'antd';
 import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType, ObjectRule, ImplementationLocation } from '@specbook/shared';
 import { RuleLocationEditor } from './RuleLocationEditor';
@@ -27,6 +27,7 @@ interface ObjectDetailPanelProps {
     specId: string | null;
     specs: ObjectTreeNode[];
     onSaved: () => void;
+    onDelete?: (id: string) => void;
 }
 
 function flattenTree(nodes: ObjectTreeNode[], depth = 0): { id: string; label: string }[] {
@@ -59,9 +60,25 @@ function collectDescendantIds(nodes: ObjectTreeNode[], id: string): Set<string> 
 
 const actionTypeOptions = ACTION_TYPES.map(t => ({ value: t, label: t }));
 
+/** Build the parent path segments for a node (excludes the node itself) */
+function getAncestorSegments(nodes: ObjectTreeNode[], targetId: string): string[] {
+    const find = (list: ObjectTreeNode[], trail: string[]): string[] | null => {
+        for (const n of list) {
+            const current = [...trail, n.title];
+            if (n.id === targetId) return trail;
+            if (n.children) {
+                const result = find(n.children, current);
+                if (result) return result;
+            }
+        }
+        return null;
+    };
+    return find(nodes, []) || [];
+}
+
 // @specbook-object 019c4d29-f2ed-71df-9e61-2f24045670ed — Display object item detail
 export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
-    specId, specs, onSaved,
+    specId, specs, onSaved, onDelete,
 }) => {
     const { token } = useToken();
     const [modal, contextHolder] = Modal.useModal();
@@ -232,27 +249,41 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                         <Title level={4} style={{ margin: 0, flex: 1 }}>
                             {detail?.title || 'Untitled'}
                         </Title>
-                        <Space size={8}>
+                        <Space>
                             {/* @specbook-object 019c623b-4c7c-7659-bc4e-3227f1c56cd8 — Display edit object item button */}
-                            <Button
-                                size="small"
-                                icon={<EditOutlined />}
-                                onClick={enterEdit}
-                            >
-                                Edit
-                            </Button>
+                            <Tooltip title="Edit">
+                                <Button
+                                    size="small"
+                                    icon={<EditOutlined />}
+                                    onClick={enterEdit}
+                                />
+                            </Tooltip>
+                            {onDelete && (
+                                <Popconfirm title="Delete this object?" onConfirm={() => onDelete(specId!)}>
+                                    <Button size="small" danger icon={<DeleteOutlined />} />
+                                </Popconfirm>
+                            )}
                         </Space>
                     </div>
 
                     {/* Meta info */}
                     {/* @specbook-object 019c6238-17e2-722b-9ab3-c3205a54d69e — Display object item parent */}
-                    <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
-                        {detail?.parentId && (
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                                Parent: {parentOptions.find(p => p.id === detail.parentId)?.label.trim() || detail.parentId}
-                            </Text>
-                        )}
-                    </div>
+                    {detail?.parentId && (() => {
+                        const segments = getAncestorSegments(specs, specId!);
+                        return segments.length > 0 ? (
+                            <div style={{ marginBottom: 12 }}>
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                    Path:{' '}
+                                    {segments.map((seg, i) => (
+                                        <React.Fragment key={i}>
+                                            {i > 0 && <Text strong style={{ fontSize: 12, margin: '0 6px' }}>/</Text>}
+                                            {seg}
+                                        </React.Fragment>
+                                    ))}
+                                </Text>
+                            </div>
+                        ) : null;
+                    })()}
 
                     {/* Implementation Rules & Locations */}
                     {((detail?.implRules?.length ?? 0) > 0 || (detail?.implLocations?.length ?? 0) > 0) && (

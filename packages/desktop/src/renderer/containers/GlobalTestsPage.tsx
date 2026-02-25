@@ -158,17 +158,17 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Top bar */}
-            <div style={{ flexShrink: 0, marginBottom: 8 }}>
-                <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
-                    <Title level={4} style={{ margin: 0 }}>🧪 Tests</Title>
+            <div style={{ flexShrink: 0, padding: '12px 16px', borderBottom: `1px solid ${token.colorBorderSecondary}`, marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Title level={4} style={{ margin: 0, lineHeight: 1 }}>Tests</Title>
                     <Button size="small" icon={<PlusOutlined />} type="primary" onClick={handleStartAddTest}>Add Test</Button>
-                </Space>
+                </div>
             </div>
 
             <Splitter style={{ flex: 1, minHeight: 0 }}>
                 {/* Left: test list */}
                 <Splitter.Panel defaultSize="35%" min="200px" max="50%">
-                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingRight: 4 }}>
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 12px' }}>
                         <Input
                             placeholder="Search tests..."
                             prefix={<SearchOutlined style={{ color: token.colorTextQuaternary }} />}
@@ -179,11 +179,10 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                             style={{ marginBottom: 8 }}
                         />
                         <div style={{ flex: 1, overflow: 'auto' }}>
-                            {filteredTests.length === 0 ? (
+                            {loading ? null : filteredTests.length === 0 ? (
                                 <Empty description="No tests yet" style={{ marginTop: 40 }} />
                             ) : (
                                 <List
-                                    loading={loading}
                                     dataSource={filteredTests}
                                     size="small"
                                     renderItem={test => (

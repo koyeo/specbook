@@ -20,7 +20,6 @@ export function registerGlossaryHandlers(): void {
         const term: GlossaryTerm = {
             id: generateId(),
             name: payload.name.trim(),
-            aliases: payload.aliases ?? [],
             description: payload.description?.trim() ?? '',
             category: payload.category?.trim() || undefined,
             createdAt: now,
@@ -39,7 +38,6 @@ export function registerGlossaryHandlers(): void {
         const updated: GlossaryTerm = {
             ...existing,
             name: payload.name?.trim() ?? existing.name,
-            aliases: payload.aliases ?? existing.aliases,
             description: payload.description?.trim() ?? existing.description,
             category: payload.category?.trim() || existing.category,
             updatedAt: new Date().toISOString(),

@@ -321,17 +321,17 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({ workspace }) => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Top bar */}
-            <div style={{ flexShrink: 0, marginBottom: 8 }}>
-                <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
-                    <Title level={4} style={{ margin: 0 }}>🧠 Knowledge</Title>
+            <div style={{ flexShrink: 0, padding: '12px 16px', borderBottom: `1px solid ${token.colorBorderSecondary}`, marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Title level={4} style={{ margin: 0, lineHeight: 1 }}>Knowledge</Title>
                     <Button size="small" icon={<PlusOutlined />} type="primary" onClick={handleAdd}>Add Entry</Button>
-                </Space>
+                </div>
             </div>
 
             <Splitter style={{ flex: 1, minHeight: 0 }}>
                 {/* Left: entry list */}
                 <Splitter.Panel defaultSize="35%" min="200px" max="60%">
-                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingRight: 4 }}>
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 12px' }}>
                         <Input
                             placeholder="Search entries..."
                             prefix={<SearchOutlined style={{ color: token.colorTextQuaternary }} />}
@@ -364,11 +364,10 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({ workspace }) => {
                         </div>
 
                         <div style={{ flex: 1, overflow: 'auto' }}>
-                            {filteredEntries.length === 0 ? (
+                            {loading ? null : filteredEntries.length === 0 ? (
                                 <Empty description="No entries yet" style={{ marginTop: 40 }} />
                             ) : (
                                 <List
-                                    loading={loading}
                                     dataSource={filteredEntries}
                                     size="small"
                                     renderItem={(entry: KnowledgeEntry) => (

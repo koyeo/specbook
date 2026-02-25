@@ -238,7 +238,7 @@ export const AnalysisLogDrawer: React.FC<Props> = ({ task, open, onClose, object
             open={open}
             onClose={onClose}
             width={width}
-            destroyOnClose
+            destroyOnHidden
             styles={{ body: { position: 'relative' } }}
         >
             {/* Drag handle on the left edge */}

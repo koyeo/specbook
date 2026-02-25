@@ -26,6 +26,7 @@ import {
     MoreOutlined,
     CopyOutlined,
     FileTextOutlined,
+    BookOutlined,
 } from '@ant-design/icons';
 import type { ObjectTreeNode } from '@specbook/shared';
 
@@ -43,6 +44,7 @@ interface ObjectTableProps {
     onBatchDelete: (ids: string[]) => Promise<void>;
     onBatchMove: (ids: string[], newParentId: string | null) => Promise<void>;
     onGeneratePrompt: (id: string) => void;
+    onAddToGlossary: (text: string) => void;
     foundIds?: Set<string>;
 }
 
@@ -109,6 +111,7 @@ interface RowProps {
     onAddChild: (parentId: string) => void;
     onDelete: (id: string) => void;
     onGeneratePrompt: (id: string) => void;
+    onAddToGlossary: (text: string) => void;
     foundIds?: Set<string>;
 }
 
@@ -117,11 +120,12 @@ interface RowProps {
 const ObjectRow: React.FC<RowProps> = ({
     node, depth, guides, isLastChild, expanded, hasChildren, hoveredRow, selected, anySelected,
     hoverBg, selectedBg, guideColor,
-    onToggleExpand, onToggleSelect, onHover, onOpen, onAddSibling, onAddChild, onDelete, onGeneratePrompt,
+    onToggleExpand, onToggleSelect, onHover, onOpen, onAddSibling, onAddChild, onDelete, onGeneratePrompt, onAddToGlossary,
     foundIds,
 }) => {
     const isHovered = hoveredRow === node.id;
     const showCheckbox = isHovered || selected;
+    const savedSelection = React.useRef('');
 
     const menuItems: MenuProps['items'] = [
         { key: 'open', label: '📂 Open detail' },
@@ -130,6 +134,7 @@ const ObjectRow: React.FC<RowProps> = ({
         { key: 'add-sibling', label: '↓ Add sibling below' },
         { type: 'divider' },
         { key: 'gen-prompt', label: '📋 Generate Prompt' },
+        { key: 'add-glossary', icon: <BookOutlined />, label: 'Add to Glossary' },
         { type: 'divider' },
         { key: 'delete', label: '🗑 Delete', danger: true },
     ];
@@ -139,12 +144,20 @@ const ObjectRow: React.FC<RowProps> = ({
         else if (key === 'add-sibling') onAddSibling(node.id, node.parentId);
         else if (key === 'add-child') onAddChild(node.id);
         else if (key === 'gen-prompt') onGeneratePrompt(node.id);
+        else if (key === 'add-glossary') {
+            onAddToGlossary(savedSelection.current || node.title);
+        }
         else if (key === 'delete') onDelete(node.id);
+    };
+
+    const handleContextMenu = () => {
+        savedSelection.current = window.getSelection()?.toString().trim() || '';
     };
 
     return (
         <Dropdown menu={{ items: menuItems, onClick: onMenu }} trigger={['contextMenu']}>
             <div
+                onContextMenu={handleContextMenu}
                 style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -294,6 +307,7 @@ interface TreeProps {
     onAddChild: (parentId: string) => void;
     onDelete: (id: string) => void;
     onGeneratePrompt: (id: string) => void;
+    onAddToGlossary: (text: string) => void;
     foundIds?: Set<string>;
 }
 
@@ -321,7 +335,7 @@ const TreeRenderer: React.FC<TreeProps> = ({ nodes, depth, guides, expandedKeys,
 // @specbook-object 019c4d29-aa99-76df-be66-5ee69c3cb315 — Objects Tree
 // @specbook-rule b807ddba-0b77-4c2f-a664-7fcb6da9ef74 — r11
 export const ObjectTable: React.FC<ObjectTableProps> = ({
-    objects, loading, onDelete, onOpen, onAddSibling, onAddChild, onAddRoot, onBatchDelete, onBatchMove, onGeneratePrompt, foundIds,
+    objects, loading, onDelete, onOpen, onAddSibling, onAddChild, onAddRoot, onBatchDelete, onBatchMove, onGeneratePrompt, onAddToGlossary, foundIds,
 }) => {
     const { token } = useToken();
     const hoverBg = token.controlItemBgHover;
@@ -383,6 +397,7 @@ export const ObjectTable: React.FC<ObjectTableProps> = ({
                 )}
                 <div style={{ flex: 1 }} />
                 <Text type="secondary" style={{ fontSize: 11 }}>{filteredCount} / {totalCount}</Text>
+                <Button size="small" icon={<PlusOutlined />} onClick={onAddRoot} />
             </div>
 
             {/* Batch bar */}
@@ -403,13 +418,7 @@ export const ObjectTable: React.FC<ObjectTableProps> = ({
                 </div>
             )}
 
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${borderColor}`, padding: '4px 0' }}>
-                <div style={{ width: 36, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {anySelected && <Checkbox checked={isAllSelected} indeterminate={anySelected && !isAllSelected} onChange={toggleSelectAll} />}
-                </div>
-                <Text type="secondary" style={{ fontSize: 11 }}>Title</Text>
-            </div>
+
 
             {/* Rows */}
             <div>
@@ -427,16 +436,10 @@ export const ObjectTable: React.FC<ObjectTableProps> = ({
                         onToggleExpand={toggleExpand} onToggleSelect={toggleSelect} onHover={setHoveredRow}
                         onOpen={onOpen} onAddSibling={onAddSibling} onAddChild={onAddChild} onDelete={onDelete}
                         onGeneratePrompt={onGeneratePrompt}
+                        onAddToGlossary={onAddToGlossary}
                         foundIds={foundIds}
                     />
                 )}
-                {/* @specbook-object 019c621d-8a13-72ce-b75e-8630bd6522ae — Display object item default adding entry */}
-                <div style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', paddingLeft: 36, cursor: 'pointer', color: token.colorTextQuaternary, fontSize: 13, transition: 'color 0.15s' }}
-                    onClick={onAddRoot}
-                    onMouseEnter={e => (e.currentTarget.style.color = token.colorPrimary)}
-                    onMouseLeave={e => (e.currentTarget.style.color = token.colorTextQuaternary)}>
-                    <PlusOutlined style={{ marginRight: 6 }} /> New Object
-                </div>
             </div>
         </div>
     );

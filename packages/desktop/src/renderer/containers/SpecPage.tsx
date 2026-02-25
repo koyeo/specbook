@@ -5,7 +5,7 @@
  * Pure features editing — no scan/mapping concerns.
  */
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Typography, Button, Space, Divider, message, Modal, Input, Splitter, Drawer, theme } from 'antd';
+import { Typography, Button, Space, Modal, Input, Splitter, Drawer, theme, App as AntApp } from 'antd';
 import { ExportOutlined, CopyOutlined } from '@ant-design/icons';
 import { ObjectTable } from '../components/SpecTable';
 import { ObjectDetailPanel } from '../components/SpecDetailPanel';
@@ -23,6 +23,7 @@ interface ObjectPageProps {
 // @specbook-object 019c4d29-46fb-748d-8dd3-e0cd47a3223e — Features Management Page
 export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     const { token } = useToken();
+    const { message } = AntApp.useApp();
     const {
         objects, loading, loadObjects,
         addObject, deleteObject, moveObject,
@@ -71,6 +72,23 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
 
     const handleOpen = (id: string) => setSelectedObjectId(id);
     const handleSaved = () => { loadObjects(); };
+
+    const handleAddToGlossary = useCallback(async (text: string) => {
+        if (!text) {
+            message.warning('Please select text first');
+            return;
+        }
+        if (!/^[A-Z][a-zA-Z0-9]*$/.test(text)) {
+            message.warning(`"${text}" is not PascalCase (e.g. OrderItem, UserAccount)`);
+            return;
+        }
+        try {
+            await window.glossaryApi.addTerm({ name: text, description: '' });
+            message.success(`Added "${text}" to Glossary`);
+        } catch (err: any) {
+            message.error(err?.message || 'Failed to add to Glossary');
+        }
+    }, [message]);
 
     const handleAddRoot = () => { setAddMode('root'); setAddParentId(null); setNewTitle(''); };
     const handleAddSibling = (_afterId: string, parentId: string | null) => { setAddMode('sibling'); setAddParentId(parentId); setNewTitle(''); };
@@ -251,26 +269,24 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Top bar */}
-            <div style={{ flexShrink: 0, marginBottom: 8 }}>
-                <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
-                    <Title level={4} style={{ margin: 0 }}>Specifications</Title>
-                    <Space size={12}>
-                        <Button size="small" icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
-                    </Space>
-                </Space>
-                <Divider style={{ margin: '8px 0' }} />
+            <div style={{ flexShrink: 0, padding: '12px 16px', borderBottom: `1px solid ${token.colorBorderSecondary}`, marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Title level={4} style={{ margin: 0, lineHeight: 1 }}>Specifications</Title>
+                    <Button size="small" icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
+                </div>
             </div>
 
             {/* Splitter: tree | detail */}
             <Splitter style={{ flex: 1, minHeight: 0 }}>
                 <Splitter.Panel defaultSize="40%" min="200px" max="60%">
-                    <div style={{ height: '100%', overflow: 'auto', paddingRight: 4 }}>
+                    <div style={{ height: '100%', overflow: 'auto', padding: '0 12px' }}>
                         <ObjectTable
                             objects={objects} loading={loading}
                             onDelete={handleDelete} onOpen={handleOpen}
                             onAddSibling={handleAddSibling} onAddChild={handleAddChild} onAddRoot={handleAddRoot}
                             onBatchDelete={handleBatchDelete} onBatchMove={handleBatchMove}
                             onGeneratePrompt={handleGeneratePrompt}
+                            onAddToGlossary={handleAddToGlossary}
                         />
                     </div>
                 </Splitter.Panel>
@@ -280,13 +296,13 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                         borderLeft: `1px solid ${token.colorBorderSecondary}`,
                         overflow: 'auto',
                     }}>
-                        <ObjectDetailPanel specId={selectedObjectId} specs={objects} onSaved={handleSaved} />
+                        <ObjectDetailPanel specId={selectedObjectId} specs={objects} onSaved={handleSaved} onDelete={handleDelete} />
                     </div>
                 </Splitter.Panel>
             </Splitter>
 
             {/* Add modal */}
-            <Modal title={modalTitle} open={!!addMode} onOk={handleAddConfirm} onCancel={handleAddCancel} confirmLoading={adding} okText="Add" destroyOnClose>
+            <Modal title={modalTitle} open={!!addMode} onOk={handleAddConfirm} onCancel={handleAddCancel} confirmLoading={adding} okText="Add" destroyOnHidden>
                 <Input placeholder="Object title..." value={newTitle} onChange={e => setNewTitle(e.target.value)} onPressEnter={handleAddConfirm} autoFocus />
             </Modal>
 
@@ -308,7 +324,7 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                         Copy
                     </Button>
                 }
-                destroyOnClose
+                destroyOnHidden
             >
                 {/* Drag handle on left edge */}
                 <div

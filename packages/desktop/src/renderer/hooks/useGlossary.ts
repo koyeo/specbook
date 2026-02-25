@@ -6,7 +6,7 @@ import type { GlossaryTerm, AddGlossaryTermPayload, UpdateGlossaryTermPayload } 
 
 export function useGlossary() {
     const [terms, setTerms] = useState<GlossaryTerm[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const loadTerms = useCallback(async () => {
         setLoading(true);

@@ -6,7 +6,7 @@ import type { GlobalTest, AddGlobalTestPayload, UpdateGlobalTestPayload } from '
 
 export function useGlobalTests() {
     const [tests, setTests] = useState<GlobalTest[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const loadTests = useCallback(async () => {
         setLoading(true);

@@ -156,6 +156,7 @@ export function setupApplicationMenu(): void {
             submenu: [
                 { role: 'reload' as const },
                 { role: 'forceReload' as const },
+                ...(process.env['ELECTRON_RENDERER_URL'] ? [{ role: 'toggleDevTools' as const }] : []),
                 { type: 'separator' as const },
                 { role: 'resetZoom' as const },
                 { role: 'zoomIn' as const },

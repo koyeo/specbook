@@ -2,12 +2,64 @@
   "version": "1.0",
   "terms": [
     {
-      "id": "019c5f2b-d131-772a-bc54-f64c83e4cf8d",
-      "name": "Trace Event",
-      "aliases": [],
-      "description": "区块链链上运行得来的",
-      "createdAt": "2026-02-15T02:40:33.072Z",
-      "updatedAt": "2026-02-15T02:40:33.072Z"
+      "id": "019c92b3-ad2e-758d-b020-29c0b5964349",
+      "name": "StaticPromptGenerator",
+      "description": "",
+      "createdAt": "2026-02-25T02:49:34.766Z",
+      "updatedAt": "2026-02-25T03:06:10.447Z"
+    },
+    {
+      "id": "019c92c2-e25c-701a-9f8e-a903002a9edd",
+      "name": "Specification",
+      "description": "",
+      "createdAt": "2026-02-25T03:06:11.420Z",
+      "updatedAt": "2026-02-25T03:11:17.632Z",
+      "category": "Entity"
+    },
+    {
+      "id": "019c92c3-6c85-75e1-87ea-53b867902113",
+      "name": "SpecificationTree",
+      "description": "",
+      "createdAt": "2026-02-25T03:06:46.789Z",
+      "updatedAt": "2026-02-25T03:11:33.037Z"
+    },
+    {
+      "id": "019c92c3-c987-734b-9544-2f122c92ac12",
+      "name": "SpecificationTreeItem",
+      "description": "",
+      "createdAt": "2026-02-25T03:07:10.599Z",
+      "updatedAt": "2026-02-25T03:11:49.958Z"
+    },
+    {
+      "id": "019c92c8-101c-71f9-855b-aee7c7e86c86",
+      "name": "Rule",
+      "description": "",
+      "createdAt": "2026-02-25T03:11:50.812Z",
+      "updatedAt": "2026-02-25T03:11:57.908Z"
+    },
+    {
+      "id": "019c92c8-4ab3-76ee-a8eb-04282b68df6c",
+      "name": "KnowledgeEntry",
+      "description": "",
+      "createdAt": "2026-02-25T03:12:05.811Z",
+      "updatedAt": "2026-02-25T03:12:43.496Z",
+      "category": "Entity"
+    },
+    {
+      "id": "019c92c8-79d0-71cc-b5b5-3dbf37a0fa66",
+      "name": "GlossaryTerm",
+      "description": "",
+      "createdAt": "2026-02-25T03:12:17.872Z",
+      "updatedAt": "2026-02-25T03:12:55.118Z",
+      "category": "Entity"
+    },
+    {
+      "id": "019c92ea-62a6-70eb-80c6-4673aa383f26",
+      "name": "KnowledgeEntryTag",
+      "description": "",
+      "category": "Entity",
+      "createdAt": "2026-02-25T03:49:20.166Z",
+      "updatedAt": "2026-02-25T03:49:36.411Z"
     }
   ]
 }

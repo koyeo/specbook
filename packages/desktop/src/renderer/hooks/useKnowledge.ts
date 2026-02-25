@@ -6,7 +6,7 @@ import type { KnowledgeEntry, AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayl
 
 export function useKnowledge() {
     const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const loadEntries = useCallback(async () => {
         setLoading(true);

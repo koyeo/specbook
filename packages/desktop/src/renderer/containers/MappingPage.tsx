@@ -227,11 +227,10 @@ export const MappingPage: React.FC<MappingPageProps> = ({ workspace }) => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Header */}
-            <div style={{ flexShrink: 0, marginBottom: 16 }}>
+            <div style={{ flexShrink: 0, padding: '12px 16px', marginBottom: 16, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <Title level={4} style={{ margin: 0 }}>
-                            <FileTextOutlined style={{ marginRight: 8 }} />
                             Feature Mapping
                         </Title>
                         <Text type="secondary" style={{ fontSize: 12 }}>
@@ -334,7 +333,7 @@ export const MappingPage: React.FC<MappingPageProps> = ({ workspace }) => {
                 width={drawerWidth}
                 open={detailDrawerOpen}
                 onClose={() => setDetailDrawerOpen(false)}
-                destroyOnClose
+                destroyOnHidden
                 extra={
                     detailEntry && (
                         <Button

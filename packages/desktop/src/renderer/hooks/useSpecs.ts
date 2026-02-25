@@ -6,7 +6,7 @@ import type { ObjectTreeNode, AddObjectPayload, UpdateObjectPayload, MoveObjectP
 
 export function useObjects() {
     const [objects, setObjects] = useState<ObjectTreeNode[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [workspace, setWorkspace] = useState<string | null>(null);
 
     const refreshWorkspace = useCallback(async () => {

@@ -133,7 +133,6 @@ export interface AiAPI {
 /** Add glossary term payload. */
 export interface AddGlossaryTermPayload {
     name: string;
-    aliases?: string[];
     description?: string;
     category?: string;
 }
@@ -142,7 +141,6 @@ export interface AddGlossaryTermPayload {
 export interface UpdateGlossaryTermPayload {
     id: string;
     name?: string;
-    aliases?: string[];
     description?: string;
     category?: string;
 }

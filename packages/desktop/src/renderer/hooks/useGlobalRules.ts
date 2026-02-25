@@ -6,7 +6,7 @@ import type { GlobalRule, AddGlobalRulePayload, UpdateGlobalRulePayload } from '
 
 export function useGlobalRules() {
     const [rules, setRules] = useState<GlobalRule[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const loadRules = useCallback(async () => {
         setLoading(true);

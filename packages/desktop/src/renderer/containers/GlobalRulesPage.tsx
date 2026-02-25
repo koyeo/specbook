@@ -121,17 +121,17 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Top bar */}
-            <div style={{ flexShrink: 0, marginBottom: 8 }}>
-                <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
-                    <Title level={4} style={{ margin: 0 }}>📏 Rules</Title>
+            <div style={{ flexShrink: 0, padding: '12px 16px', borderBottom: `1px solid ${token.colorBorderSecondary}`, marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Title level={4} style={{ margin: 0, lineHeight: 1 }}>Rules</Title>
                     <Button size="small" icon={<PlusOutlined />} type="primary" onClick={handleStartAdd}>Add Rule</Button>
-                </Space>
+                </div>
             </div>
 
             <Splitter style={{ flex: 1, minHeight: 0 }}>
                 {/* Left: rule list */}
                 <Splitter.Panel defaultSize="40%" min="200px" max="60%">
-                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingRight: 4 }}>
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 12px' }}>
                         <Space direction="vertical" size={4} style={{ width: '100%', marginBottom: 8 }}>
                             <Input
                                 placeholder="Search rules..."
@@ -143,11 +143,10 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                             />
                         </Space>
                         <div style={{ flex: 1, overflow: 'auto' }}>
-                            {filteredRules.length === 0 ? (
+                            {loading ? null : filteredRules.length === 0 ? (
                                 <Empty description="No rules yet" style={{ marginTop: 40 }} />
                             ) : (
                                 <List
-                                    loading={loading}
                                     dataSource={filteredRules}
                                     size="small"
                                     renderItem={rule => (

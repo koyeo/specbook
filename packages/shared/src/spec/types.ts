@@ -196,7 +196,6 @@ export interface AnalysisTask {
 export interface GlossaryTerm {
     id: string;
     name: string;
-    aliases: string[];
     description: string;
     category?: string;
     createdAt: string;
