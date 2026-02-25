@@ -190,7 +190,7 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                 sections.push('## Global Rules');
                 sections.push('');
                 for (const gr of globalRules) {
-                    sections.push(`- (ID: \`${gr.id}\`): ${gr.text}`);
+                    sections.push(`- (ID: \`${gr.id}\`): ${gr.content}`);
                 }
                 sections.push('');
             }

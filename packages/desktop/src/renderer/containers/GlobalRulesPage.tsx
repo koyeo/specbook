@@ -45,7 +45,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
         if (search.trim()) {
             const q = search.toLowerCase();
             result = result.filter(r =>
-                r.text.toLowerCase().includes(q)
+                r.content.toLowerCase().includes(q)
             );
         }
         return result;
@@ -66,7 +66,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
     const handleStartEdit = (rule: GlobalRule) => {
         setIsAdding(false);
         setEditing(true);
-        setEditText(rule.text);
+        setEditText(rule.content);
 
     };
 
@@ -83,14 +83,14 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
         try {
             if (isAdding) {
                 const newRule = await addRule({
-                    text: editText.trim(),
+                    content: editText.trim(),
                 });
                 setSelectedRuleId(newRule.id);
                 message.success('Rule added');
             } else if (selectedRule) {
                 await updateRule({
                     id: selectedRule.id,
-                    text: editText.trim(),
+                    content: editText.trim(),
                 });
                 message.success('Rule updated');
             }
@@ -170,7 +170,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                                             }}
                                         >
                                             <div style={{ width: '100%' }}>
-                                                <Text style={{ fontSize: 13 }} ellipsis>{rule.text}</Text>
+                                                <Text style={{ fontSize: 13 }} ellipsis>{rule.content}</Text>
                                             </div>
                                         </List.Item>
                                     )}
@@ -225,7 +225,7 @@ export const GlobalRulesPage: React.FC<GlobalRulesPageProps> = ({ workspace }) =
                                     </Space>
                                 </div>
                                 <Paragraph style={{ whiteSpace: 'pre-wrap', fontSize: 14 }}>
-                                    {selectedRule.text}
+                                    {selectedRule.content}
                                 </Paragraph>
                                 <Text type="secondary" style={{ fontSize: 11 }}>
                                     Created: {new Date(selectedRule.createdAt).toLocaleString()} · Updated: {new Date(selectedRule.updatedAt).toLocaleString()}

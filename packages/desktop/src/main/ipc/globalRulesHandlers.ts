@@ -19,7 +19,7 @@ export function registerGlobalRulesHandlers(): void {
         const now = new Date().toISOString();
         const rule: GlobalRule = {
             id: generateId(),
-            text: payload.text.trim(),
+            content: payload.content.trim(),
             createdAt: now,
             updatedAt: now,
         };
@@ -35,7 +35,7 @@ export function registerGlobalRulesHandlers(): void {
 
         const updated: GlobalRule = {
             ...existing,
-            text: payload.text?.trim() ?? existing.text,
+            content: payload.content?.trim() ?? existing.content,
             updatedAt: new Date().toISOString(),
         };
         globalRulesStore.updateRule(ws, updated);

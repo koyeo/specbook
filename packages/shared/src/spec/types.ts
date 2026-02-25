@@ -276,7 +276,7 @@ export const KNOWLEDGE_FILE = 'knowledge.json';
 /** A single global rule entry. */
 export interface GlobalRule {
     id: string;
-    text: string;
+    content: string;
     createdAt: string;
     updatedAt: string;
 }

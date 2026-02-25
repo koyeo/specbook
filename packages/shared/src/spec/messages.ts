@@ -195,13 +195,13 @@ export interface KnowledgeAPI {
 
 /** Add global rule payload. */
 export interface AddGlobalRulePayload {
-    text: string;
+    content: string;
 }
 
 /** Update global rule payload. */
 export interface UpdateGlobalRulePayload {
     id: string;
-    text?: string;
+    content?: string;
 }
 
 /** Global Rules API exposed to renderer. */
