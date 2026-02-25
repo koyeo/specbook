@@ -13,15 +13,15 @@
 }
 
 [data-theme='dark'] {
-  --sb-bg: #141414;
-  --sb-bg-secondary: #1f1f1f;
-  --sb-bg-elevated: #1f1f1f;
+  --sb-bg: #262626;
+  --sb-bg-secondary: #2f2f2f;
+  --sb-bg-elevated: #2f2f2f;
   --sb-text: rgba(255, 255, 255, 0.85);
   --sb-text-secondary: rgba(255, 255, 255, 0.45);
   --sb-border: rgba(255, 255, 255, 0.08);
   --sb-scrollbar: rgba(255, 255, 255, 0.15);
   --sb-scrollbar-hover: rgba(255, 255, 255, 0.25);
-  --sb-sider-bg: #141414;
+  --sb-sider-bg: #262626;
 }
 
 /* ─── Global Resets ──────────────────────────────── */
