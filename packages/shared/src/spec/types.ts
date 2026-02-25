@@ -383,6 +383,35 @@ export const MAPPING_FILE = 'mapping.json';
 /** Mapping directory under .specbook for per-object files. */
 export const MAPPING_DIR = 'mapping';
 
+// ─── Issues Types ───────────────────────────────────
+
+/** Issue status. */
+export type IssueStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+
+/** Issue priority. */
+export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
+
+/** A single issue entry. */
+export interface Issue {
+    id: string;
+    title: string;
+    description: string;
+    status: IssueStatus;
+    priority: IssuePriority;
+    labels: string[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** Root issues file structure (.specbook/issues.json) */
+export interface IssueIndex {
+    version: string;
+    issues: Issue[];
+}
+
+/** Issues file name. */
+export const ISSUES_FILE = 'issues.json';
+
 // ─── Prompt (Correction & Translation) Types ────────
 
 /** A single text correction made by the AI. */

@@ -31,6 +31,10 @@ export { GLOBAL_RULES_FILE } from './spec/types';
 export type { GlobalTest, GlobalTestIndex } from './spec/types';
 export { GLOBAL_TESTS_FILE } from './spec/types';
 
+// Issues types
+export type { Issue, IssueIndex, IssueStatus, IssuePriority } from './spec/types';
+export { ISSUES_FILE } from './spec/types';
+
 // Feature Mapping types
 export type { FeatureMappingEntry, MappingChangeType, MappingChangeEntry, FeatureMappingIndex, ObjectMappingResult, ScanProgressEvent } from './spec/types';
 export { MAPPING_FILE, MAPPING_DIR } from './spec/types';
@@ -48,6 +52,7 @@ export type {
     AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload, KnowledgeAPI,
     AddGlobalRulePayload, UpdateGlobalRulePayload, GlobalRulesAPI,
     AddGlobalTestPayload, UpdateGlobalTestPayload, GlobalTestsAPI,
+    AddIssuePayload, UpdateIssuePayload, IssuesAPI,
     MappingAPI,
     PromptAPI, SendPromptPayload,
     WindowAPI,

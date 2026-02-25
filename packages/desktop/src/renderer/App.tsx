@@ -2,13 +2,13 @@
  * App shell — antd ConfigProvider + sidebar layout + CSS variable theme.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { ConfigProvider, theme, Layout, Menu, Button, Tooltip, Typography, Space, Dropdown, Splitter, App as AntApp } from 'antd';
+import { ConfigProvider, theme, Layout, Menu, Button, Tooltip, Typography, Space, Dropdown, Splitter, List, App as AntApp } from 'antd';
 import {
     SunOutlined, MoonOutlined, SettingOutlined,
     AppstoreOutlined, BookOutlined,
     FolderOpenOutlined, BulbOutlined, DesktopOutlined,
     RobotOutlined, SafetyOutlined, ExperimentOutlined,
-
+    BugOutlined, CloseOutlined,
 } from '@ant-design/icons';
 import { ObjectPage } from './containers/SpecPage';
 import { GlossaryPage } from './containers/GlossaryPage';
@@ -16,6 +16,7 @@ import { PlaygroundPage } from './containers/PlaygroundPage';
 import { KnowledgePage } from './containers/KnowledgePage';
 import { GlobalRulesPage } from './containers/GlobalRulesPage';
 import { GlobalTestsPage } from './containers/GlobalTestsPage';
+import { IssuesPage } from './containers/IssuesPage';
 import { AiSettingsModal } from './components/AiSettingsModal';
 import { GlossaryFloatPanel } from './components/GlossaryFloatPanel';
 
@@ -26,7 +27,7 @@ const { Text, Title } = Typography;
 const { Sider, Content } = Layout;
 
 type ThemeMode = 'system' | 'light' | 'dark';
-type PageKey = 'objects' | 'glossary' | 'knowledge' | 'rules' | 'tests';
+type PageKey = 'objects' | 'glossary' | 'knowledge' | 'rules' | 'tests' | 'issues';
 
 function getSystemDark(): boolean {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
@@ -40,6 +41,7 @@ const App: React.FC = () => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [workspace, setWorkspace] = useState<string | null>(null);
     const [objects, setObjects] = useState<ObjectTreeNode[]>([]);
+    const [recentWorkspaces, setRecentWorkspaces] = useState<string[]>([]);
     const [currentPage, setCurrentPage] = useState<PageKey>('objects');
     const [siderCollapsed, setSiderCollapsed] = useState(false);
     const [copilotOpen, setCopilotOpen] = useState<boolean>(() => {
@@ -54,6 +56,7 @@ const App: React.FC = () => {
     // Load saved workspace on mount
     useEffect(() => {
         window.api.getWorkspace().then(ws => setWorkspace(ws));
+        window.api.getRecentWorkspaces().then(list => setRecentWorkspaces(list));
     }, []);
 
     // Load objects whenever workspace changes
@@ -71,7 +74,20 @@ const App: React.FC = () => {
 
     const handleSelectWorkspace = useCallback(async () => {
         const ws = await window.api.selectWorkspace();
-        if (ws) setWorkspace(ws);
+        if (ws) {
+            setWorkspace(ws);
+            window.api.getRecentWorkspaces().then(list => setRecentWorkspaces(list));
+        }
+    }, []);
+
+    const handleOpenRecent = useCallback(async (ws: string) => {
+        await window.api.setWorkspace(ws);
+        setWorkspace(ws);
+    }, []);
+
+    const handleRemoveRecent = useCallback(async (ws: string) => {
+        await window.api.removeRecentWorkspace(ws);
+        setRecentWorkspaces(prev => prev.filter(w => w !== ws));
     }, []);
 
     // Listen for system theme changes
@@ -111,6 +127,7 @@ const App: React.FC = () => {
 
         { key: 'rules', icon: <SafetyOutlined />, label: 'Rules' },
         { key: 'tests', icon: <ExperimentOutlined />, label: 'Tests' },
+        { key: 'issues', icon: <BugOutlined />, label: 'Issues' },
         { key: 'knowledge', icon: <BulbOutlined />, label: 'Knowledge' },
         { key: 'glossary', icon: <BookOutlined />, label: 'Glossary' },
     ];
@@ -129,6 +146,8 @@ const App: React.FC = () => {
                 return <GlobalRulesPage workspace={workspace} />;
             case 'tests':
                 return <GlobalTestsPage workspace={workspace} />;
+            case 'issues':
+                return <IssuesPage workspace={workspace} />;
             default:
                 return null;
         }
@@ -173,6 +192,50 @@ const App: React.FC = () => {
                             <Button type="primary" size="large" icon={<FolderOpenOutlined />} onClick={handleSelectWorkspace}>
                                 Open Workspace
                             </Button>
+
+                            {recentWorkspaces.length > 0 && (
+                                <div style={{ marginTop: 24, width: '100%', maxWidth: 480 }}>
+                                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>Recent Projects</Text>
+                                    <List
+                                        size="small"
+                                        dataSource={recentWorkspaces}
+                                        renderItem={ws => {
+                                            const basename = ws.split('/').pop() || ws;
+                                            return (
+                                                <List.Item
+                                                    style={{
+                                                        cursor: 'pointer',
+                                                        padding: '8px 12px',
+                                                        borderRadius: 6,
+                                                        transition: 'background 0.15s',
+                                                    }}
+                                                    onClick={() => handleOpenRecent(ws)}
+                                                    actions={[
+                                                        <Tooltip title="Remove from list" key="remove">
+                                                            <Button
+                                                                type="text"
+                                                                size="small"
+                                                                icon={<CloseOutlined />}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleRemoveRecent(ws);
+                                                                }}
+                                                                style={{ color: 'var(--sb-text-secondary)' }}
+                                                            />
+                                                        </Tooltip>,
+                                                    ]}
+                                                >
+                                                    <List.Item.Meta
+                                                        avatar={<FolderOpenOutlined style={{ fontSize: 16, color: '#1677ff', marginTop: 4 }} />}
+                                                        title={<Text strong style={{ fontSize: 13 }}>{basename}</Text>}
+                                                        description={<Text type="secondary" style={{ fontSize: 11 }}>{ws}</Text>}
+                                                    />
+                                                </List.Item>
+                                            );
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <Layout style={{ background: 'var(--sb-bg)' }}>

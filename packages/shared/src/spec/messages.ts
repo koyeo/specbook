@@ -8,6 +8,7 @@ import type {
     GlossaryTerm, ChatSession, ChatSessionSummary, ChatMessage,
     KnowledgeEntry,
     GlobalRule, GlobalTest,
+    Issue,
     FeatureMappingIndex, ObjectMappingResult, ScanProgressEvent, PromptResult,
 } from './types';
 
@@ -28,6 +29,7 @@ export const IPC = {
     OPEN_IN_EDITOR: 'object:open-in-editor',
     EXPORT_MARKDOWN: 'object:export-markdown',
     SELECT_WORKSPACE: 'workspace:select',
+    SET_WORKSPACE: 'workspace:set',
     GET_WORKSPACE: 'workspace:get',
     // AI channels
     AI_GET_CONFIG: 'ai:get-config',
@@ -72,8 +74,16 @@ export const IPC = {
     PROMPT_DELETE_SESSION: 'prompt:delete-session',
     PROMPT_SEND: 'prompt:send',
     PROMPT_GENERATE_FEATURES: 'prompt:generate-features',
+    // Issues channels
+    ISSUES_LOAD: 'issues:load',
+    ISSUES_ADD: 'issues:add',
+    ISSUES_UPDATE: 'issues:update',
+    ISSUES_DELETE: 'issues:delete',
     // Window management
     NEW_WINDOW: 'window:new',
+    // Recent workspaces
+    RECENT_WORKSPACES: 'workspace:recent',
+    REMOVE_RECENT_WORKSPACE: 'workspace:remove-recent',
 } as const;
 
 /** Add object payload. */
@@ -119,7 +129,10 @@ export interface ObjectAPI {
     exportMarkdown(): Promise<boolean>;
     openInEditor(filePath: string, line?: number): Promise<void>;
     selectWorkspace(): Promise<string | null>;
+    setWorkspace(workspace: string): Promise<void>;
     getWorkspace(): Promise<string | null>;
+    getRecentWorkspaces(): Promise<string[]>;
+    removeRecentWorkspace(workspace: string): Promise<void>;
 }
 
 /** AI API exposed to renderer via contextBridge. */
@@ -263,6 +276,34 @@ export interface PromptAPI {
     deleteSession(id: string): Promise<void>;
     sendPrompt(payload: SendPromptPayload): Promise<string>;
     generateFeatures(sessionId: string): Promise<string>;
+}
+
+// ─── Issues ─────────────────────────────────────────
+
+/** Add issue payload. */
+export interface AddIssuePayload {
+    title: string;
+    description?: string;
+    priority?: import('./types').IssuePriority;
+    labels?: string[];
+}
+
+/** Update issue payload. */
+export interface UpdateIssuePayload {
+    id: string;
+    title?: string;
+    description?: string;
+    status?: import('./types').IssueStatus;
+    priority?: import('./types').IssuePriority;
+    labels?: string[];
+}
+
+/** Issues API exposed to renderer. */
+export interface IssuesAPI {
+    loadIssues(): Promise<Issue[]>;
+    addIssue(payload: AddIssuePayload): Promise<Issue>;
+    updateIssue(payload: UpdateIssuePayload): Promise<Issue>;
+    deleteIssue(id: string): Promise<void>;
 }
 
 /** Window management API exposed to renderer. */

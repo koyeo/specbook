@@ -67,6 +67,13 @@ export function getRecentWorkspaces(): string[] {
     return (config.recentWorkspaces ?? []).filter(w => fs.existsSync(w));
 }
 
+/** Remove a workspace from the recent list. */
+export function removeRecentWorkspace(workspace: string): void {
+    const config = readConfig();
+    config.recentWorkspaces = (config.recentWorkspaces ?? []).filter(w => w !== workspace);
+    writeConfig(config);
+}
+
 // ─── AI Config ──────────────────────────────────────
 
 export function getAiConfig(): AiConfig | null {

@@ -14,6 +14,7 @@ import { registerGlobalRulesHandlers } from './ipc/globalRulesHandlers';
 import { registerGlobalTestsHandlers } from './ipc/globalTestsHandlers';
 import { registerScanHandlers } from './ipc/scanHandlers';
 import { registerPromptHandlers } from './ipc/promptHandlers';
+import { registerIssuesHandlers } from './ipc/issuesHandlers';
 
 app.whenReady().then(() => {
     // Set up native menu (with New Window commands)
@@ -30,6 +31,7 @@ app.whenReady().then(() => {
     registerGlobalTestsHandlers();
     registerScanHandlers();
     registerPromptHandlers();
+    registerIssuesHandlers();
 
     // Handle "new window" request from renderer
     ipcMain.handle(IPC.NEW_WINDOW, () => {

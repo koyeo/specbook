@@ -20,7 +20,7 @@ import {
     setWorkspaceForSender,
     requireWorkspaceForSender,
 } from '../windowManager';
-import { getLastWorkspace } from '../infrastructure/appConfig';
+import { getLastWorkspace, getRecentWorkspaces, removeRecentWorkspace } from '../infrastructure/appConfig';
 
 export function registerIpcHandlers(): void {
     // ─── Workspace ──────────────────────────────────
@@ -38,8 +38,20 @@ export function registerIpcHandlers(): void {
         return workspace;
     });
 
+    ipcMain.handle(IPC.SET_WORKSPACE, (event, workspace: string) => {
+        setWorkspaceForSender(event.sender.id, workspace);
+    });
+
     ipcMain.handle(IPC.GET_WORKSPACE, (event) => {
         return getWorkspaceForSender(event.sender.id);
+    });
+
+    ipcMain.handle(IPC.RECENT_WORKSPACES, () => {
+        return getRecentWorkspaces();
+    });
+
+    ipcMain.handle(IPC.REMOVE_RECENT_WORKSPACE, (_event, workspace: string) => {
+        removeRecentWorkspace(workspace);
     });
 
     // ─── Objects CRUD ───────────────────────────────

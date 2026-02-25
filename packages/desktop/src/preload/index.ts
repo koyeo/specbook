@@ -12,6 +12,7 @@ import type {
     KnowledgeAPI, AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload,
     GlobalRulesAPI, AddGlobalRulePayload, UpdateGlobalRulePayload,
     GlobalTestsAPI, AddGlobalTestPayload, UpdateGlobalTestPayload,
+    IssuesAPI, AddIssuePayload, UpdateIssuePayload,
     MappingAPI, ScanProgressEvent,
     PromptAPI, SendPromptPayload,
     WindowAPI,
@@ -33,7 +34,10 @@ const api: ObjectAPI = {
     exportMarkdown: () => ipcRenderer.invoke(IPC.EXPORT_MARKDOWN),
     openInEditor: (filePath: string, line?: number) => ipcRenderer.invoke(IPC.OPEN_IN_EDITOR, filePath, line),
     selectWorkspace: () => ipcRenderer.invoke(IPC.SELECT_WORKSPACE),
+    setWorkspace: (workspace: string) => ipcRenderer.invoke(IPC.SET_WORKSPACE, workspace),
     getWorkspace: () => ipcRenderer.invoke(IPC.GET_WORKSPACE),
+    getRecentWorkspaces: () => ipcRenderer.invoke(IPC.RECENT_WORKSPACES),
+    removeRecentWorkspace: (workspace: string) => ipcRenderer.invoke(IPC.REMOVE_RECENT_WORKSPACE, workspace),
 };
 
 const aiApi: AiAPI = {
@@ -103,6 +107,13 @@ const windowApi: WindowAPI = {
     newWindow: () => ipcRenderer.invoke(IPC.NEW_WINDOW),
 };
 
+const issuesApi: IssuesAPI = {
+    loadIssues: () => ipcRenderer.invoke(IPC.ISSUES_LOAD),
+    addIssue: (payload: AddIssuePayload) => ipcRenderer.invoke(IPC.ISSUES_ADD, payload),
+    updateIssue: (payload: UpdateIssuePayload) => ipcRenderer.invoke(IPC.ISSUES_UPDATE, payload),
+    deleteIssue: (id: string) => ipcRenderer.invoke(IPC.ISSUES_DELETE, id),
+};
+
 contextBridge.exposeInMainWorld('api', api);
 contextBridge.exposeInMainWorld('aiApi', aiApi);
 contextBridge.exposeInMainWorld('glossaryApi', glossaryApi);
@@ -113,3 +124,4 @@ contextBridge.exposeInMainWorld('globalTestsApi', globalTestsApi);
 contextBridge.exposeInMainWorld('mappingApi', mappingApi);
 contextBridge.exposeInMainWorld('promptApi', promptApi);
 contextBridge.exposeInMainWorld('windowApi', windowApi);
+contextBridge.exposeInMainWorld('issuesApi', issuesApi);
