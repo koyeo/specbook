@@ -271,7 +271,7 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
             {/* Top bar */}
             <div style={{ flexShrink: 0, padding: '12px 16px', borderBottom: `1px solid ${token.colorBorderSecondary}`, marginBottom: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Title level={4} style={{ margin: 0, lineHeight: 1 }}>Specifications</Title>
+                    <Title level={4} style={{ margin: 0, lineHeight: 1 }}>Features</Title>
                     <Button size="small" icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
                 </div>
             </div>

@@ -122,14 +122,12 @@ const App: React.FC = () => {
         : mode === 'light' ? <SunOutlined /> : <MoonOutlined />;
 
     const menuItems = [
-
-        { key: 'objects', icon: <AppstoreOutlined />, label: 'Specifications' },
-
+        { key: 'objects', icon: <AppstoreOutlined />, label: 'Features' },
+        { key: 'glossary', icon: <BookOutlined />, label: 'Glossary' },
         { key: 'rules', icon: <SafetyOutlined />, label: 'Rules' },
         { key: 'tests', icon: <ExperimentOutlined />, label: 'Tests' },
-        { key: 'issues', icon: <BugOutlined />, label: 'Issues' },
         { key: 'knowledge', icon: <BulbOutlined />, label: 'Knowledge' },
-        { key: 'glossary', icon: <BookOutlined />, label: 'Glossary' },
+        { key: 'issues', icon: <BugOutlined />, label: 'Issues' },
     ];
 
     const renderPage = () => {
