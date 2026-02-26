@@ -11,7 +11,7 @@ import { ObjectTable } from '../components/SpecTable';
 import { ObjectDetailPanel } from '../components/SpecDetailPanel';
 import { MarkdownPreview } from '../components/MarkdownPreview';
 import { useObjects } from '../hooks/useSpecs';
-import type { ObjectTreeNode, ObjectDetail, ObjectRule, GlobalRule } from '@specbook/shared';
+import type { ObjectTreeNode, ObjectDetail, ObjectRequirement, GlobalRule } from '@specbook/shared';
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
@@ -215,23 +215,23 @@ export const ObjectPage: React.FC<ObjectPageProps> = ({ workspace }) => {
                 }
 
                 // Implementation rules
-                const implRules: ObjectRule[] = detail?.implRules ?? [];
-                if (implRules.length > 0) {
-                    sections.push(`${indent}**Implementation Rules:**`);
+                const implRequirements: ObjectRequirement[] = detail?.implRequirements ?? [];
+                if (implRequirements.length > 0) {
+                    sections.push(`${indent}**Implementation Requirements:**`);
                     sections.push('');
-                    for (const rule of implRules) {
-                        sections.push(`${indent}- (Rule ID: \`${rule.id}\`) ${rule.text}`);
+                    for (const req of implRequirements) {
+                        sections.push(`${indent}- (Requirement ID: \`${req.id}\`) ${req.text}`);
                     }
                     sections.push('');
                 }
 
-                // Test rules
-                const testRules: ObjectRule[] = detail?.testRules ?? [];
-                if (testRules.length > 0) {
-                    sections.push(`${indent}**Test Rules:**`);
+                // Test requirements
+                const testRequirements: ObjectRequirement[] = detail?.testRequirements ?? [];
+                if (testRequirements.length > 0) {
+                    sections.push(`${indent}**Test Requirements:**`);
                     sections.push('');
-                    for (const rule of testRules) {
-                        sections.push(`${indent}- (Rule ID: \`${rule.id}\`) ${rule.text}`);
+                    for (const req of testRequirements) {
+                        sections.push(`${indent}- (Requirement ID: \`${req.id}\`) ${req.text}`);
                     }
                     sections.push('');
                 }

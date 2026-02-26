@@ -22,6 +22,9 @@ export function registerGlossaryHandlers(): void {
             name: payload.name.trim(),
             description: payload.description?.trim() ?? '',
             category: payload.category?.trim() || undefined,
+            fields: payload.fields ?? [],
+            requirements: payload.requirements ?? [],
+            locations: payload.locations ?? [],
             createdAt: now,
             updatedAt: now,
         };
@@ -40,6 +43,9 @@ export function registerGlossaryHandlers(): void {
             name: payload.name?.trim() ?? existing.name,
             description: payload.description?.trim() ?? existing.description,
             category: payload.category?.trim() || existing.category,
+            fields: payload.fields ?? existing.fields,
+            requirements: payload.requirements ?? existing.requirements,
+            locations: payload.locations ?? existing.locations,
             updatedAt: new Date().toISOString(),
         };
         glossaryStore.updateTerm(ws, updated);

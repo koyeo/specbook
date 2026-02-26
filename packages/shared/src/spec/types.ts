@@ -31,8 +31,8 @@ export interface ImplementationLocation {
     keywords?: string;
 }
 
-/** A single object rule — describes a constraint or requirement. */
-export interface ObjectRule {
+/** A single object requirement — describes a constraint or requirement. */
+export interface ObjectRequirement {
     id: string;
     text: string;
     locationId?: string;
@@ -48,9 +48,9 @@ export interface ObjectIndexEntry {
     isState: boolean;
     contentHash: string | null;
     implLocations?: ImplementationLocation[];
-    implRules?: ObjectRule[];
+    implRequirements?: ObjectRequirement[];
     testLocations?: ImplementationLocation[];
-    testRules?: ObjectRule[];
+    testRequirements?: ObjectRequirement[];
     createdAt: string;
     updatedAt: string;
 }
@@ -67,9 +67,9 @@ export interface ObjectSummary {
     isState: boolean;
     completed: boolean;
     implLocations?: ImplementationLocation[];
-    implRules?: ObjectRule[];
+    implRequirements?: ObjectRequirement[];
     testLocations?: ImplementationLocation[];
-    testRules?: ObjectRule[];
+    testRequirements?: ObjectRequirement[];
     createdAt: string;
 }
 
@@ -192,12 +192,23 @@ export interface AnalysisTask {
 
 // ─── Glossary Types ─────────────────────────────────
 
+/** A single field definition for a glossary term. */
+export interface GlossaryField {
+    id: string;
+    name: string;
+    type: string;
+    description: string;
+}
+
 /** A single glossary term entry. */
 export interface GlossaryTerm {
     id: string;
     name: string;
     description: string;
     category?: string;
+    fields?: GlossaryField[];
+    requirements?: ObjectRequirement[];
+    locations?: ImplementationLocation[];
     createdAt: string;
     updatedAt: string;
 }
@@ -297,7 +308,7 @@ export interface GlobalTest {
     id: string;
     title: string;
     description: string;
-    rules: ObjectRule[];
+    requirements: ObjectRequirement[];
     locations: ImplementationLocation[];
     createdAt: string;
     updatedAt: string;

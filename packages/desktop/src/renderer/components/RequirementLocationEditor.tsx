@@ -1,11 +1,11 @@
 /**
- * RuleLocationEditor — side-by-side rules + locations editor
+ * RequirementLocationEditor — side-by-side requirements + locations editor
  * with CSS-based connection lines and drag-to-link interaction.
  */
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import { Input, Button, Typography, theme } from 'antd';
 import { PlusOutlined, DeleteOutlined, HolderOutlined } from '@ant-design/icons';
-import type { ObjectRule, ImplementationLocation } from '@specbook/shared';
+import type { ObjectRequirement, ImplementationLocation } from '@specbook/shared';
 
 const { Text } = Typography;
 
@@ -43,30 +43,30 @@ interface HandlePos {
     y: number;
 }
 
-interface RuleLocationEditorProps {
+interface RequirementLocationEditorProps {
     title: string;
-    rules: ObjectRule[];
+    requirements: ObjectRequirement[];
     locations: ImplementationLocation[];
-    onRulesChange: (rules: ObjectRule[]) => void;
+    onRequirementsChange: (requirements: ObjectRequirement[]) => void;
     onLocationsChange: (locations: ImplementationLocation[]) => void;
     editable: boolean;
 }
 
 // ─── Component ──────────────────────────────────────
 
-export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
-    title, rules, locations, onRulesChange, onLocationsChange, editable,
+export const RequirementLocationEditor: React.FC<RequirementLocationEditorProps> = ({
+    title, requirements, locations, onRequirementsChange, onLocationsChange, editable,
 }) => {
     const { token } = theme.useToken();
     const containerRef = useRef<HTMLDivElement>(null);
-    const ruleHandleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+    const reqHandleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const locHandleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
     // Connection line positions (computed from handle DOM positions)
-    const [lines, setLines] = useState<{ ruleId: string; locId: string; x1: number; y1: number; x2: number; y2: number }[]>([]);
+    const [lines, setLines] = useState<{ reqId: string; locId: string; x1: number; y1: number; x2: number; y2: number }[]>([]);
 
     // Drag state for linking
-    const [dragging, setDragging] = useState<{ ruleId: string; startX: number; startY: number; curX: number; curY: number } | null>(null);
+    const [dragging, setDragging] = useState<{ reqId: string; startX: number; startY: number; curX: number; curY: number } | null>(null);
     const [hoverLocId, setHoverLocId] = useState<string | null>(null);
 
     // Drag-sort state
@@ -80,16 +80,16 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
         const rect = container.getBoundingClientRect();
         const newLines: typeof lines = [];
 
-        for (const rule of rules) {
+        for (const rule of requirements) {
             if (!rule.locationId) continue;
-            const ruleEl = ruleHandleRefs.current.get(rule.id);
+            const reqEl = reqHandleRefs.current.get(rule.id);
             const locEl = locHandleRefs.current.get(rule.locationId);
-            if (!ruleEl || !locEl) continue;
+            if (!reqEl || !locEl) continue;
 
-            const rr = ruleEl.getBoundingClientRect();
+            const rr = reqEl.getBoundingClientRect();
             const lr = locEl.getBoundingClientRect();
             newLines.push({
-                ruleId: rule.id,
+                reqId: rule.id,
                 locId: rule.locationId,
                 x1: rr.left + rr.width / 2 - rect.left,
                 y1: rr.top + rr.height / 2 - rect.top,
@@ -98,12 +98,12 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
             });
         }
         setLines(newLines);
-    }, [rules]);
+    }, [requirements]);
 
     // Recalculate on data change + resize
     useLayoutEffect(() => {
         recalcLines();
-    }, [rules, locations, recalcLines]);
+    }, [requirements, locations, recalcLines]);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -117,22 +117,22 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
     useEffect(() => {
         const timer = setTimeout(recalcLines, 50);
         return () => clearTimeout(timer);
-    }, [rules, locations, recalcLines]);
+    }, [requirements, locations, recalcLines]);
 
     // ─── Drag-to-link ────────────────────────────────
 
-    const handleRuleHandleMouseDown = useCallback((ruleId: string, e: React.MouseEvent) => {
+    const handleReqHandleMouseDown = useCallback((reqId: string, e: React.MouseEvent) => {
         if (!editable) return;
         e.preventDefault();
         const container = containerRef.current;
         if (!container) return;
         const rect = container.getBoundingClientRect();
-        const handleEl = ruleHandleRefs.current.get(ruleId);
+        const handleEl = reqHandleRefs.current.get(reqId);
         if (!handleEl) return;
         const hr = handleEl.getBoundingClientRect();
         const startX = hr.left + hr.width / 2 - rect.left;
         const startY = hr.top + hr.height / 2 - rect.top;
-        setDragging({ ruleId, startX, startY, curX: startX, curY: startY });
+        setDragging({ reqId, startX, startY, curX: startX, curY: startY });
     }, [editable]);
 
     useEffect(() => {
@@ -148,7 +148,7 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
         const onMouseUp = () => {
             if (hoverLocId && dragging) {
                 // Create binding
-                onRulesChange(rules.map(r => r.id === dragging.ruleId ? { ...r, locationId: hoverLocId } : r));
+                onRequirementsChange(requirements.map(r => r.id === dragging.reqId ? { ...r, locationId: hoverLocId } : r));
             }
             setDragging(null);
             setHoverLocId(null);
@@ -160,14 +160,14 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
         };
-    }, [dragging, hoverLocId, rules, onRulesChange]);
+    }, [dragging, hoverLocId, requirements, onRequirementsChange]);
 
     // ─── CRUD ────────────────────────────────────────
 
-    const addRule = () => onRulesChange([...rules, { id: crypto.randomUUID(), text: '' }]);
-    const updateRuleText = (id: string, text: string) => onRulesChange(rules.map(r => r.id === id ? { ...r, text } : r));
-    const removeRule = (id: string) => onRulesChange(rules.filter(r => r.id !== id));
-    const unlinkRule = (id: string) => onRulesChange(rules.map(r => r.id === id ? { ...r, locationId: undefined } : r));
+    const addRequirement = () => onRequirementsChange([...requirements, { id: crypto.randomUUID(), text: '' }]);
+    const updateRequirementText = (id: string, text: string) => onRequirementsChange(requirements.map(r => r.id === id ? { ...r, text } : r));
+    const removeRequirement = (id: string) => onRequirementsChange(requirements.filter(r => r.id !== id));
+    const unlinkRequirement = (id: string) => onRequirementsChange(requirements.map(r => r.id === id ? { ...r, locationId: undefined } : r));
 
     const addLocation = () => onLocationsChange([...locations, { id: crypto.randomUUID(), filePath: '' }]);
     const updateLocationFromString = (id: string, raw: string) => {
@@ -175,8 +175,8 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
     };
     const removeLocation = (id: string) => {
         onLocationsChange(locations.filter(loc => loc.id !== id));
-        // Unbind any rules referencing this location
-        onRulesChange(rules.map(r => r.locationId === id ? { ...r, locationId: undefined } : r));
+        // Unbind any requirements referencing this location
+        onRequirementsChange(requirements.map(r => r.locationId === id ? { ...r, locationId: undefined } : r));
     };
 
     // ─── Drag-sort helpers ────────────────────────────
@@ -209,7 +209,7 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
         const { dragIdx, overIdx } = sortDrag;
         if (dragIdx !== overIdx) {
             if (type === 'rule') {
-                onRulesChange(reorder(rules, dragIdx, overIdx));
+                onRequirementsChange(reorder(requirements, dragIdx, overIdx));
             } else {
                 onLocationsChange(reorder(locations, dragIdx, overIdx));
             }
@@ -304,21 +304,21 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
 
             {/* Two-column layout */}
             <div style={{ display: 'flex', gap: 24 }}>
-                {/* ── Left: Rules ── */}
+                {/* ── Left: Requirements ── */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>Rules</Text>
-                        {editable && <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={addRule}>Add</Button>}
+                        <Text type="secondary" style={{ fontSize: 12 }}>Requirements</Text>
+                        {editable && <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={addRequirement}>Add</Button>}
                     </div>
-                    {rules.length === 0 ? (
-                        <Text type="secondary" style={{ fontSize: 12, fontStyle: 'italic' }}>No rules defined.</Text>
+                    {requirements.length === 0 ? (
+                        <Text type="secondary" style={{ fontSize: 12, fontStyle: 'italic' }}>No requirements defined.</Text>
                     ) : (
                         <div
                             style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
                             onDrop={handleSortDrop('rule')}
                             onDragOver={e => e.preventDefault()}
                         >
-                            {rules.map((r, i) => (
+                            {requirements.map((r, i) => (
                                 <div
                                     key={r.id}
                                     style={{
@@ -342,8 +342,8 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
                                     {editable ? (
                                         <Input
                                             value={r.text}
-                                            onChange={e => updateRuleText(r.id, e.target.value)}
-                                            placeholder="Describe a rule..."
+                                            onChange={e => updateRequirementText(r.id, e.target.value)}
+                                            placeholder="Describe a requirement..."
                                             size="small"
                                             style={{ flex: 1 }}
                                         />
@@ -351,14 +351,14 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
                                         <Text style={{ flex: 1, fontSize: 13 }}>{r.text || '(empty)'}</Text>
                                     )}
                                     {editable && (
-                                        <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => removeRule(r.id)} style={{ flexShrink: 0 }} />
+                                        <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => removeRequirement(r.id)} style={{ flexShrink: 0 }} />
                                     )}
                                     {/* Rule connection handle — after delete */}
                                     <div
-                                        ref={el => { if (el) ruleHandleRefs.current.set(r.id, el); else ruleHandleRefs.current.delete(r.id); }}
+                                        ref={el => { if (el) reqHandleRefs.current.set(r.id, el); else reqHandleRefs.current.delete(r.id); }}
                                         style={handleStyle(false, !!r.locationId)}
-                                        onMouseDown={e => handleRuleHandleMouseDown(r.id, e)}
-                                        onDoubleClick={() => editable && r.locationId && unlinkRule(r.id)}
+                                        onMouseDown={e => handleReqHandleMouseDown(r.id, e)}
+                                        onDoubleClick={() => editable && r.locationId && unlinkRequirement(r.id)}
                                         title={editable ? (r.locationId ? 'Double-click to unlink, or drag to re-link' : 'Drag to link to a location') : undefined}
                                     />
                                 </div>
@@ -394,7 +394,7 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
                                     {/* Location connection handle (left side) */}
                                     <div
                                         ref={el => { if (el) locHandleRefs.current.set(loc.id, el); else locHandleRefs.current.delete(loc.id); }}
-                                        style={handleStyle(hoverLocId === loc.id, rules.some(r => r.locationId === loc.id))}
+                                        style={handleStyle(hoverLocId === loc.id, requirements.some(r => r.locationId === loc.id))}
                                         onMouseEnter={() => dragging && setHoverLocId(loc.id)}
                                         onMouseLeave={() => dragging && setHoverLocId(null)}
                                     />
@@ -436,7 +436,7 @@ export const RuleLocationEditor: React.FC<RuleLocationEditorProps> = ({
             >
                 {lines.map(l => (
                     <path
-                        key={`${l.ruleId}-${l.locId}`}
+                        key={`${l.reqId}-${l.locId}`}
                         d={orthogonalPath(l.x1, l.y1, l.x2, l.y2)}
                         fill="none"
                         stroke={HANDLE_COLOR}

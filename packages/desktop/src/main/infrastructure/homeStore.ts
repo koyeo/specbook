@@ -20,22 +20,7 @@ function ensureDir(workspace: string): void {
 
 const DEFAULT_HOME: HomeData = {
     version: '1.0',
-    content: `# Welcome to Specbook 👋
-
-This is the **Home** page of your project specification workspace.
-
-Use this page to share important information with your team:
-
-- 🏗️ **Project setup** instructions
-- 📦 **Dependencies** and prerequisites
-- 🔧 **Development environment** configuration
-- 📝 **Conventions** and coding standards
-- 🚀 **Getting started** guide for new developers
-
----
-
-*Click the **Edit** button above to customize this page.*
-`,
+    content: '',
 };
 
 export function loadHome(workspace: string): HomeData {

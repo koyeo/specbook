@@ -134,8 +134,8 @@ export function registerScanHandlers(): void {
                 if (!detail) return null;
                 return {
                     content: detail.content,
-                    implRules: detail.implRules,
-                    testRules: detail.testRules,
+                    implRules: detail.implRequirements,
+                    testRules: detail.testRequirements,
                 };
             },
         });
@@ -225,8 +225,8 @@ export function registerScanHandlers(): void {
         const detail = readObjectDetail(ws, objectId);
         const objectDetail = detail ? {
             content: detail.content,
-            implRules: detail.implRules,
-            testRules: detail.testRules,
+            implRules: detail.implRequirements,
+            testRules: detail.testRequirements,
         } : undefined;
 
         const result = await scanSingleObject({

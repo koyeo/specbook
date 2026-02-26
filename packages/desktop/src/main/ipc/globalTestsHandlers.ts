@@ -21,7 +21,7 @@ export function registerGlobalTestsHandlers(): void {
             id: generateId(),
             title: payload.title.trim(),
             description: payload.description?.trim() ?? '',
-            rules: [],
+            requirements: [],
             locations: [],
             createdAt: now,
             updatedAt: now,
@@ -40,7 +40,7 @@ export function registerGlobalTestsHandlers(): void {
             ...existing,
             title: payload.title?.trim() ?? existing.title,
             description: payload.description?.trim() ?? existing.description,
-            rules: payload.rules ?? existing.rules,
+            requirements: payload.requirements ?? existing.requirements,
             locations: payload.locations ?? existing.locations,
             updatedAt: new Date().toISOString(),
         };

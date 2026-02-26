@@ -4,11 +4,12 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
     Typography, Button, Space, Input, List, Tag, Empty,
-    Splitter, theme, Popconfirm, message, Tooltip, Dropdown, Segmented,
+    Splitter, theme, Popconfirm, message, Tooltip, Dropdown, Segmented, AutoComplete, Select,
 } from 'antd';
 import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, CheckOutlined, CloseOutlined, CopyOutlined, SortAscendingOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useGlossary } from '../hooks/useGlossary';
-import type { GlossaryTerm } from '@specbook/shared';
+import type { GlossaryTerm, GlossaryField, ObjectRequirement, ImplementationLocation } from '@specbook/shared';
+import { RequirementLocationEditor } from '../components/RequirementLocationEditor';
 
 const { Title, Text, Paragraph } = Typography;
 const { useToken } = theme;
@@ -30,6 +31,18 @@ export const GlossaryPage: React.FC<GlossaryPageProps> = ({ workspace }) => {
     const [draftName, setDraftName] = useState('');
     const [draftDescription, setDraftDescription] = useState('');
     const [draftCategory, setDraftCategory] = useState('');
+    const [draftRequirements, setDraftRequirements] = useState<ObjectRequirement[]>([]);
+    const [draftLocations, setDraftLocations] = useState<ImplementationLocation[]>([]);
+    const [draftFields, setDraftFields] = useState<GlossaryField[]>([]);
+
+    // Derive unique categories from all terms for autocomplete
+    const categoryOptions = useMemo(() => {
+        const cats = new Set<string>();
+        for (const t of terms) {
+            if (t.category?.trim()) cats.add(t.category.trim());
+        }
+        return Array.from(cats).sort().map(c => ({ value: c }));
+    }, [terms]);
 
     useEffect(() => {
         if (workspace) loadTerms();
@@ -61,6 +74,9 @@ export const GlossaryPage: React.FC<GlossaryPageProps> = ({ workspace }) => {
         setDraftName(term.name);
         setDraftDescription(term.description);
         setDraftCategory(term.category || '');
+        setDraftRequirements(term.requirements || []);
+        setDraftLocations(term.locations || []);
+        setDraftFields(term.fields || []);
         setEditing(true);
     }, []);
 
@@ -91,6 +107,9 @@ export const GlossaryPage: React.FC<GlossaryPageProps> = ({ workspace }) => {
                 name,
                 description: draftDescription.trim(),
                 category: draftCategory.trim() || undefined,
+                fields: draftFields,
+                requirements: draftRequirements,
+                locations: draftLocations,
             });
             setEditing(false);
             message.success('Term saved');
@@ -255,10 +274,15 @@ export const GlossaryPage: React.FC<GlossaryPageProps> = ({ workspace }) => {
 
                                     <div style={{ marginBottom: 12 }}>
                                         <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Category</Text>
-                                        <Input
+                                        <AutoComplete
                                             value={draftCategory}
-                                            onChange={e => setDraftCategory(e.target.value)}
+                                            onChange={setDraftCategory}
+                                            options={categoryOptions}
                                             placeholder="e.g. DDD, Business"
+                                            style={{ width: '100%' }}
+                                            filterOption={(input, option) =>
+                                                (option?.value as string).toLowerCase().includes(input.toLowerCase())
+                                            }
                                         />
                                     </div>
 
@@ -271,6 +295,71 @@ export const GlossaryPage: React.FC<GlossaryPageProps> = ({ workspace }) => {
                                             placeholder="Describe this term..."
                                         />
                                     </div>
+
+                                    {/* Fields editor */}
+                                    <div style={{ marginBottom: 12 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                            <Text type="secondary" style={{ fontSize: 12 }}>Fields</Text>
+                                            <Button
+                                                size="small"
+                                                type="dashed"
+                                                icon={<PlusOutlined />}
+                                                onClick={() => setDraftFields(prev => [...prev, { id: crypto.randomUUID(), name: '', type: 'string', description: '' }])}
+                                            >
+                                                Add Field
+                                            </Button>
+                                        </div>
+                                        {draftFields.map((field, idx) => (
+                                            <div key={field.id} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'flex-start' }}>
+                                                <Input
+                                                    size="small"
+                                                    placeholder="Name"
+                                                    value={field.name}
+                                                    onChange={e => {
+                                                        const v = e.target.value;
+                                                        setDraftFields(prev => prev.map((f, i) => i === idx ? { ...f, name: v } : f));
+                                                    }}
+                                                    style={{ flex: 2 }}
+                                                />
+                                                <Input
+                                                    size="small"
+                                                    placeholder="Type"
+                                                    value={field.type}
+                                                    onChange={e => {
+                                                        const v = e.target.value;
+                                                        setDraftFields(prev => prev.map((f, i) => i === idx ? { ...f, type: v } : f));
+                                                    }}
+                                                    style={{ flex: 1 }}
+                                                />
+                                                <Input
+                                                    size="small"
+                                                    placeholder="Description"
+                                                    value={field.description}
+                                                    onChange={e => {
+                                                        const v = e.target.value;
+                                                        setDraftFields(prev => prev.map((f, i) => i === idx ? { ...f, description: v } : f));
+                                                    }}
+                                                    style={{ flex: 3 }}
+                                                />
+                                                <Button
+                                                    size="small"
+                                                    type="text"
+                                                    danger
+                                                    icon={<DeleteOutlined />}
+                                                    onClick={() => setDraftFields(prev => prev.filter((_, i) => i !== idx))}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <RequirementLocationEditor
+                                        title=""
+                                        requirements={draftRequirements}
+                                        locations={draftLocations}
+                                        onRequirementsChange={setDraftRequirements}
+                                        onLocationsChange={setDraftLocations}
+                                        editable={true}
+                                    />
                                 </div>
                             ) : (
                                 /* ── Read-only mode ── */
@@ -302,6 +391,38 @@ export const GlossaryPage: React.FC<GlossaryPageProps> = ({ workspace }) => {
                                             {selectedTerm.description || <Text type="secondary" italic>No description</Text>}
                                         </Paragraph>
                                     </div>
+
+                                    {/* Fields read-only */}
+                                    {(selectedTerm.fields?.length ?? 0) > 0 && (
+                                        <div style={{ marginBottom: 12 }}>
+                                            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>Fields</Text>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                {selectedTerm.fields!.map(field => (
+                                                    <div key={field.id} style={{
+                                                        display: 'flex', gap: 8, alignItems: 'baseline',
+                                                        padding: '4px 8px',
+                                                        background: token.colorFillQuaternary,
+                                                        borderRadius: token.borderRadiusSM,
+                                                    }}>
+                                                        <Text strong style={{ fontSize: 13, minWidth: 80 }}>{field.name}</Text>
+                                                        <Tag color="processing" style={{ margin: 0 }}>{field.type}</Tag>
+                                                        {field.description && <Text type="secondary" style={{ fontSize: 12 }}>{field.description}</Text>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {((selectedTerm.requirements?.length ?? 0) > 0 || (selectedTerm.locations?.length ?? 0) > 0) && (
+                                        <RequirementLocationEditor
+                                            title=""
+                                            requirements={selectedTerm.requirements || []}
+                                            locations={selectedTerm.locations || []}
+                                            onRequirementsChange={() => { }}
+                                            onLocationsChange={() => { }}
+                                            editable={false}
+                                        />
+                                    )}
                                 </div>
                             )
                         ) : (

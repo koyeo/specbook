@@ -1,5 +1,5 @@
 /**
- * GlobalTestsPage — test list on left, detail with RuleLocationEditor on right.
+ * GlobalTestsPage — test list on left, detail with RequirementLocationEditor on right.
  * Edit mode includes title, description, AND rules/locations editing.
  */
 import React, { useEffect, useState, useMemo } from 'react';
@@ -12,8 +12,8 @@ import {
     CheckOutlined, CloseOutlined,
 } from '@ant-design/icons';
 import { useGlobalTests } from '../hooks/useGlobalTests';
-import { RuleLocationEditor } from '../components/RuleLocationEditor';
-import type { GlobalTest, ObjectRule, ImplementationLocation } from '@specbook/shared';
+import { RequirementLocationEditor } from '../components/RequirementLocationEditor';
+import type { GlobalTest, ObjectRequirement, ImplementationLocation } from '@specbook/shared';
 
 const { Title, Text, Paragraph } = Typography;
 const { useToken } = theme;
@@ -34,7 +34,7 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
     const [isAddingTest, setIsAddingTest] = useState(false);
     const [editTitle, setEditTitle] = useState('');
     const [editDescription, setEditDescription] = useState('');
-    const [editRules, setEditRules] = useState<ObjectRule[]>([]);
+    const [editRequirements, setEditRequirements] = useState<ObjectRequirement[]>([]);
     const [editLocations, setEditLocations] = useState<ImplementationLocation[]>([]);
 
     useEffect(() => {
@@ -62,7 +62,7 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
         setSelectedTestId(null);
         setEditTitle('');
         setEditDescription('');
-        setEditRules([]);
+        setEditRequirements([]);
         setEditLocations([]);
     };
 
@@ -71,7 +71,7 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
         setEditingTest(true);
         setEditTitle(test.title);
         setEditDescription(test.description);
-        setEditRules(test.rules ?? []);
+        setEditRequirements(test.rules ?? []);
         setEditLocations(test.locations ?? []);
     };
 
@@ -92,10 +92,10 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                     description: editDescription.trim(),
                 });
                 // Save rules/locations immediately after creating
-                if (editRules.length > 0 || editLocations.length > 0) {
+                if (editRequirements.length > 0 || editLocations.length > 0) {
                     await updateTest({
                         id: newTest.id,
-                        rules: editRules,
+                        requirements: editRequirements,
                         locations: editLocations,
                     });
                 }
@@ -106,7 +106,7 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                     id: selectedTest.id,
                     title: editTitle.trim(),
                     description: editDescription.trim(),
-                    rules: editRules,
+                    requirements: editRequirements,
                     locations: editLocations,
                 });
                 message.success('Test updated');
@@ -133,12 +133,12 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
 
     // ─── View-mode Rules & Locations change handlers (auto-save) ──────────
 
-    const handleRulesChange = async (rules: ObjectRule[]) => {
+    const handleRequirementsChange = async (requirements: ObjectRequirement[]) => {
         if (!selectedTest) return;
         try {
-            await updateTest({ id: selectedTest.id, rules });
+            await updateTest({ id: selectedTest.id, requirements });
         } catch (err: any) {
-            message.error(err?.message || 'Failed to save rules');
+            message.error(err?.message || 'Failed to save requirements');
         }
     };
 
@@ -209,7 +209,7 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                                                 <Text strong style={{ fontSize: 13 }}>{test.title}</Text>
                                                 <div>
                                                     <Text type="secondary" style={{ fontSize: 11 }}>
-                                                        {test.rules?.length ?? 0} rule{(test.rules?.length ?? 0) !== 1 ? 's' : ''}
+                                                        {test.rules?.length ?? 0} requirement{(test.rules?.length ?? 0) !== 1 ? 's' : ''}
                                                         {' · '}
                                                         {test.locations?.length ?? 0} location{(test.locations?.length ?? 0) !== 1 ? 's' : ''}
                                                     </Text>
@@ -232,7 +232,7 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                         padding: '16px 20px',
                     }}>
                         {showTestEditForm ? (
-                            /* ─── Test edit / add mode with RuleLocationEditor ─── */
+                            /* ─── Test edit / add mode with RequirementLocationEditor ─── */
                             <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                                     <Text strong style={{ fontSize: 14 }}>{isAddingTest ? 'New Test' : 'Edit Test'}</Text>
@@ -254,12 +254,12 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
 
                                 <Divider style={{ margin: '16px 0' }} />
 
-                                {/* Rules & Locations editor */}
-                                <RuleLocationEditor
+                                {/* Requirements & Locations editor */}
+                                <RequirementLocationEditor
                                     title=""
-                                    rules={editRules}
+                                    requirements={editRequirements}
                                     locations={editLocations}
-                                    onRulesChange={setEditRules}
+                                    onRequirementsChange={setEditRequirements}
                                     onLocationsChange={setEditLocations}
                                     editable={true}
                                 />
@@ -277,7 +277,7 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
                                 </div>
                             </div>
                         ) : selectedTest ? (
-                            /* ─── Test view mode with RuleLocationEditor ─── */
+                            /* ─── Test view mode with RequirementLocationEditor ─── */
                             <div>
                                 {/* Test header */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
@@ -298,12 +298,12 @@ export const GlobalTestsPage: React.FC<GlobalTestsPageProps> = ({ workspace }) =
 
                                 <Divider style={{ margin: '12px 0' }} />
 
-                                {/* Rules & Locations preview — read-only */}
-                                <RuleLocationEditor
+                                {/* Requirements & Locations preview — read-only */}
+                                <RequirementLocationEditor
                                     title=""
-                                    rules={selectedTest.rules ?? []}
+                                    requirements={selectedTest.rules ?? []}
                                     locations={selectedTest.locations ?? []}
-                                    onRulesChange={() => { }}
+                                    onRequirementsChange={() => { }}
                                     onLocationsChange={() => { }}
                                     editable={false}
                                 />

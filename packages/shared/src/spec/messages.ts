@@ -104,9 +104,9 @@ export interface UpdateObjectPayload {
     completed?: boolean;
     isState?: boolean;
     implLocations?: import('./types').ImplementationLocation[];
-    implRules?: import('./types').ObjectRule[];
+    implRequirements?: import('./types').ObjectRequirement[];
     testLocations?: import('./types').ImplementationLocation[];
-    testRules?: import('./types').ObjectRule[];
+    testRequirements?: import('./types').ObjectRequirement[];
 }
 
 /** Move object payload — change parent. */
@@ -151,6 +151,9 @@ export interface AddGlossaryTermPayload {
     name: string;
     description?: string;
     category?: string;
+    fields?: import('./types').GlossaryField[];
+    requirements?: import('./types').ObjectRequirement[];
+    locations?: import('./types').ImplementationLocation[];
 }
 
 /** Update glossary term payload. */
@@ -159,6 +162,9 @@ export interface UpdateGlossaryTermPayload {
     name?: string;
     description?: string;
     category?: string;
+    fields?: import('./types').GlossaryField[];
+    requirements?: import('./types').ObjectRequirement[];
+    locations?: import('./types').ImplementationLocation[];
 }
 
 /** Glossary API exposed to renderer via contextBridge. */
@@ -241,7 +247,7 @@ export interface UpdateGlobalTestPayload {
     id: string;
     title?: string;
     description?: string;
-    rules?: import('./types').ObjectRule[];
+    requirements?: import('./types').ObjectRequirement[];
     locations?: import('./types').ImplementationLocation[];
 }
 

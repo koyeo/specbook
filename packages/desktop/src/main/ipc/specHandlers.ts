@@ -110,9 +110,9 @@ export function registerIpcHandlers(): void {
             completed: payload.completed ?? existing.completed ?? false,
             isState: payload.isState ?? existing.isState ?? false,
             implLocations: payload.implLocations ?? existing.implLocations,
-            implRules: payload.implRules ?? existing.implRules,
+            implRequirements: payload.implRequirements ?? existing.implRequirements,
             testLocations: payload.testLocations ?? existing.testLocations,
-            testRules: payload.testRules ?? existing.testRules,
+            testRequirements: payload.testRequirements ?? existing.testRequirements,
             updatedAt: new Date().toISOString(),
         };
         updated.hasContent = updated.content.length > 0;

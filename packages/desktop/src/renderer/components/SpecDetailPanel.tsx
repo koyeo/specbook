@@ -6,8 +6,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Input, Button, Select, message, Spin, Typography, theme, Modal, Space, Tag, Switch, Tooltip, Collapse, Alert, Popconfirm } from 'antd';
 import { SaveOutlined, EditOutlined, EyeOutlined, ExclamationCircleFilled, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType, ObjectRule, ImplementationLocation } from '@specbook/shared';
-import { RuleLocationEditor } from './RuleLocationEditor';
+import type { ObjectDetail, ObjectTreeNode, UpdateObjectPayload, ObjectAction, ActionType, ObjectRequirement, ImplementationLocation } from '@specbook/shared';
+import { RequirementLocationEditor } from './RequirementLocationEditor';
 
 /** Action types — local copy to avoid CJS/ESM mismatch with @specbook/shared */
 const ACTION_TYPES: readonly ActionType[] = [
@@ -88,9 +88,9 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
     const [parentId, setParentId] = useState<string | null>(null);
     const [content, setContent] = useState('');
     const [implLocations, setImplLocations] = useState<ImplementationLocation[]>([]);
-    const [implRules, setImplRules] = useState<ObjectRule[]>([]);
+    const [implRequirements, setImplRequirements] = useState<ObjectRequirement[]>([]);
     const [testLocations, setTestLocations] = useState<ImplementationLocation[]>([]);
-    const [testRules, setTestRules] = useState<ObjectRule[]>([]);
+    const [testRequirements, setTestRequirements] = useState<ObjectRequirement[]>([]);
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -114,31 +114,31 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     setParentId(d?.parentId || null);
                     setContent(d?.content || '');
                     setImplLocations(d?.implLocations || []);
-                    setImplRules(d?.implRules || []);
+                    setImplRequirements(d?.implRequirements || []);
                     setTestLocations(d?.testLocations || []);
-                    setTestRules(d?.testRules || []);
+                    setTestRequirements(d?.testRequirements || []);
                 })
                 .catch((err) => { message.error('Failed to load spec detail'); console.error(err); })
                 .finally(() => setLoading(false));
         } else {
-            setDetail(null); setTitle(''); setParentId(null); setContent(''); setImplLocations([]); setImplRules([]); setTestLocations([]); setTestRules([]);
+            setDetail(null); setTitle(''); setParentId(null); setContent(''); setImplLocations([]); setImplRequirements([]); setTestLocations([]); setTestRequirements([]);
             setMode('preview');
         }
     }, [specId]);
 
     const implLocationsChanged = JSON.stringify(implLocations) !== JSON.stringify(detail?.implLocations || []);
-    const implRulesChanged = JSON.stringify(implRules) !== JSON.stringify(detail?.implRules || []);
+    const implRequirementsChanged = JSON.stringify(implRequirements) !== JSON.stringify(detail?.implRequirements || []);
     const testLocationsChanged = JSON.stringify(testLocations) !== JSON.stringify(detail?.testLocations || []);
-    const testRulesChanged = JSON.stringify(testRules) !== JSON.stringify(detail?.testRules || []);
+    const testRequirementsChanged = JSON.stringify(testRequirements) !== JSON.stringify(detail?.testRequirements || []);
 
     const hasChanges = detail ? (
         title !== (detail.title || '') ||
         parentId !== (detail.parentId || null) ||
         content !== (detail.content || '') ||
         implLocationsChanged ||
-        implRulesChanged ||
+        implRequirementsChanged ||
         testLocationsChanged ||
-        testRulesChanged
+        testRequirementsChanged
     ) : false;
 
 
@@ -163,9 +163,9 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     setParentId(detail?.parentId || null);
                     setContent(detail?.content || '');
                     setImplLocations(detail?.implLocations || []);
-                    setImplRules(detail?.implRules || []);
+                    setImplRequirements(detail?.implRequirements || []);
                     setTestLocations(detail?.testLocations || []);
-                    setTestRules(detail?.testRules || []);
+                    setTestRequirements(detail?.testRequirements || []);
                     setMode('preview');
                 },
             });
@@ -182,11 +182,11 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
             if (title !== detail.title) payload.title = title;
             if (content !== detail.content) payload.content = content;
             if (implLocationsChanged) payload.implLocations = implLocations;
-            if (implRulesChanged) payload.implRules = implRules;
+            if (implRequirementsChanged) payload.implRequirements = implRequirements;
             if (testLocationsChanged) payload.testLocations = testLocations;
-            if (testRulesChanged) payload.testRules = testRules;
+            if (testRequirementsChanged) payload.testRequirements = testRequirements;
 
-            if (payload.title !== undefined || payload.content !== undefined || payload.implLocations !== undefined || payload.implRules !== undefined || payload.testLocations !== undefined || payload.testRules !== undefined) {
+            if (payload.title !== undefined || payload.content !== undefined || payload.implLocations !== undefined || payload.implRequirements !== undefined || payload.testLocations !== undefined || payload.testRequirements !== undefined) {
                 await window.api.updateObject(payload);
             }
 
@@ -201,9 +201,9 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
             setParentId(updated?.parentId || null);
             setContent(updated?.content || '');
             setImplLocations(updated?.implLocations || []);
-            setImplRules(updated?.implRules || []);
+            setImplRequirements(updated?.implRequirements || []);
             setTestLocations(updated?.testLocations || []);
-            setTestRules(updated?.testRules || []);
+            setTestRequirements(updated?.testRequirements || []);
             setMode('preview');
             onSaved();
         } catch (err: any) {
@@ -286,24 +286,24 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     })()}
 
                     {/* Implementation Rules & Locations */}
-                    {((detail?.implRules?.length ?? 0) > 0 || (detail?.implLocations?.length ?? 0) > 0) && (
-                        <RuleLocationEditor
+                    {((detail?.implRequirements?.length ?? 0) > 0 || (detail?.implLocations?.length ?? 0) > 0) && (
+                        <RequirementLocationEditor
                             title="Implementation"
-                            rules={detail?.implRules || []}
+                            requirements={detail?.implRequirements || []}
                             locations={detail?.implLocations || []}
-                            onRulesChange={() => { }}
+                            onRequirementsChange={() => { }}
                             onLocationsChange={() => { }}
                             editable={false}
                         />
                     )}
 
-                    {/* Test Rules & Locations */}
-                    {((detail?.testRules?.length ?? 0) > 0 || (detail?.testLocations?.length ?? 0) > 0) && (
-                        <RuleLocationEditor
+                    {/* Test Requirements & Locations */}
+                    {((detail?.testRequirements?.length ?? 0) > 0 || (detail?.testLocations?.length ?? 0) > 0) && (
+                        <RequirementLocationEditor
                             title="Test"
-                            rules={detail?.testRules || []}
+                            requirements={detail?.testRequirements || []}
                             locations={detail?.testLocations || []}
-                            onRulesChange={() => { }}
+                            onRequirementsChange={() => { }}
                             onLocationsChange={() => { }}
                             editable={false}
                         />
@@ -377,22 +377,22 @@ export const ObjectDetailPanel: React.FC<ObjectDetailPanelProps> = ({
                     />
                 </div>
 
-                {/* Implementation Rules & Locations */}
-                <RuleLocationEditor
+                {/* Implementation Requirements & Locations */}
+                <RequirementLocationEditor
                     title="Implementation"
-                    rules={implRules}
+                    requirements={implRequirements}
                     locations={implLocations}
-                    onRulesChange={setImplRules}
+                    onRequirementsChange={setImplRequirements}
                     onLocationsChange={setImplLocations}
                     editable={true}
                 />
 
-                {/* Test Rules & Locations */}
-                <RuleLocationEditor
+                {/* Test Requirements & Locations */}
+                <RequirementLocationEditor
                     title="Test"
-                    rules={testRules}
+                    requirements={testRequirements}
                     locations={testLocations}
-                    onRulesChange={setTestRules}
+                    onRequirementsChange={setTestRequirements}
                     onLocationsChange={setTestLocations}
                     editable={true}
                 />
