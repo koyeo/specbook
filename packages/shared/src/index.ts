@@ -15,6 +15,10 @@ export type { AiConfig, TokenUsage, RelatedFile, ImplData, ObjectMapping, Analys
 export type { GlossaryTerm, GlossaryIndex, GlossaryField } from './spec/types';
 export { GLOSSARY_FILE } from './spec/types';
 
+// User Stories types
+export type { UserStory, UserStoryIndex } from './spec/types';
+export { USER_STORIES_FILE } from './spec/types';
+
 // Playground (Chat) types
 export type { ChatMessage, ChatSession, ChatSessionSummary } from './spec/types';
 export { PLAYGROUND_DIR } from './spec/types';
@@ -56,6 +60,7 @@ export type {
     AddKnowledgeEntryPayload, UpdateKnowledgeEntryPayload, KnowledgeAPI,
     AddGlobalRulePayload, UpdateGlobalRulePayload, GlobalRulesAPI,
     AddGlobalTestPayload, UpdateGlobalTestPayload, GlobalTestsAPI,
+    AddUserStoryPayload, UpdateUserStoryPayload, UserStoriesAPI,
     AddIssuePayload, UpdateIssuePayload, IssuesAPI,
     MappingAPI,
     PromptAPI, SendPromptPayload,

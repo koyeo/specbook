@@ -8,7 +8,7 @@ import {
     AppstoreOutlined, BookOutlined, HomeOutlined,
     FolderOpenOutlined, BulbOutlined, DesktopOutlined,
     RobotOutlined, SafetyOutlined, ExperimentOutlined,
-    BugOutlined, CloseOutlined,
+    BugOutlined, CloseOutlined, FileTextOutlined,
 } from '@ant-design/icons';
 import { ObjectPage } from './containers/SpecPage';
 import { GlossaryPage } from './containers/GlossaryPage';
@@ -18,6 +18,7 @@ import { GlobalRulesPage } from './containers/GlobalRulesPage';
 import { GlobalTestsPage } from './containers/GlobalTestsPage';
 import { IssuesPage } from './containers/IssuesPage';
 import { HomePage } from './containers/HomePage';
+import { UserStoriesPage } from './containers/UserStoriesPage';
 import { AiSettingsModal } from './components/AiSettingsModal';
 import { GlossaryFloatPanel } from './components/GlossaryFloatPanel';
 
@@ -28,7 +29,7 @@ const { Text, Title } = Typography;
 const { Sider, Content } = Layout;
 
 type ThemeMode = 'system' | 'light' | 'dark';
-type PageKey = 'home' | 'objects' | 'glossary' | 'knowledge' | 'rules' | 'tests' | 'issues';
+type PageKey = 'home' | 'objects' | 'glossary' | 'knowledge' | 'rules' | 'tests' | 'issues' | 'stories';
 
 function getSystemDark(): boolean {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
@@ -129,6 +130,7 @@ const App: React.FC = () => {
         { key: 'rules', icon: <SafetyOutlined />, label: 'Rules' },
         { key: 'tests', icon: <ExperimentOutlined />, label: 'Tests' },
         { key: 'knowledge', icon: <BulbOutlined />, label: 'Knowledge' },
+        { key: 'stories', icon: <FileTextOutlined />, label: 'User Stories' },
         { key: 'issues', icon: <BugOutlined />, label: 'Issues' },
     ];
 
@@ -150,6 +152,8 @@ const App: React.FC = () => {
                 return <GlobalTestsPage workspace={workspace} />;
             case 'issues':
                 return <IssuesPage workspace={workspace} />;
+            case 'stories':
+                return <UserStoriesPage workspace={workspace} />;
             default:
                 return null;
         }

@@ -52,6 +52,11 @@ export const IPC = {
     KNOWLEDGE_ADD: 'knowledge:add',
     KNOWLEDGE_UPDATE: 'knowledge:update',
     KNOWLEDGE_DELETE: 'knowledge:delete',
+    // User Stories channels
+    USER_STORIES_LOAD: 'user-stories:load',
+    USER_STORIES_ADD: 'user-stories:add',
+    USER_STORIES_UPDATE: 'user-stories:update',
+    USER_STORIES_DELETE: 'user-stories:delete',
     // Global Rules channels
     GLOBAL_RULES_LOAD: 'global-rules:load',
     GLOBAL_RULES_ADD: 'global-rules:add',
@@ -211,6 +216,31 @@ export interface KnowledgeAPI {
     addEntry(payload: AddKnowledgeEntryPayload): Promise<KnowledgeEntry>;
     updateEntry(payload: UpdateKnowledgeEntryPayload): Promise<KnowledgeEntry>;
     deleteEntry(id: string): Promise<void>;
+}
+
+// ─── User Stories ───────────────────────────────────
+
+/** Add user story payload. */
+export interface AddUserStoryPayload {
+    title: string;
+    content?: string;
+    tags?: string[];
+}
+
+/** Update user story payload. */
+export interface UpdateUserStoryPayload {
+    id: string;
+    title?: string;
+    content?: string;
+    tags?: string[];
+}
+
+/** User Stories API exposed to renderer via contextBridge. */
+export interface UserStoriesAPI {
+    loadStories(): Promise<import('./types').UserStory[]>;
+    addStory(payload: AddUserStoryPayload): Promise<import('./types').UserStory>;
+    updateStory(payload: UpdateUserStoryPayload): Promise<import('./types').UserStory>;
+    deleteStory(id: string): Promise<void>;
 }
 
 // ─── Global Rules ───────────────────────────────────

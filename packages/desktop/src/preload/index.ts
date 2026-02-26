@@ -13,6 +13,7 @@ import type {
     GlobalRulesAPI, AddGlobalRulePayload, UpdateGlobalRulePayload,
     GlobalTestsAPI, AddGlobalTestPayload, UpdateGlobalTestPayload,
     IssuesAPI, AddIssuePayload, UpdateIssuePayload,
+    UserStoriesAPI, AddUserStoryPayload, UpdateUserStoryPayload,
     MappingAPI, ScanProgressEvent,
     PromptAPI, SendPromptPayload,
     WindowAPI,
@@ -120,6 +121,13 @@ const homeApi: HomeAPI = {
     saveHome: (content: string) => ipcRenderer.invoke(IPC.HOME_SAVE, content),
 };
 
+const userStoriesApi: UserStoriesAPI = {
+    loadStories: () => ipcRenderer.invoke(IPC.USER_STORIES_LOAD),
+    addStory: (payload: AddUserStoryPayload) => ipcRenderer.invoke(IPC.USER_STORIES_ADD, payload),
+    updateStory: (payload: UpdateUserStoryPayload) => ipcRenderer.invoke(IPC.USER_STORIES_UPDATE, payload),
+    deleteStory: (id: string) => ipcRenderer.invoke(IPC.USER_STORIES_DELETE, id),
+};
+
 contextBridge.exposeInMainWorld('api', api);
 contextBridge.exposeInMainWorld('aiApi', aiApi);
 contextBridge.exposeInMainWorld('glossaryApi', glossaryApi);
@@ -132,3 +140,4 @@ contextBridge.exposeInMainWorld('promptApi', promptApi);
 contextBridge.exposeInMainWorld('windowApi', windowApi);
 contextBridge.exposeInMainWorld('issuesApi', issuesApi);
 contextBridge.exposeInMainWorld('homeApi', homeApi);
+contextBridge.exposeInMainWorld('userStoriesApi', userStoriesApi);

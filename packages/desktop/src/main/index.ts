@@ -16,6 +16,7 @@ import { registerScanHandlers } from './ipc/scanHandlers';
 import { registerPromptHandlers } from './ipc/promptHandlers';
 import { registerIssuesHandlers } from './ipc/issuesHandlers';
 import { registerHomeHandlers } from './ipc/homeHandlers';
+import { registerUserStoriesHandlers } from './ipc/userStoriesHandlers';
 
 app.whenReady().then(() => {
     // Set up native menu (with New Window commands)
@@ -34,6 +35,7 @@ app.whenReady().then(() => {
     registerPromptHandlers();
     registerIssuesHandlers();
     registerHomeHandlers();
+    registerUserStoriesHandlers();
 
     // Handle "new window" request from renderer
     ipcMain.handle(IPC.NEW_WINDOW, () => {

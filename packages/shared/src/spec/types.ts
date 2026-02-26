@@ -282,6 +282,27 @@ export interface KnowledgeIndex {
 /** Knowledge file name. */
 export const KNOWLEDGE_FILE = 'knowledge.json';
 
+// ─── User Stories Types ─────────────────────────────
+
+/** A single user story entry. */
+export interface UserStory {
+    id: string;
+    title: string;
+    content: string;
+    tags: string[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** Root user stories file structure (.specbook/user-stories.json) */
+export interface UserStoryIndex {
+    version: string;
+    stories: UserStory[];
+}
+
+/** User stories file name. */
+export const USER_STORIES_FILE = 'user-stories.json';
+
 // ─── Global Rules Types ─────────────────────────────
 
 /** A single global rule entry. */
