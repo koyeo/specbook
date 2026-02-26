@@ -84,6 +84,9 @@ export const IPC = {
     // Recent workspaces
     RECENT_WORKSPACES: 'workspace:recent',
     REMOVE_RECENT_WORKSPACE: 'workspace:remove-recent',
+    // Home page
+    HOME_LOAD: 'home:load',
+    HOME_SAVE: 'home:save',
 } as const;
 
 /** Add object payload. */
@@ -309,4 +312,12 @@ export interface IssuesAPI {
 /** Window management API exposed to renderer. */
 export interface WindowAPI {
     newWindow(): Promise<void>;
+}
+
+// ─── Home Page ──────────────────────────────────────
+
+/** Home API exposed to renderer. */
+export interface HomeAPI {
+    loadHome(): Promise<import('./types').HomeData>;
+    saveHome(content: string): Promise<void>;
 }

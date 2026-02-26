@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ConfigProvider, theme, Layout, Menu, Button, Tooltip, Typography, Space, Dropdown, Splitter, List, App as AntApp } from 'antd';
 import {
     SunOutlined, MoonOutlined, SettingOutlined,
-    AppstoreOutlined, BookOutlined,
+    AppstoreOutlined, BookOutlined, HomeOutlined,
     FolderOpenOutlined, BulbOutlined, DesktopOutlined,
     RobotOutlined, SafetyOutlined, ExperimentOutlined,
     BugOutlined, CloseOutlined,
@@ -17,6 +17,7 @@ import { KnowledgePage } from './containers/KnowledgePage';
 import { GlobalRulesPage } from './containers/GlobalRulesPage';
 import { GlobalTestsPage } from './containers/GlobalTestsPage';
 import { IssuesPage } from './containers/IssuesPage';
+import { HomePage } from './containers/HomePage';
 import { AiSettingsModal } from './components/AiSettingsModal';
 import { GlossaryFloatPanel } from './components/GlossaryFloatPanel';
 
@@ -27,7 +28,7 @@ const { Text, Title } = Typography;
 const { Sider, Content } = Layout;
 
 type ThemeMode = 'system' | 'light' | 'dark';
-type PageKey = 'objects' | 'glossary' | 'knowledge' | 'rules' | 'tests' | 'issues';
+type PageKey = 'home' | 'objects' | 'glossary' | 'knowledge' | 'rules' | 'tests' | 'issues';
 
 function getSystemDark(): boolean {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
@@ -42,7 +43,7 @@ const App: React.FC = () => {
     const [workspace, setWorkspace] = useState<string | null>(null);
     const [objects, setObjects] = useState<ObjectTreeNode[]>([]);
     const [recentWorkspaces, setRecentWorkspaces] = useState<string[]>([]);
-    const [currentPage, setCurrentPage] = useState<PageKey>('objects');
+    const [currentPage, setCurrentPage] = useState<PageKey>('home');
     const [siderCollapsed, setSiderCollapsed] = useState(false);
     const [copilotOpen, setCopilotOpen] = useState<boolean>(() => {
         return localStorage.getItem('specbook-copilot') === 'true';
@@ -122,6 +123,7 @@ const App: React.FC = () => {
         : mode === 'light' ? <SunOutlined /> : <MoonOutlined />;
 
     const menuItems = [
+        { key: 'home', icon: <HomeOutlined />, label: 'Home' },
         { key: 'objects', icon: <AppstoreOutlined />, label: 'Features' },
         { key: 'glossary', icon: <BookOutlined />, label: 'Glossary' },
         { key: 'rules', icon: <SafetyOutlined />, label: 'Rules' },
@@ -132,6 +134,8 @@ const App: React.FC = () => {
 
     const renderPage = () => {
         switch (currentPage) {
+            case 'home':
+                return <HomePage workspace={workspace} />;
 
             case 'objects':
                 return <ObjectPage workspace={workspace} />;

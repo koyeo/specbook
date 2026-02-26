@@ -437,3 +437,14 @@ export interface PromptResult {
 
 /** Subdirectory for prompt sessions. */
 export const PROMPT_DIR = 'prompts';
+
+// ─── Home Page Types ────────────────────────────────
+
+/** Home page content structure (.specbook/home.json) */
+export interface HomeData {
+    version: string;
+    content: string;
+}
+
+/** Home file name. */
+export const HOME_FILE = 'home.json';

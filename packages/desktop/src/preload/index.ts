@@ -16,6 +16,7 @@ import type {
     MappingAPI, ScanProgressEvent,
     PromptAPI, SendPromptPayload,
     WindowAPI,
+    HomeAPI,
 } from '@specbook/shared';
 
 const api: ObjectAPI = {
@@ -114,6 +115,11 @@ const issuesApi: IssuesAPI = {
     deleteIssue: (id: string) => ipcRenderer.invoke(IPC.ISSUES_DELETE, id),
 };
 
+const homeApi: HomeAPI = {
+    loadHome: () => ipcRenderer.invoke(IPC.HOME_LOAD),
+    saveHome: (content: string) => ipcRenderer.invoke(IPC.HOME_SAVE, content),
+};
+
 contextBridge.exposeInMainWorld('api', api);
 contextBridge.exposeInMainWorld('aiApi', aiApi);
 contextBridge.exposeInMainWorld('glossaryApi', glossaryApi);
@@ -125,3 +131,4 @@ contextBridge.exposeInMainWorld('mappingApi', mappingApi);
 contextBridge.exposeInMainWorld('promptApi', promptApi);
 contextBridge.exposeInMainWorld('windowApi', windowApi);
 contextBridge.exposeInMainWorld('issuesApi', issuesApi);
+contextBridge.exposeInMainWorld('homeApi', homeApi);

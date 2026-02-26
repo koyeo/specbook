@@ -35,6 +35,10 @@ export { GLOBAL_TESTS_FILE } from './spec/types';
 export type { Issue, IssueIndex, IssueStatus, IssuePriority } from './spec/types';
 export { ISSUES_FILE } from './spec/types';
 
+// Home page types
+export type { HomeData } from './spec/types';
+export { HOME_FILE } from './spec/types';
+
 // Feature Mapping types
 export type { FeatureMappingEntry, MappingChangeType, MappingChangeEntry, FeatureMappingIndex, ObjectMappingResult, ScanProgressEvent } from './spec/types';
 export { MAPPING_FILE, MAPPING_DIR } from './spec/types';
@@ -56,6 +60,7 @@ export type {
     MappingAPI,
     PromptAPI, SendPromptPayload,
     WindowAPI,
+    HomeAPI,
 } from './spec/messages';
 
 // Validations
